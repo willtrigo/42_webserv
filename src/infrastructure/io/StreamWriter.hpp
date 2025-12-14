@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/12 17:25:43 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/13 22:59:40 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/14 12:58:22 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,16 +24,14 @@ namespace io {
 class StreamWriter : public application::ports::IStreamWriter {
  public:
   StreamWriter();
+  StreamWriter(const StreamWriter&);
   virtual ~StreamWriter();
+
+  StreamWriter& operator=(const StreamWriter&);
 
   virtual void print(std::ostream& ostr, const std::string& str,
                      bool newLine) const;
   virtual void flush();
-
- private:
-  StreamWriter(const StreamWriter&);
-
-  StreamWriter& operator=(const StreamWriter&);
 };
 
 }  // namespace io

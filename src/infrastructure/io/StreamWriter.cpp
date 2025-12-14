@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/12 17:24:58 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/13 23:03:49 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/14 12:58:14 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,7 @@ StreamWriter::StreamWriter(const StreamWriter& /*unused*/) {}
 StreamWriter::~StreamWriter() { flush(); }
 
 StreamWriter& StreamWriter::operator=(const StreamWriter& /*unused*/) {
-  throw std::runtime_error("StreamWriter assignment is not allowed");
+  return *this;
 }
 
 void StreamWriter::print(std::ostream& ostr, const std::string& str,
@@ -34,7 +34,7 @@ void StreamWriter::print(std::ostream& ostr, const std::string& str,
   if (!ostr.good()) {
     throw std::runtime_error("Output stream in invalid state; cannot print.");
   }
-  
+
   ostr << str;
   if (newLine) {
     ostr << std::endl;

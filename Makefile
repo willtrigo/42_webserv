@@ -6,7 +6,7 @@
 #    By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/12 17:25:01 by dande-je         ###   ########.fr        #
+#    Updated: 2025/12/14 19:57:25 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -37,10 +37,13 @@ SRCS_ENTITIES_DIR               := $(SRCS_DOMAIN_DIR)entities/
 SRCS_INFRASTRUCTURE_DIR         := $(SRCS_DIR)infrastructure/
 SRCS_ADAPTER_DIR                := $(SRCS_INFRASTRUCTURE_DIR)adapters/
 SRCS_IO_DIR                     := $(SRCS_INFRASTRUCTURE_DIR)io/
+SRCS_LOGGING_DIR                := $(SRCS_INFRASTRUCTURE_DIR)logging/
 
 SRCS_PRESENTATION_DIR           := $(SRCS_DIR)presentation/
 SRCS_CLI_DIR                    := $(SRCS_PRESENTATION_DIR)cli/
-SRCS_UTILS_DIR                  := $(SRCS_PRESENTATION_DIR)utils/
+
+SRCS_SHARED_DIR                 := $(SRCS_DIR)shared/
+SRCS_UTILS_DIR                  := $(SRCS_SHARED_DIR)utils/
 
 INCS                            := src/
 BIN_DIR                         := bin/
@@ -62,7 +65,9 @@ SLEEP                           := sleep 0.01
 NAME_OUTPUT                     = webserv
 NAME                            = $(BIN_DIR)$(NAME_OUTPUT)
 
-SRCS_FILES                      += $(addprefix $(SRCS_IO_DIR), StreamWriter.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_IO_DIR), FileWriter.cpp \
+																	 StreamWriter.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_LOGGING_DIR), Logger.cpp)
 
 SRCS_FILES                      += $(addprefix $(SRCS_CLI_DIR), CliController.cpp \
 																	 CliView.cpp)
@@ -112,6 +117,7 @@ endif
 
 define create_dir
 	$(MKDIR) $(dir $@)
+	$(MKDIR) log
 endef
 
 define comp_objs
