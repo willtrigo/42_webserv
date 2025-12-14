@@ -1,0 +1,8 @@
+.cache/
+.clang-tidy
+.clang-format
+*.json
+*.o
+*.d
+bin/
+build/
