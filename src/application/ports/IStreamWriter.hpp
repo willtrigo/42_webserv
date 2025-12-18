@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/12 17:24:41 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/14 13:04:05 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/18 11:16:32 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,12 +21,11 @@ namespace ports {
 
 class IStreamWriter {
  public:
+  virtual ~IStreamWriter() {}
+
   virtual void print(std::ostream& ostr, const std::string& str,
                      bool newLine) const = 0;
   virtual void flush() = 0;
-
- protected:
-  virtual ~IStreamWriter() {}
 };
 
 }  // namespace ports

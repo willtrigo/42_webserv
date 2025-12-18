@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/12 17:09:16 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/14 20:15:12 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/17 19:38:14 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,4 +35,8 @@ void CliView::displayUsage(const std::string& programName) const {
 
 void CliView::displayError(const std::string& str) const {
   this->m_logger.error(str);
+}
+
+application::ports::ILogger& CliView::getLogger() const {
+  return this->m_logger;
 }

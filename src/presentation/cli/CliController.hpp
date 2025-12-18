@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/12 16:08:05 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/13 23:21:41 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/17 12:39:55 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,9 +29,9 @@ class CliController {
 
   CliView& m_view;
 
-  static const int MAX_SIZE_ARGS = 2;
-  static const int NAME_PROGRAM = 0;
-  static const int LITERAL_ARGUMENT_INDEX = 1;
+  static const int K_MAX_SIZE_ARGS = 2;
+  static const int K_NAME_PROGRAM = 0;
+  static const int K_LITERAL_ARGUMENT_INDEX = 1;
 
   bool parseArguments(int argc, char** argv);
 };

@@ -6,14 +6,17 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/12 16:08:17 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/13 23:21:45 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/17 20:22:23 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+#include "application/ports/IConfigProvider.hpp"
+#include "infrastructure/adapters/ConfigProvider.hpp"
 #include "presentation/cli/CliController.hpp"
 #include "presentation/cli/CliView.hpp"
 
 #include <cstdlib>
+#include <memory>
 #include <stdexcept>
 #include <string>
 
@@ -37,6 +40,15 @@ bool CliController::run(int argc, char** argv) {
   }
 
   try {
+    const std::string configPath =
+        ((argv[K_LITERAL_ARGUMENT_INDEX] != 0)
+             ? std::string(argv[K_LITERAL_ARGUMENT_INDEX])
+             : "default.conf");
+
+    std::auto_ptr<application::ports::IConfigProvider> configProvider( new
+    infrastructure::adapters::ConfigProvider(this->m_view.getLogger()));
+    configProvider->load(configPath, "default.conf");
+
   } catch (const std::exception& exception) {
     this->m_view.displayError(exception.what());
     return false;
@@ -45,12 +57,9 @@ bool CliController::run(int argc, char** argv) {
 }
 
 bool CliController::parseArguments(int argc, char** argv) {
-  if (argc < MAX_SIZE_ARGS) {
-    this->m_view.displayUsage(std::string(argv[NAME_PROGRAM]));
+  if (argc > K_MAX_SIZE_ARGS) {
+    this->m_view.displayUsage(std::string(argv[K_NAME_PROGRAM]));
     return false;
-  }
-
-  for (int i = LITERAL_ARGUMENT_INDEX; i < argc; ++i) {
   }
 
   return true;
