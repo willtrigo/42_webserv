@@ -6,7 +6,7 @@
 #    By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/18 12:31:35 by dande-je         ###   ########.fr        #
+#    Updated: 2025/12/18 21:24:25 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -36,6 +36,7 @@ SRCS_ENTITIES_DIR               := $(SRCS_DOMAIN_DIR)entities/
 
 SRCS_INFRASTRUCTURE_DIR         := $(SRCS_DIR)infrastructure/
 SRCS_ADAPTER_DIR                := $(SRCS_INFRASTRUCTURE_DIR)adapters/
+SRCS_CONFIG_DIR                 := $(SRCS_INFRASTRUCTURE_DIR)config/
 SRCS_IO_DIR                     := $(SRCS_INFRASTRUCTURE_DIR)io/
 SRCS_LOGGING_DIR                := $(SRCS_INFRASTRUCTURE_DIR)logging/
 
@@ -67,6 +68,7 @@ NAME_OUTPUT                     = webserv
 NAME                            = $(BIN_DIR)$(NAME_OUTPUT)
 
 SRCS_FILES                      += $(addprefix $(SRCS_ADAPTER_DIR), ConfigProvider.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_CONFIG_DIR), ConfigParser.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_IO_DIR), FileWriter.cpp \
 																	 StreamWriter.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_LOGGING_DIR), Logger.cpp)

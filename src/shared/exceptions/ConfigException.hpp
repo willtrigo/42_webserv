@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/18 12:05:20 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/18 12:38:28 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/18 20:24:17 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,15 +28,17 @@ class ConfigException : public BaseException {
     VALIDATION_INVALID_PATH = 104,
     VALIDATION_MISSING_DIRECTIVE = 105,
     INCLUDE_RECURSION = 106,
-    CODE_COUNT = 107,
+    LOAD_UNEXPECTED = 107,
+    INVALID_STATE = 108,
+    CODE_COUNT = 109,
     STATUS_BEGIN_COUNT = 100
   };
 
-  ConfigException(const std::string& msg, ErrorCode code);
-  ConfigException(const ConfigException&);
-  ~ConfigException() throw();
+  explicit ConfigException(const std::string& msg, ErrorCode code);
+  ConfigException(const ConfigException& other);
+  virtual ~ConfigException() throw();
 
-  ConfigException& operator=(const ConfigException&);
+  ConfigException& operator=(const ConfigException& other);
 
  private:
   static const char* m_codeMsgs[CODE_COUNT - STATUS_BEGIN_COUNT];

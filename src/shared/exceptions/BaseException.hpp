@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/18 11:22:20 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/18 12:34:39 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/18 18:42:26 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,18 +21,17 @@ namespace exceptions {
 
 class BaseException : public std::exception {
  public:
+  BaseException(const BaseException&);
   virtual ~BaseException() throw();
+
+  BaseException& operator=(const BaseException&);
+  
   virtual const char* what() const throw();
 
  protected:
   BaseException(const std::string& msg, int code);
 
   mutable std::string m_whatMsg;
-
- private:
-  BaseException(const BaseException&);
-
-  BaseException& operator=(const BaseException&);
 };
 
 }  // namespace exceptions

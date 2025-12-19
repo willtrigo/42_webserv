@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/18 12:15:54 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/18 12:27:24 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/18 20:24:44 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,9 @@ const char* ConfigException::m_codeMsgs[] = {
     "Duplicate listen port across servers",
     "Invalid path directive (nonexistent dir)",
     "Missing required directive (e.g., listen/root)",
-    "Recursive include detected"};
+    "Recursive include detected",
+    "Unexpected error during configuration load",
+    "Invalid configuration state (e.g., unloaded or unvalidated)"};
 
 ConfigException::ConfigException(const std::string& msg, ErrorCode code)
     : BaseException("", static_cast<int>(code)) {
@@ -35,7 +37,16 @@ ConfigException::ConfigException(const std::string& msg, ErrorCode code)
   this->m_whatMsg = oss.str();
 }
 
+ConfigException::ConfigException(const ConfigException& other) : BaseException(other) {}
+
 ConfigException::~ConfigException() throw() {}
+
+ConfigException& ConfigException::operator=(const ConfigException& other) {
+  if (this != &other) {
+    BaseException::operator=(other);
+  }
+  return *this;
+}
 
 }  // namespace exceptions
 }  // namespace shared
