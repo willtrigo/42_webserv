@@ -6,7 +6,7 @@
 #    By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/20 01:31:02 by dande-je         ###   ########.fr        #
+#    Updated: 2025/12/20 10:37:25 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -68,7 +68,8 @@ NAME_OUTPUT                     = webserv
 NAME                            = $(BIN_DIR)$(NAME_OUTPUT)
 
 SRCS_FILES                      += $(addprefix $(SRCS_VALUE_OBJECTS_DIR), Path.cpp \
-																	 Port.cpp)
+																	 Port.cpp \
+																	 Size.cpp)
 
 SRCS_FILES                      += $(addprefix $(SRCS_ADAPTER_DIR), ConfigProvider.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_CONFIG_DIR), ConfigParser.cpp)
@@ -82,7 +83,8 @@ SRCS_FILES                      += $(addprefix $(SRCS_CLI_DIR), CliController.cp
 SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseException.cpp \
 																	 ConfigException.cpp \
 																	 PathException.cpp \
-																	 PortException.cpp)
+																	 PortException.cpp \
+																	 SizeException.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_UTILS_DIR), TerminalColor.cpp)
 
 SRCS_FILES                      += $(addprefix $(SRCS_DIR), main.cpp)
