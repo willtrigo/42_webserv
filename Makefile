@@ -6,7 +6,7 @@
 #    By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/18 21:24:25 by dande-je         ###   ########.fr        #
+#    Updated: 2025/12/20 01:06:17 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -33,6 +33,7 @@ SRCS_SERVICES_DIR               := $(SRCS_APPLICATION_DIR)services/
 
 SRCS_DOMAIN_DIR                 := $(SRCS_DIR)domain/
 SRCS_ENTITIES_DIR               := $(SRCS_DOMAIN_DIR)entities/
+SRCS_VALUE_OBJECTS_DIR          := $(SRCS_DOMAIN_DIR)value_objects/
 
 SRCS_INFRASTRUCTURE_DIR         := $(SRCS_DIR)infrastructure/
 SRCS_ADAPTER_DIR                := $(SRCS_INFRASTRUCTURE_DIR)adapters/
@@ -54,8 +55,7 @@ BUILD_DIR                       := build/
 #******************************************************************************#
 #                                  COMMANDS                                    #
 #******************************************************************************#
-
-RM                              := rm -rf
+arser                          := rm -rf
 MKDIR                           := mkdir -p
 MAKEFLAGS                       += --no-print-directory
 SLEEP                           := sleep 0.01
@@ -67,6 +67,8 @@ SLEEP                           := sleep 0.01
 NAME_OUTPUT                     = webserv
 NAME                            = $(BIN_DIR)$(NAME_OUTPUT)
 
+SRCS_FILES                      += $(addprefix $(SRCS_VALUE_OBJECTS_DIR), Port.cpp)
+
 SRCS_FILES                      += $(addprefix $(SRCS_ADAPTER_DIR), ConfigProvider.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_CONFIG_DIR), ConfigParser.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_IO_DIR), FileWriter.cpp \
@@ -77,7 +79,8 @@ SRCS_FILES                      += $(addprefix $(SRCS_CLI_DIR), CliController.cp
 																	 CliView.cpp)
 
 SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseException.cpp \
-																	 ConfigException.cpp)
+																	 ConfigException.cpp \
+																	 PortException.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_UTILS_DIR), TerminalColor.cpp)
 
 SRCS_FILES                      += $(addprefix $(SRCS_DIR), main.cpp)
