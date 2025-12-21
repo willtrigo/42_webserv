@@ -6,7 +6,7 @@
 #    By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/20 20:33:53 by dande-je         ###   ########.fr        #
+#    Updated: 2025/12/21 00:01:05 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -68,6 +68,7 @@ NAME_OUTPUT                     = webserv
 NAME                            = $(BIN_DIR)$(NAME_OUTPUT)
 
 SRCS_FILES                      += $(addprefix $(SRCS_VALUE_OBJECTS_DIR), ErrorCode.cpp \
+																	 HttpMethod.cpp \
 																	 Path.cpp \
 																	 Port.cpp \
 																	 Size.cpp)
@@ -84,6 +85,7 @@ SRCS_FILES                      += $(addprefix $(SRCS_CLI_DIR), CliController.cp
 SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseException.cpp \
 																	 ConfigException.cpp \
 																	 ErrorCodeException.cpp \
+																	 HttpMethodException.cpp \
 																	 PathException.cpp \
 																	 PortException.cpp \
 																	 SizeException.cpp)
