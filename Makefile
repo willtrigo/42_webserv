@@ -6,7 +6,7 @@
 #    By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/21 00:01:05 by dande-je         ###   ########.fr        #
+#    Updated: 2025/12/21 01:43:42 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -70,6 +70,7 @@ NAME                            = $(BIN_DIR)$(NAME_OUTPUT)
 SRCS_FILES                      += $(addprefix $(SRCS_VALUE_OBJECTS_DIR), ErrorCode.cpp \
 																	 HttpMethod.cpp \
 																	 Path.cpp \
+																	 Permission.cpp \
 																	 Port.cpp \
 																	 Size.cpp)
 
@@ -87,6 +88,7 @@ SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseExcep
 																	 ErrorCodeException.cpp \
 																	 HttpMethodException.cpp \
 																	 PathException.cpp \
+																	 PermissionException.cpp \
 																	 PortException.cpp \
 																	 SizeException.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_UTILS_DIR), TerminalColor.cpp)
