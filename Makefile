@@ -6,7 +6,7 @@
 #    By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/21 11:57:49 by dande-je         ###   ########.fr        #
+#    Updated: 2025/12/22 01:08:03 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -73,7 +73,8 @@ SRCS_FILES                      += $(addprefix $(SRCS_VALUE_OBJECTS_DIR), ErrorC
 																	 Permission.cpp \
 																	 Port.cpp \
 																	 RegexPattern.cpp \
-																	 Size.cpp)
+																	 Size.cpp \
+																	 Uri.cpp)
 
 SRCS_FILES                      += $(addprefix $(SRCS_ADAPTER_DIR), ConfigProvider.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_CONFIG_DIR), ConfigParser.cpp)
@@ -92,7 +93,8 @@ SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseExcep
 																	 PermissionException.cpp \
 																	 PortException.cpp \
 																	 RegexPatternException.cpp \
-																	 SizeException.cpp)
+																	 SizeException.cpp \
+																	 UriException.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_UTILS_DIR), TerminalColor.cpp)
 
 SRCS_FILES                      += $(addprefix $(SRCS_DIR), main.cpp)
