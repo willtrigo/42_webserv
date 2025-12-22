@@ -6,7 +6,7 @@
 #    By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/22 01:08:03 by dande-je         ###   ########.fr        #
+#    Updated: 2025/12/22 19:01:21 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -39,6 +39,7 @@ SRCS_INFRASTRUCTURE_DIR         := $(SRCS_DIR)infrastructure/
 SRCS_ADAPTER_DIR                := $(SRCS_INFRASTRUCTURE_DIR)adapters/
 SRCS_CONFIG_DIR                 := $(SRCS_INFRASTRUCTURE_DIR)config/
 SRCS_IO_DIR                     := $(SRCS_INFRASTRUCTURE_DIR)io/
+SRCS_FILESYSTEM_DIR             := $(SRCS_INFRASTRUCTURE_DIR)filesystem/
 SRCS_LOGGING_DIR                := $(SRCS_INFRASTRUCTURE_DIR)logging/
 
 SRCS_PRESENTATION_DIR           := $(SRCS_DIR)presentation/
@@ -67,6 +68,7 @@ SLEEP                           := sleep 0.01
 NAME_OUTPUT                     = webserv
 NAME                            = $(BIN_DIR)$(NAME_OUTPUT)
 
+SRCS_FILES                      += $(addprefix $(SRCS_ENTITIES_DIR), CgiConfig.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_VALUE_OBJECTS_DIR), ErrorCode.cpp \
 																	 HttpMethod.cpp \
 																	 Path.cpp \
@@ -78,6 +80,7 @@ SRCS_FILES                      += $(addprefix $(SRCS_VALUE_OBJECTS_DIR), ErrorC
 
 SRCS_FILES                      += $(addprefix $(SRCS_ADAPTER_DIR), ConfigProvider.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_CONFIG_DIR), ConfigParser.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_FILESYSTEM_DIR), FileSystemHelper.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_IO_DIR), FileWriter.cpp \
 																	 StreamWriter.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_LOGGING_DIR), Logger.cpp)
@@ -86,8 +89,10 @@ SRCS_FILES                      += $(addprefix $(SRCS_CLI_DIR), CliController.cp
 																	 CliView.cpp)
 
 SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseException.cpp \
+																	 CgiConfigException.cpp \
 																	 ConfigException.cpp \
 																	 ErrorCodeException.cpp \
+																	 FileSystemHelperException.cpp \
 																	 HttpMethodException.cpp \
 																	 PathException.cpp \
 																	 PermissionException.cpp \
