@@ -6,7 +6,7 @@
 #    By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/22 20:11:33 by dande-je         ###   ########.fr        #
+#    Updated: 2025/12/23 01:23:55 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -74,13 +74,16 @@ SRCS_FILES                      += $(addprefix $(SRCS_VALUE_OBJECTS_DIR), ErrorC
 																	 Path.cpp \
 																	 Permission.cpp \
 																	 Port.cpp \
+																	 QueryStringBuilder.cpp \
 																	 RegexPattern.cpp \
 																	 Size.cpp \
 																	 Uri.cpp)
 
 SRCS_FILES                      += $(addprefix $(SRCS_ADAPTER_DIR), ConfigProvider.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_CONFIG_DIR), ConfigParser.cpp)
-SRCS_FILES                      += $(addprefix $(SRCS_FILESYSTEM_DIR), FileSystemHelper.cpp \
+SRCS_FILES                      += $(addprefix $(SRCS_FILESYSTEM_DIR), DirectoryEntryComparators.cpp \
+																	 DirectoryLister.cpp \
+																	 FileSystemHelper.cpp \
 																	 PathResolver.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_IO_DIR), FileWriter.cpp \
 																	 StreamWriter.cpp)
@@ -92,6 +95,7 @@ SRCS_FILES                      += $(addprefix $(SRCS_CLI_DIR), CliController.cp
 SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseException.cpp \
 																	 CgiConfigException.cpp \
 																	 ConfigException.cpp \
+																	 DirectoryListerException.cpp \
 																	 ErrorCodeException.cpp \
 																	 FileSystemHelperException.cpp \
 																	 HttpMethodException.cpp \
@@ -99,6 +103,7 @@ SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseExcep
 																	 PathResolverException.cpp \
 																	 PermissionException.cpp \
 																	 PortException.cpp \
+																	 QueryStringBuilderException.cpp \
 																	 RegexPatternException.cpp \
 																	 SizeException.cpp \
 																	 UriException.cpp)
