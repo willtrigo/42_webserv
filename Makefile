@@ -6,7 +6,7 @@
 #    By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/23 01:23:55 by dande-je         ###   ########.fr        #
+#    Updated: 2025/12/23 20:28:03 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -83,6 +83,7 @@ SRCS_FILES                      += $(addprefix $(SRCS_ADAPTER_DIR), ConfigProvid
 SRCS_FILES                      += $(addprefix $(SRCS_CONFIG_DIR), ConfigParser.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_FILESYSTEM_DIR), DirectoryEntryComparators.cpp \
 																	 DirectoryLister.cpp \
+																	 FileHandler.cpp \
 																	 FileSystemHelper.cpp \
 																	 PathResolver.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_IO_DIR), FileWriter.cpp \
@@ -97,6 +98,7 @@ SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseExcep
 																	 ConfigException.cpp \
 																	 DirectoryListerException.cpp \
 																	 ErrorCodeException.cpp \
+																	 FileHandlerException.cpp \
 																	 FileSystemHelperException.cpp \
 																	 HttpMethodException.cpp \
 																	 PathException.cpp \
