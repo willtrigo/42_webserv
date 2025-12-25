@@ -6,7 +6,7 @@
 #    By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/23 20:28:03 by dande-je         ###   ########.fr        #
+#    Updated: 2025/12/25 15:04:36 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -38,9 +38,11 @@ SRCS_VALUE_OBJECTS_DIR          := $(SRCS_DOMAIN_DIR)value_objects/
 SRCS_INFRASTRUCTURE_DIR         := $(SRCS_DIR)infrastructure/
 SRCS_ADAPTER_DIR                := $(SRCS_INFRASTRUCTURE_DIR)adapters/
 SRCS_CONFIG_DIR                 := $(SRCS_INFRASTRUCTURE_DIR)config/
+SRCS_HTTP_DIR                   := $(SRCS_INFRASTRUCTURE_DIR)http/
 SRCS_IO_DIR                     := $(SRCS_INFRASTRUCTURE_DIR)io/
 SRCS_FILESYSTEM_DIR             := $(SRCS_INFRASTRUCTURE_DIR)filesystem/
 SRCS_LOGGING_DIR                := $(SRCS_INFRASTRUCTURE_DIR)logging/
+SRCS_NETWORK_DIR                := $(SRCS_INFRASTRUCTURE_DIR)network/
 
 SRCS_PRESENTATION_DIR           := $(SRCS_DIR)presentation/
 SRCS_CLI_DIR                    := $(SRCS_PRESENTATION_DIR)cli/
@@ -68,7 +70,8 @@ SLEEP                           := sleep 0.01
 NAME_OUTPUT                     = webserv
 NAME                            = $(BIN_DIR)$(NAME_OUTPUT)
 
-SRCS_FILES                      += $(addprefix $(SRCS_ENTITIES_DIR), CgiConfig.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_ENTITIES_DIR), CgiConfig.cpp \
+																	 Route.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_VALUE_OBJECTS_DIR), ErrorCode.cpp \
 																	 HttpMethod.cpp \
 																	 Path.cpp \
@@ -86,9 +89,11 @@ SRCS_FILES                      += $(addprefix $(SRCS_FILESYSTEM_DIR), Directory
 																	 FileHandler.cpp \
 																	 FileSystemHelper.cpp \
 																	 PathResolver.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_HTTP_DIR), RequestParser.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_IO_DIR), FileWriter.cpp \
 																	 StreamWriter.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_LOGGING_DIR), Logger.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_NETWORK_DIR), RouteMatcher.cpp)
 
 SRCS_FILES                      += $(addprefix $(SRCS_CLI_DIR), CliController.cpp \
 																	 CliView.cpp)
@@ -107,6 +112,9 @@ SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseExcep
 																	 PortException.cpp \
 																	 QueryStringBuilderException.cpp \
 																	 RegexPatternException.cpp \
+																	 RequestParserException.cpp \
+																	 RouteException.cpp \
+																	 RouteMatcherException.cpp \
 																	 SizeException.cpp \
 																	 UriException.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_UTILS_DIR), TerminalColor.cpp)
