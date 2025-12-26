@@ -6,7 +6,7 @@
 #    By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/25 15:04:36 by dande-je         ###   ########.fr        #
+#    Updated: 2025/12/25 21:36:58 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -71,6 +71,7 @@ NAME_OUTPUT                     = webserv
 NAME                            = $(BIN_DIR)$(NAME_OUTPUT)
 
 SRCS_FILES                      += $(addprefix $(SRCS_ENTITIES_DIR), CgiConfig.cpp \
+																	 LocationConfig.cpp \
 																	 Route.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_VALUE_OBJECTS_DIR), ErrorCode.cpp \
 																	 HttpMethod.cpp \
@@ -106,6 +107,7 @@ SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseExcep
 																	 FileHandlerException.cpp \
 																	 FileSystemHelperException.cpp \
 																	 HttpMethodException.cpp \
+																	 LocationConfigException.cpp \
 																	 PathException.cpp \
 																	 PathResolverException.cpp \
 																	 PermissionException.cpp \
