@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+         #
+#    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/25 15:04:36 by dande-je         ###   ########.fr        #
+#    Updated: 2025/12/25 20:36:47 by umeneses         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -203,6 +203,66 @@ define reset_count
 	$(eval COUNT=$(1))
 	$(eval OBJS_COUNT=$(words $(SRCS_FILES)))
 endef
+
+#******************************************************************************#
+#                              DOCKER FUNCTIONS                                #
+#******************************************************************************#
+
+define get_container_name
+	head -n 4 docker-compose.yaml | tail -n 1 | sed 's/://g'
+endef
+
+define get_image_name
+	cat docker-compose.yaml | grep 'image:' | awk '{printf $$2}'
+endef
+
+#******************************************************************************#
+#                              DOCKER PATHS                                    #
+#******************************************************************************#
+
+IMAGE = $(shell $(get_image_name))
+CONTAINER = $(shell $(get_container_name))
+COLORED_USER_ID = $(CYAN)$(shell id -u)$(YELLOW)
+COLORED_GROUP_ID = $(CYAN)$(shell id -g)$(YELLOW)
+
+#******************************************************************************#
+#                              DOCKER TARGETS                                  #
+#******************************************************************************#
+
+.PHONY: docker-build
+docker-build:
+	docker compose up -d --build
+	@printf "$(GREEN)Docker image $(IMAGE) built successfully!$(RESET)"
+
+.PHONY: docker-go
+docker-go: docker-build
+	@printf "$(GREEN)Docker container $(CONTAINER) is running!$(RESET)"
+	$(call prepare_googletest)
+	$(call build_googletest)
+	docker compose exec app /bin/bash
+
+.PHONY: docker-stop
+docker-stop:
+	docker compose stop $(CONTAINER)
+	@printf "$(YELLOW)Docker container $(CONTAINER) stopped!$(RESET)"
+
+.PHONY: docker-down
+docker-down:
+	docker compose down
+	@printf "$(YELLOW)Docker container $(CONTAINER) stopped and removed!$(RESET)"
+
+.PHONY: docker-reload
+docker-reload: docker-stop docker-build docker-go
+
+.PHONY: docker-ps
+docker-ps:
+	docker ps -a
+	@printf "$(YELLOW)Docker containers listed!$(RESET)"
+
+.PHONY: docker-deep-clean
+docker-deep-clean:
+	docker builder prune -f
+	@printf "$(RED)Docker builder cache cleaned!$(RESET)\n"
 
 #******************************************************************************#
 #                                   TARGETS                                    #

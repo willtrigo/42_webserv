@@ -1,0 +1,14 @@
+name: 42_Environment_2023
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ubuntu_42_env:latest
+    container_name: 42_env_with_googletest
+    volumes:
+      - .:/app
+    tty: true
+    stdin_open: true
+    command: /bin/bash
