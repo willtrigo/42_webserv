@@ -1,0 +1,41 @@
+name: Build
+
+on:
+  push:
+    branches: [ main, master, develop, "**feat**" ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        submodules: recursive
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake
+    
+    - name: Cache project build
+      uses: actions/cache@v5
+      with:
+        path: |
+          build
+          bin
+        key: project-build-${{ runner.os }}-${{ hashFiles('src/**/*.cpp', 'src/**/*.hpp', 'Makefile') }}
+        restore-keys: |
+          project-build-${{ runner.os }}-
+    
+    - name: Build project
+      run: |
+        make
+    
+    - name: Check executable
+      run: |
+        ls -lh bin/webserv
+        echo "✅ Build successful!"

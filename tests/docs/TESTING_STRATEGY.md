@@ -250,8 +250,6 @@ For beginners: **See [BEGINNER_GUIDE.md](BEGINNER_GUIDE.md) for testing fundamen
 
 ### Phase 1: Setup (Day 1) ✅ COMPLETE
 
-### Phase 1: Setup (Day 1) ✅ COMPLETE
-
 1. **Install Google Test 1.8.1** ✅
 ```bash
 cd tests/
@@ -279,15 +277,15 @@ tests/
 2. Domain Entities (CgiConfig)
 3. Infrastructure (ConfigParser, FileHandler)
 4. Presentation (CLIHttpMethod) - **COMPLETE (5/5 tests)**
-2. ⚠️ Value Objects (Port) - **PARTIAL (1/10 tests - needs updates)**
-3. 🚧 Value Objects (Path, ErrorCode, Uri) - **NOT IMPLEMENTED**
-4. 🚧 Domain Entities (CgiConfig, Route) - **BLOCKED**
-5. 🚧 FileHandler with real filesystem - **DISABLED (architecture blocker)**
-2. 🚧 ConfigParser with test config files - **NOT IMPLEMENTED**
-3. 🚧 Full CLI workflow - **NOT IMPLEMENTED**
-4. 🚧 End-to-end scenarios - **NOT IMPLEMENTED**
+5. ⚠️ Value Objects (Port) - **PARTIAL (1/10 tests - needs updates)**
+6. 🚧 Value Objects (Path, ErrorCode, Uri) - **NOT IMPLEMENTED**
+7. 🚧 Domain Entities (CgiConfig, Route) - **BLOCKED**
+8. 🚧 FileHandler with real filesystem - **DISABLED (architecture blocker)**
+1. 🚧 ConfigParser with test config files - **NOT IMPLEMENTED**
+2. 🚧 Full CLI workflow - **NOT IMPLEMENTED**
+3. 🚧 End-to-end scenarios - **NOT IMPLEMENTED**
 
-### Phase 4: CI/CD Integration (Week 3) 🚧 PLANNEDmethod
+### Phase 4: CI/CD Integration (Week 3) 🚧 PLANNED
 - RegexPattern empty initialization causes crashes (blocks CgiConfig, DirectoryLister)
 - FileSystemHelper has private constructor (blocks integration tests)
 
@@ -418,7 +416,7 @@ def test_webserver_startup():
 - **Integration tests**: 0 seconds (all disabled)
 - **Full suite**: < 0.1 seconds
 
-### Test Execution Time (Goals)oals)est
+### Test Execution Time (Goals)
     response = requests.get('http://localhost:8080/')
     assert response.status_code == 200
     
@@ -527,7 +525,7 @@ Project Documentation
 - [Advanced Guide (1.8.1)](https://github.com/google/googletest/blob/release-1.8.1/googletest/docs/advanced.md)
 - [FAQ (1.8.1)](https://github.com/google/googletest/blob/release-1.8.1/googletest/docs/faq.md)
 
-**⚠️ Important:** This project uses Google Test 1.8.1 (C++98 compatible), not the latest version.ures complete
+**⚠️ Important:** This project uses Google Test 1.8.1 (C++98 compatible), not the latest version.
 
 **For beginners:**
 
@@ -596,7 +594,7 @@ make
 
 Then implement ErrorCode to unblock routing tests! 🚀
 
-**Last Updated:** December 26, 2025ts)
+**Last Updated:** December 26, 2025
 - Test error handling thoroughly
 - Memory leak detection is critical
 - Follow C++98 standard strictly
