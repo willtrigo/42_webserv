@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/25 20:36:47 by umeneses         ###   ########.fr        #
+#    Updated: 2025/12/25 21:39:59 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -71,8 +71,10 @@ NAME_OUTPUT                     = webserv
 NAME                            = $(BIN_DIR)$(NAME_OUTPUT)
 
 SRCS_FILES                      += $(addprefix $(SRCS_ENTITIES_DIR), CgiConfig.cpp \
+																	 LocationConfig.cpp \
 																	 Route.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_VALUE_OBJECTS_DIR), ErrorCode.cpp \
+																	 Host.cpp \
 																	 HttpMethod.cpp \
 																	 Path.cpp \
 																	 Permission.cpp \
@@ -105,7 +107,9 @@ SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseExcep
 																	 ErrorCodeException.cpp \
 																	 FileHandlerException.cpp \
 																	 FileSystemHelperException.cpp \
+																	 HostException.cpp \
 																	 HttpMethodException.cpp \
+																	 LocationConfigException.cpp \
 																	 PathException.cpp \
 																	 PathResolverException.cpp \
 																	 PermissionException.cpp \
