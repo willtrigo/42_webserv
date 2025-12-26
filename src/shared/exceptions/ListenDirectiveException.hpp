@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 03:18:52 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/26 03:18:53 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/26 16:46:15 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,11 +36,8 @@ class ListenDirectiveException : public shared::exceptions::BaseException {
 
   ListenDirectiveException& operator=(const ListenDirectiveException& other);
 
-  ErrorCode getErrorCode() const;
-
  private:
   static const std::pair<ErrorCode, std::string> K_CODE_MSGS[];
-  ErrorCode m_errorCode;
 
   static std::string getErrorMsg(ErrorCode code);
 };

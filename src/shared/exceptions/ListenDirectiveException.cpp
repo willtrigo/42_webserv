@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 03:19:15 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/26 03:19:20 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/26 16:48:50 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@ const std::pair<ListenDirectiveException::ErrorCode, std::string>
 
 ListenDirectiveException::ListenDirectiveException(const std::string& msg,
                                                    ErrorCode code)
-    : BaseException("", static_cast<int>(code)), m_errorCode(code) {
+    : BaseException("", static_cast<int>(code)) {
   std::ostringstream oss;
   oss << getErrorMsg(code) << ": " << msg;
   this->m_whatMsg = oss.str();
@@ -42,7 +42,7 @@ ListenDirectiveException::ListenDirectiveException(const std::string& msg,
 
 ListenDirectiveException::ListenDirectiveException(
     const ListenDirectiveException& other)
-    : BaseException(other), m_errorCode(other.m_errorCode) {}
+    : BaseException(other) {}
 
 ListenDirectiveException::~ListenDirectiveException() throw() {}
 
@@ -50,14 +50,8 @@ ListenDirectiveException& ListenDirectiveException::operator=(
     const ListenDirectiveException& other) {
   if (this != &other) {
     BaseException::operator=(other);
-    m_errorCode = other.m_errorCode;
   }
   return *this;
-}
-
-ListenDirectiveException::ErrorCode ListenDirectiveException::getErrorCode()
-    const {
-  return m_errorCode;
 }
 
 std::string ListenDirectiveException::getErrorMsg(

@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 11:47:30 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/26 15:42:20 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/26 16:48:16 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,14 +70,14 @@ const std::pair<ServerConfigException::ErrorCode, std::string>
 
 ServerConfigException::ServerConfigException(const std::string& msg,
                                              ErrorCode code)
-    : BaseException("", static_cast<int>(code)), m_code(code) {
+    : BaseException("", static_cast<int>(code)) {
   std::ostringstream oss;
   oss << getErrorMsg(code) << ": " << msg;
   this->m_whatMsg = oss.str();
 }
 
 ServerConfigException::ServerConfigException(const ServerConfigException& other)
-    : BaseException(other), m_code(other.m_code) {}
+    : BaseException(other) {}
 
 ServerConfigException::~ServerConfigException() throw() {}
 
@@ -85,13 +85,8 @@ ServerConfigException& ServerConfigException::operator=(
     const ServerConfigException& other) {
   if (this != &other) {
     BaseException::operator=(other);
-    m_code = other.m_code;
   }
   return *this;
-}
-
-ServerConfigException::ErrorCode ServerConfigException::getErrorCode() const {
-  return m_code;
 }
 
 std::string ServerConfigException::getErrorMsg(

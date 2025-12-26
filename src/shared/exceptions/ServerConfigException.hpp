@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 11:46:58 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/26 15:42:15 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/26 16:45:34 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,12 +54,8 @@ class ServerConfigException : public BaseException {
 
   ServerConfigException& operator=(const ServerConfigException& other);
 
-  ErrorCode getErrorCode() const;
-
  private:
   static const std::pair<ErrorCode, std::string> K_CODE_MSGS[];
-
-  ErrorCode m_code;
 
   static std::string getErrorMsg(ErrorCode code);
 };
