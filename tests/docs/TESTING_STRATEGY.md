@@ -416,7 +416,7 @@ def test_webserver_startup():
 - **Integration tests**: 0 seconds (all disabled)
 - **Full suite**: < 0.1 seconds
 
-### Test Execution Time (Goals)oals)est
+### Test Execution Time (Goals)
     response = requests.get('http://localhost:8080/')
     assert response.status_code == 200
     
