@@ -293,10 +293,11 @@ sudo rm -rf /usr/local/share/googletest
 
 After successful installation:
 
-1. ✅ Build the tests: `cd tests && make`
-2. ✅ Run the tests: `./bin/test_runner`
-3. ✅ Read [RUNNING_TESTS.md](RUNNING_TESTS.md) for testing options
-4. ✅ Read [BEGINNER_GUIDE.md](BEGINNER_GUIDE.md) to learn testing basics
+1. [ ] Build the tests: `cd tests && make`
+2. [ ] Run the tests: `./bin/test_runner`
+3. [ ] Read [GOOGLETEST_REFERENCE.md](GOOGLETEST_REFERENCE.md) for command-line options
+4. [ ] Read [TESTING_SCENARIOS.md](TESTING_SCENARIOS.md) for test scenarios
+5. [ ] Read [BEGINNER_GUIDE.md](BEGINNER_GUIDE.md) to learn testing basics
 
 ---
 

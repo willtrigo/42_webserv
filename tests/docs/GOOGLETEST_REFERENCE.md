@@ -1,6 +1,9 @@
-# Running Tests Guide
+# Google Test Command-Line Reference
 
-This guide explains how to build and run tests in the webserver project.
+This guide explains **Google Test command-line options** for running tests.
+
+**For test scenarios**, see [TESTING_SCENARIOS.md](TESTING_SCENARIOS.md).  
+**For framework usage**, see [GOOGLETEST_GUIDE.md](GOOGLETEST_GUIDE.md).
 
 ## Quick Start
 
@@ -42,7 +45,7 @@ make
 
 ### Build Issues?
 
-See [FEATURES_STATUS.md](FEATURES_STATUS.md) for list of excluded files and why.
+See [TESTING_STATUS.md](TESTING_STATUS.md) for list of excluded files and why.
 
 ---
 
@@ -448,7 +451,7 @@ tests/
 
 **Issue:** Implementation differs from test expectations
 
-See [FEATURES_STATUS.md](FEATURES_STATUS.md#port-domainvalue_objects) for details.
+See [TESTING_STATUS.md](TESTING_STATUS.md#port-domainvalue_objects) for details.
 
 ---
 
@@ -465,7 +468,7 @@ mv unit/test_Path.cpp.disabled unit/test_Path.cpp
 make clean && make
 ```
 
-See [FEATURES_STATUS.md](FEATURES_STATUS.md) for complete list and reasons.
+See [TESTING_STATUS.md](TESTING_STATUS.md) for complete list and reasons.
 
 ---
 
@@ -501,7 +504,7 @@ make && ./bin/test_runner
 ### 3. Check Test Status Before Implementing
 ```bash
 # See what's disabled and why:
-cat docs/FEATURES_STATUS.md
+cat docs/TESTING_STATUS.md
 ```
 
 ### 4. Clean Build When Changing Code Structure
@@ -536,7 +539,7 @@ make clean && make
 ### Tests Crash at Startup
 
 Some features cause crashes due to unimplemented code. Check:
-- [FEATURES_STATUS.md](FEATURES_STATUS.md) - List of excluded features
+- [TESTING_STATUS.md](TESTING_STATUS.md) - List of excluded features
 - `Makefile` - PROJECT_SRCS exclusions
 
 ### Linking Errors
@@ -545,16 +548,17 @@ Some features cause crashes due to unimplemented code. Check:
 undefined reference to `SomeClass::someMethod()'
 ```
 
-The method isn't implemented yet. See [FEATURES_STATUS.md](FEATURES_STATUS.md).
+The method isn't implemented yet. See [TESTING_STATUS.md](TESTING_STATUS.md).
 
 ---
 
 ## Additional Resources
 
 - **Installation:** [INSTALLATION.md](INSTALLATION.md)
-- **Feature Status:** [FEATURES_STATUS.md](FEATURES_STATUS.md)
-- **Quick Fixes:** [QUICK_FIX.md](QUICK_FIX.md)
+- **Feature Status:** [TESTING_STATUS.md](TESTING_STATUS.md)
+- **Quick Fixes:** [GOOGLETEST_QUICKFIX.md](GOOGLETEST_QUICKFIX.md)
 - **Learning Guide:** [BEGINNER_GUIDE.md](BEGINNER_GUIDE.md)
-- **Writing Tests:** [WRITING_TESTS.md](WRITING_TESTS.md)
+- **Google Test Guide:** [GOOGLETEST_GUIDE.md](GOOGLETEST_GUIDE.md)
+- **Test Scenarios:** [TESTING_SCENARIOS.md](TESTING_SCENARIOS.md)
 
 **Last Updated:** December 26, 2025

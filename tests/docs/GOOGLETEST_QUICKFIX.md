@@ -60,7 +60,7 @@ make test
 |---------------------|--------------|-------------|
 | 1.8.x | C++98 | ✅ YES |
 | 1.10+ | C++11+ | ❌ NO (for this project) |
-| Latest (1.14+) | C++14+ | ❌ NO (for this project) |
+| Latest (1.17+) | C++14+ | ❌ NO (for this project) |
 
 42 School projects **must use C++98**, so you need the older Google Test version.
 
@@ -83,8 +83,8 @@ sudo ./install_gtest.sh          # Uses correct version
 
 - See [README.md](../README.md) for overview
 - See [BEGINNER_GUIDE.md](BEGINNER_GUIDE.md) for testing tutorials
-- See [INSTALLATION.md](INSTALLATION.md) for complete installation guide
-- Check [RUNNING_TESTS.md](RUNNING_TESTS.md) for troubleshooting
+- See [GOOGLETEST_INSTALLATION.md](GOOGLETEST_INSTALLATION.md) for complete installation guide
+- Check [GOOGLETEST_REFERENCE.md](GOOGLETEST_REFERENCE.md) for command-line options
 
 ## ⚡ Quick Commands Reference
 

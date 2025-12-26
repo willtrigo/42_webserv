@@ -232,13 +232,13 @@ Solution: Check network, GitHub rate limits, or use cached version
 ```
 Error: undefined reference to...
 ```
-Solution: Check [FEATURES_STATUS.md](FEATURES_STATUS.md) - feature might not be implemented yet
+Solution: Check [TESTING_STATUS.md](TESTING_STATUS.md) - feature might not be implemented yet
 
 **Tests fail to run:**
 ```
 Error: RegexPatternException
 ```
-Solution: Feature has unimplemented dependencies (see [FEATURES_STATUS.md](FEATURES_STATUS.md))
+Solution: Feature has unimplemented dependencies (see [TESTING_STATUS.md](TESTING_STATUS.md))
 
 ### Slow Workflow
 

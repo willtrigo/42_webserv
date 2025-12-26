@@ -1,0 +1,87 @@
+name: PR Labeler
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Label documentation PRs
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const { data: pullRequest } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+
+            const branchName = pullRequest.head.ref;
+            const labels = [];
+
+            // Label based on branch name
+            if (branchName.includes('doc') || branchName.includes('documentation')) {
+              labels.push('documentation');
+            }
+            
+            // Label based on file changes
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+
+            const hasDocsChanges = files.some(file => 
+              file.filename.includes('docs/') || 
+              file.filename.includes('.md') ||
+              file.filename.includes('README')
+            );
+
+            const hasTestChanges = files.some(file => 
+              file.filename.includes('tests/') || 
+              file.filename.includes('test_')
+            );
+
+            const hasSrcChanges = files.some(file => 
+              file.filename.includes('src/') &&
+              (file.filename.endsWith('.cpp') || file.filename.endsWith('.hpp'))
+            );
+
+            const hasConfigChanges = files.some(file =>
+              file.filename.includes('Makefile') ||
+              file.filename.includes('CMakeLists.txt') ||
+              file.filename.includes('.yml') ||
+              file.filename.includes('.yaml')
+            );
+
+            // Add appropriate labels
+            if (hasDocsChanges) labels.push('documentation');
+            if (hasTestChanges) labels.push('testing');
+            if (hasSrcChanges) labels.push('enhancement');
+            if (hasConfigChanges) labels.push('configuration');
+
+            // Remove duplicates
+            const uniqueLabels = [...new Set(labels)];
+
+            // Apply labels if any
+            if (uniqueLabels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: uniqueLabels,
+              });
+              
+              console.log(`Added labels: ${uniqueLabels.join(', ')}`);
+            } else {
+              console.log('No labels to add');
+            }
