@@ -5,12 +5,12 @@ if(GIT_FOUND)
     if(NOT UPDATE_SUBMODULES)
         return()
     endif()
-    execute_process(COMMAND ${GIT_EXECUTABLE} submodule
+    execute_process(COMMAND ${GIT_EXECUTABLE} submodule status
                     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                     OUTPUT_VARIABLE EXISTING_SUBMODULES
                     RESULT_VARIABLE RETURN_CODE
                     OUTPUT_STRIP_TRAILING_WHITESPACE)
-    message(STATUS "Updating git submodules:\n${EXISTING_SUBMODULES}")
+    message(STATUS "Current git submodule status before update:\n${EXISTING_SUBMODULES}")
     execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
                     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                     RESULT_VARIABLE RETURN_CODE)
