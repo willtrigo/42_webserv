@@ -209,7 +209,7 @@ endef
 #******************************************************************************#
 
 define get_container_name
-	head -n 4 docker-compose.yaml | tail -n 1 | sed 's/://g'
+	grep 'container_name:' docker-compose.yaml | head -n 1 | awk '{print $$2}'
 endef
 
 define get_image_name
