@@ -525,7 +525,7 @@ Project Documentation
 - [Advanced Guide (1.8.1)](https://github.com/google/googletest/blob/release-1.8.1/googletest/docs/advanced.md)
 - [FAQ (1.8.1)](https://github.com/google/googletest/blob/release-1.8.1/googletest/docs/faq.md)
 
-**⚠️ Important:** This project uses Google Test 1.8.1 (C++98 compatible), not the latest version.ures complete
+**⚠️ Important:** This project uses Google Test 1.8.1 (C++98 compatible), not the latest version.
 
 **For beginners:**
 
