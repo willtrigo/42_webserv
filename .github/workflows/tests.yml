@@ -1,0 +1,59 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, master, develop, "**feat**" ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        submodules: recursive
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake wget
+    
+    - name: Install Google Test 1.8.1 (C++98 compatible)
+      run: |
+        cd tests/
+        sudo ./install_gtest.sh
+    
+    - name: Verify Google Test installation
+      run: |
+        ls -la /usr/local/lib/libgtest* || echo "Warning: Libraries not found in /usr/local/lib"
+        ls -la /usr/local/include/gtest/ || echo "Warning: Headers not found"
+    
+    - name: Build tests
+      run: |
+        cd tests/
+        make clean
+        make
+    
+    - name: Run tests
+      run: |
+        cd tests/
+        ./bin/test_runner --gtest_output=xml:test-results.xml
+    
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: test-results
+        path: tests/test-results.xml
+    
+    - name: Test Summary
+      if: always()
+      run: |
+        echo "## Test Results" >> $GITHUB_STEP_SUMMARY
+        cd tests/
+        if [ -f test-results.xml ]; then
+          echo "Tests completed. Check artifacts for detailed results." >> $GITHUB_STEP_SUMMARY
+        fi

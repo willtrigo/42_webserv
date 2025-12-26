@@ -1,5 +1,7 @@
 # Webserver Test Suite
 
+[![Tests](https://github.com/biralavor/42_webserver/actions/workflows/tests.yml/badge.svg)](https://github.com/biralavor/42_webserver/actions/workflows/tests.yml)
+
 Comprehensive testing infrastructure for the 42_webserver project using Google Test 1.8.1 (C++98 compatible).
 
 ## Quick Start
@@ -97,6 +99,7 @@ make clean && make
 | [RUNNING_TESTS.md](docs/RUNNING_TESTS.md) | Run tests with various options |
 | [WRITING_TESTS.md](docs/WRITING_TESTS.md) | Write new tests (patterns & examples) |
 | [TESTING_STRATEGY.md](docs/TESTING_STRATEGY.md) | Overall testing strategy & architecture |
+| [CI_CD.md](docs/CI_CD.md) | GitHub Actions & continuous integration |
 | [BEGINNER_GUIDE.md](docs/BEGINNER_GUIDE.md) | Learn testing from scratch |
 | [QUICK_FIX.md](docs/QUICK_FIX.md) | Fix common installation errors |
 

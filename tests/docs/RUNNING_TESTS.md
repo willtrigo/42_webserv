@@ -292,34 +292,45 @@ fi
 
 ### GitHub Actions Example
 
+The project includes ready-to-use GitHub Actions workflows:
+
+**`.github/workflows/tests.yml`** - Automated testing:
 ```yaml
 name: Tests
-
 on: [push, pull_request]
-
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      
+      - uses: actions/checkout@v3
       - name: Install Google Test 1.8.1
         run: |
           cd tests/
           sudo ./install_gtest.sh
-      
       - name: Build Tests
         run: |
           cd tests/
           make
-      
       - name: Run Tests
         run: |
           cd tests/
-          ./bin/test_runner
+          ./bin/test_runner --gtest_output=xml:test-results.xml
 ```
 
----
+**`.github/workflows/build.yml`** - Build verification:
+```yaml
+name: Build
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build project
+        run: make
+```
+
+### Custom CI Script Example
 
 ## Performance Testing
 
