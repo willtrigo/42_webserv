@@ -1,0 +1,212 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   test_FileHandler_Integration.cpp                   :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/12/26 09:35:52 by umeneses          #+#    #+#             */
+/*   Updated: 2025/12/26 12:22:17 by umeneses         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+// Include the classes we want to test
+#include "infrastructure/filesystem/FileHandler.hpp"
+#include "infrastructure/filesystem/FileSystemHelper.hpp"
+#include "infrastructure/filesystem/PathResolver.hpp"
+#include "domain/value_objects/Path.hpp"
+
+// Include Google Test framework
+#include <gtest/gtest.h>
+#include <fstream>
+
+// This makes typing easier - we don't have to write the full namespace each time
+using namespace infrastructure::filesystem;
+using namespace domain::value_objects;
+
+// This is our test class - it sets up everything we need for testing
+// ::testing::Test is the base class from Google Test
+class FileHandlerIntegrationTest : public ::testing::Test {
+ protected:
+  // These are the objects we'll use in our tests
+  FileSystemHelper* helper;      // Helps with file system operations
+  PathResolver* resolver;        // Resolves and validates paths
+  FileHandler* fileHandler;      // The main class we're testing
+  Path testDir;                  // Directory where we'll create test files
+  
+  // SetUp() runs BEFORE each test
+  // This ensures each test starts with a clean state
+  virtual void SetUp() {
+    // Step 1: Create our helper objects
+    helper = new FileSystemHelper();
+    
+    // Step 2: Create resolver (it needs the helper)
+    resolver = new PathResolver(helper);
+    
+    // Step 3: Create the FileHandler (it needs both helper and resolver)
+    fileHandler = new FileHandler(helper, resolver);
+    
+    // Step 4: Set up our test directory path
+    testDir = Path("/tmp/webserv_test", true);
+    
+    // Step 5: Create the actual directory on disk
+    system("mkdir -p /tmp/webserv_test");
+  }
+
+  // TearDown() runs AFTER each test
+  // This cleans up everything we created
+  virtual void TearDown() {
+    // Delete in reverse order of creation (good practice!)
+    delete fileHandler;
+    delete resolver;
+    delete helper;
+    
+    // Remove the test directory and all files inside it
+    system("rm -rf /tmp/webserv_test");
+  }
+
+  // Helper function to create full paths for our test files
+  // Declaration only - implementation below the class
+  Path getTestFilePath(const std::string& filename) const;
+};
+
+// Implementation of helper function (outside the class)
+Path FileHandlerIntegrationTest::getTestFilePath(const std::string& filename) const {
+  // Example: getTestFilePath("test.txt") returns "/tmp/webserv_test/test.txt"
+  std::string fullPath = testDir.toString() + "/" + filename;
+  return Path(fullPath, true);
+}
+
+// TEST 1: Can we create a file and read it back?
+// TEST_F means "Test with Fixture" - it uses our FileHandlerIntegrationTest class
+TEST_F(FileHandlerIntegrationTest, CreateAndReadFile) {
+  // Step 1: Get the full path where we want to create our file
+  Path testFile = getTestFilePath("test.txt");
+  
+  // Step 2: Prepare some content to write
+  std::string content = "Hello, World!";
+  
+  // Step 3: Write the content to the file
+  // EXPECT_TRUE checks if the operation succeeded (returns true)
+  bool writeSuccess = fileHandler->writeFile(testFile, content);
+  EXPECT_TRUE(writeSuccess);
+  
+  // Step 4: Read the file back
+  std::vector<char> readContent = fileHandler->readFile(testFile);
+  
+  // Step 5: Convert the vector of characters back to a string
+  std::string readStr(readContent.begin(), readContent.end());
+  
+  // Step 6: Check if what we read matches what we wrote
+  EXPECT_EQ(content, readStr);
+}
+
+// TEST 2: Can we append text to an existing file?
+TEST_F(FileHandlerIntegrationTest, AppendToFile) {
+  // Step 1: Get our test file path
+  Path testFile = getTestFilePath("append.txt");
+  
+  // Step 2: Write the first line to the file
+  fileHandler->writeFile(testFile, "First line\n");
+  
+  // Step 3: Append a second line (should NOT overwrite the first line)
+  bool appendSuccess = fileHandler->appendToFile(testFile, "Second line\n");
+  EXPECT_TRUE(appendSuccess);
+  
+  // Step 4: Read the entire file
+  std::vector<char> fileContent = fileHandler->readFile(testFile);
+  
+  // Step 5: Convert to string so we can check the content
+  std::string fileAsString(fileContent.begin(), fileContent.end());
+  
+  // Step 6: Check that BOTH lines are in the file
+  // find() returns npos (no position) if the text is NOT found
+  bool hasFirstLine = (fileAsString.find("First line") != std::string::npos);
+  bool hasSecondLine = (fileAsString.find("Second line") != std::string::npos);
+  
+  EXPECT_TRUE(hasFirstLine);
+  EXPECT_TRUE(hasSecondLine);
+}
+
+// TEST 3: Can we delete a file?
+TEST_F(FileHandlerIntegrationTest, DeleteFile) {
+  // Step 1: Get our test file path
+  Path testFile = getTestFilePath("delete.txt");
+  
+  // Step 2: Create the file first (can't delete something that doesn't exist!)
+  fileHandler->writeFile(testFile, "To be deleted");
+  
+  // Step 3: Delete the file
+  bool deleteSuccess = fileHandler->deleteFile(testFile);
+  EXPECT_TRUE(deleteSuccess);
+  
+  // Step 4: Try to read the deleted file - this should throw an exception
+  // EXPECT_THROW checks that an exception IS thrown (because file doesn't exist)
+  EXPECT_THROW(fileHandler->readFile(testFile), shared::exceptions::FileHandlerException);
+}
+
+// TEST 4: Can we copy a file from one location to another?
+TEST_F(FileHandlerIntegrationTest, CopyFile) {
+  // Step 1: Set up our source and destination paths
+  Path source = getTestFilePath("source.txt");
+  Path destination = getTestFilePath("destination.txt");
+  
+  // Step 2: Prepare the content we want to copy
+  std::string originalContent = "Copy this content";
+  
+  // Step 3: Create the source file with our content
+  fileHandler->writeFile(source, originalContent);
+  
+  // Step 4: Copy the file to the destination
+  bool copySuccess = fileHandler->copyFile(source, destination);
+  EXPECT_TRUE(copySuccess);
+  
+  // Step 5: Read the destination file
+  std::vector<char> copiedContent = fileHandler->readFile(destination);
+  
+  // Step 6: Convert to string
+  std::string copiedAsString(copiedContent.begin(), copiedContent.end());
+  
+  // Step 7: Verify the copied file has the same content as the original
+  EXPECT_EQ(originalContent, copiedAsString);
+}
+
+// TEST 5: Can we get information (metadata) about a file?
+TEST_F(FileHandlerIntegrationTest, GetMetadata) {
+  // Step 1: Create a test file
+  Path testFile = getTestFilePath("metadata.txt");
+  std::string content = "Test metadata";
+  fileHandler->writeFile(testFile, content);
+  
+  // Step 2: Get the file's metadata (information about the file)
+  FileMetadata metadata = fileHandler->getMetadata(testFile);
+  
+  // Step 3: Check the path is correct
+  std::string expectedPath = testFile.toString();
+  std::string actualPath = metadata.path.toString();
+  EXPECT_EQ(expectedPath, actualPath);
+  
+  // Step 4: Check it's not a directory (it's a file!)
+  EXPECT_FALSE(metadata.isDirectory);
+  
+  // Step 5: Check the file has a size greater than 0
+  // GT means "Greater Than"
+  int fileSize = metadata.size.getBytes();
+  EXPECT_GT(fileSize, 0);
+}
+
+// TEST 6: Can we create a directory?
+TEST_F(FileHandlerIntegrationTest, CreateDirectory) {
+  // Step 1: Get the path for our new directory
+  Path newDir = getTestFilePath("subdir");
+  
+  // Step 2: Create the directory
+  bool createSuccess = fileHandler->createDirectory(newDir);
+  EXPECT_TRUE(createSuccess);
+  
+  // Step 3: Get metadata to verify it was created
+  FileMetadata dirMetadata = fileHandler->getMetadata(newDir);
+  
+  // Step 4: Check that it IS a directory (not a file)
+  EXPECT_TRUE(dirMetadata.isDirectory);
+}
