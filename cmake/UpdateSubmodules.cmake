@@ -10,6 +10,10 @@ if(GIT_FOUND)
                     OUTPUT_VARIABLE EXISTING_SUBMODULES
                     RESULT_VARIABLE RETURN_CODE
                     OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(NOT RETURN_CODE EQUAL "0")
+        message(WARNING "Cannot list submodules. Git command failed with ${RETURN_CODE}")
+        return()
+    endif()
     message(STATUS "Current git submodule status before update:\n${EXISTING_SUBMODULES}")
     execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
                     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
