@@ -1,0 +1,162 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   test_ConfigParser.cpp                              :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: test                                        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/12/24 00:00:00 by test              #+#    #+#             */
+/*   Updated: 2025/12/24 00:00:00 by test             ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+// Include what we're testing
+#include "infrastructure/config/ConfigParser.hpp"
+#include "tests/mocks/MockLogger.hpp"
+#include "shared/exceptions/ConfigException.hpp"
+
+// Include Google Test and file operations
+#include <gtest/gtest.h>
+#include <fstream>
+
+// Shorter names
+using namespace infrastructure::config;
+
+// Test class for ConfigParser
+class ConfigParserTest : public ::testing::Test {
+ protected:
+  // Our test objects
+  tests::mocks::MockLogger* mockLogger;    // Fake logger for testing
+  ConfigParser* parser;                     // The parser we're testing
+
+  // Runs before each test
+  virtual void SetUp() {
+    // Create a fake logger
+    mockLogger = new tests::mocks::MockLogger();
+    
+    // Create the parser (it needs a logger)
+    parser = new ConfigParser(*mockLogger);
+  }
+
+  // Runs after each test
+  virtual void TearDown() {
+    // Clean up in reverse order
+    delete parser;
+    delete mockLogger;
+  }
+
+  // Helper function declarations (implementations below the class)
+  void createTestConfigFile(const std::string& path, const std::string& content);
+  void removeTestFile(const std::string& path);
+};
+
+// Implementation of helper function: create a test config file
+void ConfigParserTest::createTestConfigFile(const std::string& path, const std::string& content) {
+  // Open file for writing
+  std::ofstream file(path.c_str());
+  
+  // Write the content
+  file << content;
+  
+  // Close the file
+  file.close();
+}
+
+// Implementation of helper function: delete a test file
+void ConfigParserTest::removeTestFile(const std::string& path) {
+  std::remove(path.c_str());
+}
+
+// TEST 1: Try to parse a file that doesn't exist
+// This should fail because the file isn't there
+TEST_F(ConfigParserTest, ParseNonExistentFile) {
+  // EXPECT_THROW means "this SHOULD cause an error"
+  EXPECT_THROW(
+    parser->parsePath("/nonexistent/config.conf"),
+    shared::exceptions::ConfigException
+  );
+}
+
+// TEST 2: Parse an empty file
+// An empty config file should be OK (no errors)
+TEST_F(ConfigParserTest, ParseEmptyFile) {
+  // Step 1: Set the file path
+  const std::string testFile = "/tmp/test_empty.conf";
+  
+  // Step 2: Create an empty file
+  createTestConfigFile(testFile, "");
+  
+  // Step 3: Parse it - should work without errors
+  EXPECT_NO_THROW(parser->parsePath(testFile));
+  
+  // Step 4: Clean up
+  removeTestFile(testFile);
+}
+
+// TEST 3: Parse a valid config file
+TEST_F(ConfigParserTest, ParseValidConfig) {
+  // Step 1: Set file path
+  const std::string testFile = "/tmp/test_valid.conf";
+  
+  // Step 2: Create a file with valid config syntax
+  std::string validConfig = 
+    "server {\n"
+    "    listen 8080;\n"
+    "    server_name localhost;\n"
+    "}\n";
+  
+  createTestConfigFile(testFile, validConfig);
+  
+  // Step 3: Parse it - should work fine
+  EXPECT_NO_THROW(parser->parsePath(testFile));
+  
+  // Step 4: Clean up
+  removeTestFile(testFile);
+}
+
+// TEST 4: Parse invalid syntax
+// Missing semicolon should cause an error
+TEST_F(ConfigParserTest, ParseInvalidSyntax) {
+  // Step 1: Set file path
+  const std::string testFile = "/tmp/test_invalid.conf";
+  
+  // Step 2: Create config with WRONG syntax (missing semicolon)
+  std::string invalidConfig = 
+    "server {\n"
+    "    listen 8080\n"     // ERROR: No semicolon here!
+    "}\n";
+  
+  createTestConfigFile(testFile, invalidConfig);
+  
+  // Step 3: Try to parse - should fail
+  EXPECT_THROW(
+    parser->parsePath(testFile),
+    shared::exceptions::ConfigException
+  );
+  
+  // Step 4: Clean up
+  removeTestFile(testFile);
+}
+
+// TEST 5: Check that the parser uses the logger
+TEST_F(ConfigParserTest, LoggerIntegration) {
+  // Step 1: Set file path
+  const std::string testFile = "/tmp/test_logger.conf";
+  
+  // Step 2: Create a simple config
+  createTestConfigFile(testFile, "server { listen 8080; }\n");
+  
+  // Step 3: Clear any previous logs
+  mockLogger->clear();
+  
+  // Step 4: Parse the file
+  parser->parsePath(testFile);
+  
+  // Step 5: Check that the logger was used
+  // GT means "Greater Than" - there should be at least 1 log message
+  int logCount = mockLogger->getLogCount();
+  EXPECT_GT(logCount, 0);
+  
+  // Step 6: Clean up
+  removeTestFile(testFile);
+}
