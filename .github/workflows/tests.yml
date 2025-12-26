@@ -21,7 +21,18 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y build-essential cmake wget
     
+    - name: Cache Google Test
+      id: cache-gtest
+      uses: actions/cache@v5
+      with:
+        path: |
+          /usr/local/lib/libgtest.a
+          /usr/local/lib/libgtest_main.a
+          /usr/local/include/gtest
+        key: gtest-1.8.1-${{ runner.os }}
+    
     - name: Install Google Test 1.8.1 (C++98 compatible)
+      if: steps.cache-gtest.outputs.cache-hit != 'true'
       run: |
         cd tests/
         sudo ./install_gtest.sh
@@ -31,10 +42,19 @@ jobs:
         ls -la /usr/local/lib/libgtest* || echo "Warning: Libraries not found in /usr/local/lib"
         ls -la /usr/local/include/gtest/ || echo "Warning: Headers not found"
     
+    - name: Cache test build
+      uses: actions/cache@v5
+      with:
+        path: |
+          tests/build
+          tests/bin
+        key: test-build-${{ runner.os }}-${{ hashFiles('tests/**/*.cpp', 'tests/**/*.hpp', 'src/**/*.cpp', 'src/**/*.hpp') }}
+        restore-keys: |
+          test-build-${{ runner.os }}-
+    
     - name: Build tests
       run: |
         cd tests/
-        make clean
         make
     
     - name: Run tests

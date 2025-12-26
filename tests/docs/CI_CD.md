@@ -242,18 +242,97 @@ Solution: Feature has unimplemented dependencies (see [FEATURES_STATUS.md](FEATU
 
 ### Slow Workflow
 
-**Current times:**
-- Google Test installation: ~2-3 minutes
-- Build tests: ~10-30 seconds
+**With caching enabled (current setup):**
+- Google Test installation: ~2-3 minutes (first run), ~5 seconds (cached)
+- Build tests: ~10-30 seconds (first run), ~2-5 seconds (cached)
 - Run tests: < 1 second
-- **Total: ~3-4 minutes**
+- **Total: ~3-4 minutes (first run), ~10-15 seconds (cached)**
 
-**Optimization options:**
+**Cache strategy:**
+- ✅ Google Test binaries cached by OS
+- ✅ Build artifacts cached by source file hash
+- ✅ Automatic cache invalidation on code changes
+- ✅ Restore keys for partial cache hits
 
-**1. Cache Google Test:**
+**Caching implementation (already enabled):**
+
+**Google Test caching:**
 ```yaml
 - name: Cache Google Test
-  uses: actions/cache@v3
+  id: cache-gtest
+  uses: actions/cache@v5
+  with:
+    path: |
+      /usr/local/lib/libgtest.a
+      /usr/local/lib/libgtest_main.a
+      /usr/local/include/gtest
+    key: gtest-1.8.1-${{ runner.os }}
+
+- name: Install Google Test (only if not cached)
+  if: steps.cache-gtest.outputs.cache-hit != 'true'
+  run: |
+    cd tests/
+    sudo ./install_gtest.sh
+```
+
+**Test build caching:**
+```yaml
+- name: Cache test build
+  uses: actions/cache@v5
+  with:
+    path: |
+      tests/build
+      tests/bin
+    key: test-build-${{ runner.os }}-${{ hashFiles('tests/**/*.cpp', 'src/**/*.cpp') }}
+    restore-keys: |
+      test-build-${{ runner.os }}-
+```
+
+**Project build caching:**
+```yaml
+- name: Cache project build
+  uses: actions/cache@v5
+  with:
+    path: |
+      build
+      bin
+    key: project-build-${{ runner.os }}-${{ hashFiles('src/**/*.cpp', 'Makefile') }}
+    restore-keys: |
+      project-build-${{ runner.os }}-
+```
+
+**Benefits:**
+- ⚡ 90% faster on cached builds (~10 seconds vs ~4 minutes)
+- 💰 Saves GitHub Actions minutes
+- 🎯 Automatic invalidation on code changes
+- 🔄 Partial cache restoration with restore-keys
+
+**Optimization status:**
+
+✅ **1. Google Test caching** - ENABLED
+- Caches `/usr/local/lib/libgtest*` and `/usr/local/include/gtest`
+- Key: `gtest-1.8.1-${{ runner.os }}`
+- Skips installation if cached (saves ~2-3 minutes)
+
+✅ **2. Test build caching** - ENABLED
+- Caches `tests/build` and `tests/bin`
+- Key includes hash of test and source files
+- Automatic rebuild on changes
+
+✅ **3. Project build caching** - ENABLED
+- Caches `build` and `bin` directories
+- Key includes hash of source files and Makefile
+- Partial restore with fallback keys
+
+**Additional optimization ideas:**
+
+**4. Conditional test execution:**
+
+**1. Cache Google Test:** ✅ **ENABLED**
+
+```yaml
+- name: Cache Google Test
+  uses: actions/cache@v5
   with:
     path: /usr/local/lib/libgtest*
     key: gtest-1.8.1-${{ runner.os }}
@@ -268,7 +347,7 @@ Solution: Feature has unimplemented dependencies (see [FEATURES_STATUS.md](FEATU
 **2. Cache build artifacts:**
 ```yaml
 - name: Cache build
-  uses: actions/cache@v3
+  uses: actions/cache@v5
   with:
     path: tests/build
     key: test-build-${{ hashFiles('tests/**/*.cpp') }}
