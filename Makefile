@@ -6,7 +6,7 @@
 #    By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/26 02:40:13 by dande-je         ###   ########.fr        #
+#    Updated: 2025/12/26 05:22:02 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -72,6 +72,7 @@ NAME                            = $(BIN_DIR)$(NAME_OUTPUT)
 
 SRCS_FILES                      += $(addprefix $(SRCS_ENTITIES_DIR), CgiConfig.cpp \
 																	 ErrorPage.cpp \
+																	 ListenDirective.cpp \
 																	 LocationConfig.cpp \
 																	 Route.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_VALUE_OBJECTS_DIR), ErrorCode.cpp \
@@ -111,6 +112,7 @@ SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseExcep
 																	 FileSystemHelperException.cpp \
 																	 HostException.cpp \
 																	 HttpMethodException.cpp \
+																	 ListenDirectiveException.cpp \
 																	 LocationConfigException.cpp \
 																	 PathException.cpp \
 																	 PathResolverException.cpp \
