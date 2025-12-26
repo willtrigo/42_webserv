@@ -6,12 +6,13 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 19:13:44 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/20 00:40:29 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/26 03:43:58 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "domain/value_objects/Port.hpp"
 #include "shared/exceptions/PortException.hpp"
+#include "shared/utils/StringUtils.hpp"
 
 #include <cctype>
 #include <cstdlib>
@@ -42,7 +43,9 @@ Port& Port::operator=(const Port& other) {
 
 unsigned int Port::getValue() const { return m_value; }
 
-bool Port::isValidPort(unsigned int port) { return port <= MAX_PORT; }
+bool Port::isValidPort(unsigned int port) {
+  return port >= MIN_PORT && port <= MAX_PORT;
+}
 
 void Port::validate() const {
   if (isValidPort(m_value)) {
@@ -105,12 +108,7 @@ bool Port::isDynamic() const {
 }
 
 bool Port::isAllDigits(const std::string& str) {
-  for (std::size_t i = 0; i < str.size(); ++i) {
-    if (std::isdigit(static_cast<unsigned char>(str[i])) == 0) {
-      return false;
-    }
-  }
-  return true;
+  return shared::utils::StringUtils::isAllDigits(str);
 }
 
 unsigned int Port::parsePortString(const std::string& portString) {
@@ -132,25 +130,30 @@ unsigned int Port::parsePortString(const std::string& portString) {
         shared::exceptions::PortException::INVALID_STRING);
   }
 
-  char* endptr = NULL;
-  unsigned long result =
-      std::strtoul(portString.c_str(), &endptr, BASE_DECIMAL);
+  try {
+    unsigned long result = shared::utils::StringUtils::toUnsignedLong(
+        portString, shared::utils::StringUtils::BASE_DECIMAL);
 
-  if (endptr == portString.c_str() || *endptr != '\0') {
+    if (result > static_cast<unsigned long>(MAX_PORT)) {
+      std::ostringstream oss;
+      oss << "Port value out of range: '" << portString
+          << "' (max: " << MAX_PORT << ")";
+      throw shared::exceptions::PortException(
+          oss.str(), shared::exceptions::PortException::OUT_OF_RANGE);
+    }
+
+    return static_cast<unsigned int>(result);
+  } catch (const std::invalid_argument& exception) {
     throw shared::exceptions::PortException(
         "Failed to convert port string to number: '" + portString + "'",
         shared::exceptions::PortException::CONVERSION_FAILED);
-  }
-
-  if (result > static_cast<unsigned long>(MAX_PORT)) {
+  } catch (const std::out_of_range& exception) {
     std::ostringstream oss;
     oss << "Port value out of range: '" << portString << "' (max: " << MAX_PORT
         << ")";
     throw shared::exceptions::PortException(
         oss.str(), shared::exceptions::PortException::OUT_OF_RANGE);
   }
-
-  return static_cast<unsigned int>(result);
 }
 
 }  // namespace value_objects
