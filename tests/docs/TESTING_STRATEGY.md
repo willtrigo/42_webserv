@@ -277,13 +277,13 @@ tests/
 2. Domain Entities (CgiConfig)
 3. Infrastructure (ConfigParser, FileHandler)
 4. Presentation (CLIHttpMethod) - **COMPLETE (5/5 tests)**
-2. ⚠️ Value Objects (Port) - **PARTIAL (1/10 tests - needs updates)**
-3. 🚧 Value Objects (Path, ErrorCode, Uri) - **NOT IMPLEMENTED**
-4. 🚧 Domain Entities (CgiConfig, Route) - **BLOCKED**
-5. 🚧 FileHandler with real filesystem - **DISABLED (architecture blocker)**
-2. 🚧 ConfigParser with test config files - **NOT IMPLEMENTED**
-3. 🚧 Full CLI workflow - **NOT IMPLEMENTED**
-4. 🚧 End-to-end scenarios - **NOT IMPLEMENTED**
+5. ⚠️ Value Objects (Port) - **PARTIAL (1/10 tests - needs updates)**
+6. 🚧 Value Objects (Path, ErrorCode, Uri) - **NOT IMPLEMENTED**
+7. 🚧 Domain Entities (CgiConfig, Route) - **BLOCKED**
+8. 🚧 FileHandler with real filesystem - **DISABLED (architecture blocker)**
+1. 🚧 ConfigParser with test config files - **NOT IMPLEMENTED**
+2. 🚧 Full CLI workflow - **NOT IMPLEMENTED**
+3. 🚧 End-to-end scenarios - **NOT IMPLEMENTED**
 
 ### Phase 4: CI/CD Integration (Week 3) 🚧 PLANNEDmethod
 - RegexPattern empty initialization causes crashes (blocks CgiConfig, DirectoryLister)
