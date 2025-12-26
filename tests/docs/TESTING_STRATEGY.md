@@ -250,8 +250,6 @@ For beginners: **See [BEGINNER_GUIDE.md](BEGINNER_GUIDE.md) for testing fundamen
 
 ### Phase 1: Setup (Day 1) ✅ COMPLETE
 
-### Phase 1: Setup (Day 1) ✅ COMPLETE
-
 1. **Install Google Test 1.8.1** ✅
 ```bash
 cd tests/
