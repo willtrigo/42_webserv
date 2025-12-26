@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 11:20:04 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/20 20:32:14 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/25 22:13:47 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -206,6 +206,16 @@ ErrorCode ErrorCode::found() { return ErrorCode(STATUS_FOUND); }
 
 ErrorCode ErrorCode::notModified() { return ErrorCode(STATUS_NOT_MODIFIED); }
 
+ErrorCode ErrorCode::forbidden() { return ErrorCode(STATUS_FORBIDDEN); }
+
+ErrorCode ErrorCode::unauthorized() { return ErrorCode(STATUS_UNAUTHORIZED); }
+
+ErrorCode ErrorCode::requestTimeout() {
+  return ErrorCode(STATUS_REQUEST_TIMEOUT);
+}
+
+ErrorCode ErrorCode::conflict() { return ErrorCode(STATUS_CONFLICT); }
+
 ErrorCode ErrorCode::fromString(const std::string& codeString) {
   return ErrorCode(codeString);
 }
@@ -252,6 +262,18 @@ bool ErrorCode::isMovedPermanently() const {
 
 bool ErrorCode::isFound() const { return m_value == STATUS_FOUND; }
 
+bool ErrorCode::isForbidden() const { return m_value == STATUS_FORBIDDEN; }
+
+bool ErrorCode::isUnauthorized() const {
+  return m_value == STATUS_UNAUTHORIZED;
+}
+
+bool ErrorCode::isRequestTimeout() const {
+  return m_value == STATUS_REQUEST_TIMEOUT;
+}
+
+bool ErrorCode::isConflict() const { return m_value == STATUS_CONFLICT; }
+
 unsigned int ErrorCode::parseCodeString(const std::string& codeString) {
   if (codeString.empty()) {
     throw shared::exceptions::ErrorCodeException(
@@ -296,7 +318,8 @@ bool ErrorCode::isAllDigits(const std::string& inputString) {
 }
 
 std::string ErrorCode::getCodeDescription(unsigned int code) {
-  for (StatusCodeIterator iter = statusCodesBegin(); iter != statusCodesEnd(); ++iter) {
+  for (StatusCodeIterator iter = statusCodesBegin(); iter != statusCodesEnd();
+       ++iter) {
     if (static_cast<unsigned int>(iter->first) == code) {
       return iter->second;
     }
@@ -329,7 +352,6 @@ ErrorCode::StatusCodeIterator ErrorCode::statusCodesBegin() {
 ErrorCode::StatusCodeIterator ErrorCode::statusCodesEnd() {
   return K_STATUS_CODE_MSGS + statusCodeCount();
 }
-
 
 }  // namespace value_objects
 }  // namespace domain

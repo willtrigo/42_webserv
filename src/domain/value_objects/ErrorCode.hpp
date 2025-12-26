@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 11:08:29 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/20 19:22:25 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/25 22:16:24 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -133,6 +133,11 @@ class ErrorCode {
   static ErrorCode found();
   static ErrorCode notModified();
 
+  static ErrorCode forbidden();
+  static ErrorCode unauthorized();
+  static ErrorCode requestTimeout();
+  static ErrorCode conflict();
+
   static ErrorCode fromString(const std::string& codeString);
 
   bool isClientError() const;
@@ -148,10 +153,16 @@ class ErrorCode {
   bool isPayloadTooLarge() const;
   bool isInternalServerError() const;
   bool isServiceUnavailable() const;
+
   bool isOk() const;
   bool isCreated() const;
   bool isMovedPermanently() const;
   bool isFound() const;
+
+  bool isForbidden() const;
+  bool isUnauthorized() const;
+  bool isRequestTimeout() const;
+  bool isConflict() const;
 
  private:
   unsigned int m_value;
