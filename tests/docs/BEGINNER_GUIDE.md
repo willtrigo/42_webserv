@@ -1,6 +1,451 @@
-# Beginner's Guide to Testing with Google Test
+# Quick Start Guide - Building Tests for 42_webserver
 
-Welcome! This guide explains how testing works in this project in simple terms.
+This guide shows you **how to build tests faster** for the webserver project, following the implementation strategy.
+
+**Goal:** Get from "I need to test this component" to "tests are passing" as quickly as possible.
+
+---
+
+## 🚀 Quick Start Workflow
+
+### 1. Check What to Test Next
+
+```bash
+# See implementation priority
+cat tests/docs/TESTING_STRATEGY.md
+
+# Check current status
+cat tests/docs/TESTING_STATUS.md
+```
+
+**Priority order** (from TESTING_STRATEGY.md):
+1. 🔴 **ErrorCode** (blocks 10+ components) → Start here!
+2. 🔴 **Path** (enables file operations)
+3. 🔴 **Port** (update existing tests)
+4. 🟡 **ConfigParser** (tests ready, need implementation)
+5. 🟡 **FileHandler** (fix architecture blocker)
+
+### 2. Copy Test Template
+
+**For Value Objects** (ErrorCode, Path, Port, Uri, Size):
+```bash
+# Create test file
+touch tests/unit/test_ErrorCode.cpp
+
+# Copy template
+cat > tests/unit/test_ErrorCode.cpp << 'EOF'
+#include "domain/value_objects/ErrorCode.hpp"
+#include "shared/exceptions/InvalidStatusCodeException.hpp"
+#include <gtest/gtest.h>
+
+class ErrorCodeTest : public ::testing::Test {
+ protected:
+  virtual void SetUp() {}
+  virtual void TearDown() {}
+};
+
+TEST_F(ErrorCodeTest, ValidStatusCodes) {
+  EXPECT_NO_THROW(ErrorCode(200));
+  EXPECT_NO_THROW(ErrorCode(404));
+  EXPECT_NO_THROW(ErrorCode(500));
+}
+
+TEST_F(ErrorCodeTest, InvalidStatusCodes) {
+  EXPECT_THROW(ErrorCode(0), InvalidStatusCodeException);
+  EXPECT_THROW(ErrorCode(999), InvalidStatusCodeException);
+}
+EOF
+```
+
+**For Integration Tests** (FileHandler, ConfigParser):
+```bash
+# Create integration test
+touch tests/integration/test_FileHandler_Integration.cpp
+
+# Copy template with setup/teardown
+cat > tests/integration/test_FileHandler_Integration.cpp << 'EOF'
+#include "infrastructure/filesystem/FileHandler.hpp"
+#include <gtest/gtest.h>
+
+class FileHandlerIntegrationTest : public ::testing::Test {
+ protected:
+  std::string testDir;
+  
+  virtual void SetUp() {
+    testDir = "/tmp/webserver_test/";
+    system(("mkdir -p " + testDir).c_str());
+  }
+  
+  virtual void TearDown() {
+    system(("rm -rf " + testDir).c_str());
+  }
+};
+
+TEST_F(FileHandlerIntegrationTest, CreateAndReadFile) {
+  // Test implementation here
+}
+EOF
+```
+
+### 3. Get Test Scenarios
+
+```bash
+# Open test scenarios for specific component
+# Example: ErrorCode scenarios
+grep -A 30 "## ErrorCode" tests/docs/TESTING_SCENARIOS.md
+```
+
+Or open [TESTING_SCENARIOS.md](TESTING_SCENARIOS.md) and navigate to your component.
+
+### 4. Build and Run
+
+```bash
+cd tests/
+make                    # Compile
+./bin/test_runner       # Run all tests
+
+# Run only your new tests
+./bin/test_runner --gtest_filter='ErrorCodeTest.*'
+```
+
+### 5. Fix Failures
+
+```bash
+# Test output shows:
+# test_ErrorCode.cpp:28: Failure
+# Expected equality of these values:
+#   200
+#   code.getValue()
+#     Which is: 0
+
+# → Fix implementation or test expectation
+```
+
+---
+
+## 📋 Component-Specific Quick Starts
+
+### 🔴 ErrorCode (Start Here - Highest Priority!)
+
+**Why first?** Blocks Route, RouteMatcher, RouteConfigAdapter, error pages (10+ components)
+
+**Quick setup:**
+```bash
+# 1. Create test file
+touch tests/unit/test_ErrorCode.cpp
+
+# 2. Add to Makefile (tests/Makefile)
+# Add to TEST_SRCS: unit/test_ErrorCode.cpp
+
+# 3. Copy scenarios from TESTING_SCENARIOS.md
+# Section: "Phase 1: Domain Layer - Value Objects → ErrorCode"
+
+# 4. Run tests (they'll fail - implementation not ready)
+make && ./bin/test_runner --gtest_filter='ErrorCodeTest.*'
+```
+
+**What to test** (from TESTING_SCENARIOS.md):
+- Valid HTTP status codes (200, 301, 404, 500)
+- fromString() parsing ("404" → 404)
+- isRedirection() for 3xx codes
+- movedPermanently() returns 301
+- Default error page mapping
+- Invalid status codes (0, 999)
+- Status code categories (success, redirect, client error, server error)
+
+**Time to complete:** 1-2 days (implementation + tests)
+
+---
+
+### 🔴 Path (Second Priority)
+
+**Why important?** Enables FileHandler, static files, uploads, directory listing
+
+**Quick setup:**
+```bash
+# 1. Tests already exist but disabled
+mv tests/unit/test_Path.cpp.disabled tests/unit/test_Path.cpp
+
+# 2. Update Makefile
+# Add: unit/test_Path.cpp to TEST_SRCS
+
+# 3. Run tests
+make && ./bin/test_runner --gtest_filter='PathTest.*'
+```
+
+**What to test** (from TESTING_SCENARIOS.md):
+- Valid absolute paths
+- Reject relative paths
+- Path normalization (/foo/../bar → /bar)
+- Security validation (reject path traversal)
+- Extract directory, filename, extension
+- Path joining
+
+**Time to complete:** 2-3 days
+
+---
+
+### ⚠️ Port (Quick Fix - Update Tests)
+
+**Why now?** Tests exist but expectations don't match implementation
+
+**Quick setup:**
+```bash
+# Tests already running, just failing
+./bin/test_runner --gtest_filter='PortTest.*'
+
+# Shows: 1/10 passing
+```
+
+**What to fix:**
+- Decide: Should default port be 0 or 80?
+- Update tests to match implementation OR
+- Update implementation to match test expectations
+
+**Time to complete:** 1 day
+
+---
+
+### 🟡 ConfigParser (Tests Ready!)
+
+**Why later?** Depends on Port, Path, ErrorCode being done first
+
+**Quick setup:**
+```bash
+# 1. Tests already exist but disabled
+mv tests/unit/test_ConfigParser.cpp.disabled tests/unit/test_ConfigParser.cpp
+
+# 2. Update Makefile
+
+# 3. Implement ConfigParser class
+
+# 4. Run tests
+make && ./bin/test_runner --gtest_filter='ConfigParserTest.*'
+```
+
+**What to test** (from TESTING_SCENARIOS.md):
+- Parse single/multiple server blocks
+- Parse location blocks with routes
+- Handle syntax errors gracefully
+- Load default error pages
+- Parse CGI configuration
+- Validate max body size
+
+**Time to complete:** 3-4 days
+
+---
+
+## 🎯 Fast Test Development Tips
+
+### Tip 1: Start with Simplest Test
+
+Don't write all tests at once. Start with one:
+
+```cpp
+// ✅ Start here
+TEST_F(ErrorCodeTest, ValidStatusCode) {
+  EXPECT_NO_THROW(ErrorCode(200));
+}
+
+// Add after first test passes
+TEST_F(ErrorCodeTest, InvalidStatusCode) {
+  EXPECT_THROW(ErrorCode(0), InvalidStatusCodeException);
+}
+```
+
+### Tip 2: Use Test Scenarios as Checklist
+
+Open TESTING_SCENARIOS.md and copy test names directly:
+
+```cpp
+// From TESTING_SCENARIOS.md:
+// TEST: Valid HTTP status codes (200, 301, 404, 500)
+TEST_F(ErrorCodeTest, ValidHttpStatusCodes) {
+  EXPECT_NO_THROW(ErrorCode(200));
+  EXPECT_NO_THROW(ErrorCode(301));
+  EXPECT_NO_THROW(ErrorCode(404));
+  EXPECT_NO_THROW(ErrorCode(500));
+}
+```
+
+### Tip 3: Run Tests Frequently
+
+```bash
+# Don't wait to write all tests
+# Run after each test you add:
+make && ./bin/test_runner --gtest_filter='ErrorCodeTest.ValidHttpStatusCodes'
+```
+
+### Tip 4: Follow the Dependency Chain
+
+From TESTING_STRATEGY.md:
+
+```
+HttpMethod ✅ → (nothing blocked)
+ErrorCode 🚧 → Route → RouteMatcher → HTTP routing
+Path 🚧 → FileHandler → Static files, uploads
+Port ⚠️ → ConfigParser → Multi-server configuration
+```
+
+**Implement in order:** ErrorCode → Path → Port → ConfigParser
+
+### Tip 5: Use Existing Tests as Examples
+
+```bash
+# See working test example
+cat tests/unit/test_HttpMethod.cpp
+
+# Copy structure for your component
+```
+
+---
+
+## 🔧 Common Workflows
+
+### Workflow: Adding a New Value Object Test
+
+1. **Check if blocked** - See TESTING_STRATEGY.md dependencies
+2. **Create test file** - `tests/unit/test_ComponentName.cpp`
+3. **Copy scenarios** - From TESTING_SCENARIOS.md
+4. **Write simplest test first** - One EXPECT line
+5. **Build** - `make`
+6. **Run** - `./bin/test_runner --gtest_filter='ComponentTest.*'`
+7. **Fix** - Update implementation or test
+8. **Repeat** - Add next test
+
+### Workflow: Enabling Disabled Tests
+
+```bash
+# 1. Find disabled test
+ls tests/unit/*.disabled
+# Output: test_Path.cpp.disabled
+
+# 2. Check why disabled
+grep "disabled\|blocker" tests/docs/TESTING_STATUS.md
+
+# 3. If dependencies ready, enable
+mv tests/unit/test_Path.cpp.disabled tests/unit/test_Path.cpp
+
+# 4. Update Makefile
+# Add to TEST_SRCS
+
+# 5. Run
+make && ./bin/test_runner --gtest_filter='PathTest.*'
+```
+
+### Workflow: Debugging Test Failures
+
+```bash
+# 1. Run failing test
+./bin/test_runner --gtest_filter='PortTest.DefaultConstructor'
+
+# 2. Read output
+# test_Port.cpp:28: Failure
+# Expected: 80
+# Actual: 0
+
+# 3. Check implementation
+cat src/domain/value_objects/Port.cpp
+
+# 4. Fix (implementation or test expectation)
+
+# 5. Re-run
+make && ./bin/test_runner --gtest_filter='PortTest.DefaultConstructor'
+```
+
+---
+
+## 📚 Reference Documentation
+
+**When you need:**
+
+| Need | See Document |
+|------|--------------|
+| What to implement next? | [TESTING_STRATEGY.md](TESTING_STRATEGY.md) |
+| Test scenarios for ErrorCode? | [TESTING_SCENARIOS.md](TESTING_SCENARIOS.md#phase-1) |
+| Google Test syntax? | [GOOGLETEST_GUIDE.md](GOOGLETEST_GUIDE.md) |
+| Command-line options? | [GOOGLETEST_REFERENCE.md](GOOGLETEST_REFERENCE.md) |
+| Which features work? | [TESTING_STATUS.md](TESTING_STATUS.md) |
+| Installation issues? | [GOOGLETEST_QUICKFIX.md](GOOGLETEST_QUICKFIX.md) |
+
+---
+
+## 🚨 Common Mistakes to Avoid
+
+### ❌ Testing Blocked Components
+
+```bash
+# Don't start with Route if ErrorCode isn't done!
+# Check dependencies in TESTING_STRATEGY.md first
+```
+
+### ❌ Writing All Tests Before Running Any
+
+```bash
+# ❌ Bad: Write 50 tests, then compile
+# ✅ Good: Write 1 test, run it, then next
+```
+
+### ❌ Ignoring Test Failures
+
+```bash
+# ❌ Bad: "1 test failing, I'll add more tests"
+# ✅ Good: "Fix the 1 failing test before adding more"
+```
+
+### ❌ Not Following Naming Conventions
+
+```cpp
+// ❌ Bad
+TEST_F(ErrorCodeTest, Test1) { }
+
+// ✅ Good (matches TESTING_SCENARIOS.md)
+TEST_F(ErrorCodeTest, ValidHttpStatusCodes) { }
+```
+
+---
+
+## 🎯 Success Metrics
+
+You're doing it right if:
+
+[ ] Tests compile on first try (check dependencies first)  
+[ ] Each test covers one specific behavior  
+[ ] Test names match TESTING_SCENARIOS.md  
+[ ] You run tests after every change  
+[ ] All tests pass before moving to next component  
+
+---
+
+## 🚀 Next Steps
+
+**Start building tests now:**
+
+```bash
+# 1. Check priority
+grep "Phase 1" tests/docs/TESTING_STRATEGY.md
+
+# 2. Start with ErrorCode
+touch tests/unit/test_ErrorCode.cpp
+
+# 3. Copy scenarios
+grep -A 50 "ErrorCode" tests/docs/TESTING_SCENARIOS.md
+
+# 4. Write first test
+# (Copy from TESTING_SCENARIOS.md)
+
+# 5. Build and run
+cd tests && make && ./bin/test_runner
+```
+
+**Follow the chain:** ErrorCode → Path → Port → ConfigParser → FileHandler → CGI
+
+**Tests guide implementation!** Write failing tests, then implement until they pass.
+
+---
+
+**Last Updated:** December 26, 2025  
+**For:** 42_webserver Test-Driven Development
 
 ## What is Testing?
 

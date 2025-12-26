@@ -1,6 +1,8 @@
-# Writing Tests Guide
+# Google Test Framework Guide
 
-This guide explains how to write tests for the webserver project using Google Test.
+This guide explains how to use the **Google Test 1.8.1 framework** for writing tests in C++98.
+
+**For project-specific test scenarios**, see [TESTING_SCENARIOS.md](TESTING_SCENARIOS.md).
 
 ## Table of Contents
 
@@ -778,10 +780,10 @@ NULL                                   // ✅ C++98
 
 ## Next Steps
 
-1. ✅ Read [BEGINNER_GUIDE.md](BEGINNER_GUIDE.md) for testing fundamentals
-2. ✅ Look at existing tests in `unit/` directory for examples
-3. ✅ Start with simple value object tests
-4. ✅ Gradually add more complex tests
-5. ✅ Run tests frequently: `make && ./bin/test_runner`
+1. [ ] Read [BEGINNER_GUIDE.md](BEGINNER_GUIDE.md) for testing fundamentals
+2. [ ] Look at existing tests in `unit/` directory for examples
+3. [ ] Start with simple value object tests
+4. [ ] Gradually add more complex tests
+5. [ ] Run tests frequently: `make && ./bin/test_runner`
 
 **Last Updated:** December 26, 2025
