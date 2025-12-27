@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 11:05:51 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/20 11:05:56 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 01:54:11 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,10 +15,11 @@
 
 #include "shared/exceptions/BaseException.hpp"
 
+namespace domain {
 namespace shared {
 namespace exceptions {
 
-class ErrorCodeException : public BaseException {
+class ErrorCodeException : public ::shared::exceptions::BaseException {
  public:
   enum ErrorCode {
     INVALID_CODE,
@@ -44,5 +45,6 @@ class ErrorCodeException : public BaseException {
 
 }  // namespace exceptions
 }  // namespace shared
+}  // namespace domain
 
 #endif  // ERROR_CODE_EXCEPTION_HPP

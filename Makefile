@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/26 22:56:54 by dande-je         ###   ########.fr        #
+#    Updated: 2025/12/27 02:09:18 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -32,8 +32,9 @@ SRCS_USE_CASES_DIR              := $(SRCS_APPLICATION_DIR)use_cases/
 SRCS_SERVICES_DIR               := $(SRCS_APPLICATION_DIR)services/
 
 SRCS_DOMAIN_DIR                 := $(SRCS_DIR)domain/
-SRCS_ENTITIES_DIR               := $(SRCS_DOMAIN_DIR)entities/
-SRCS_VALUE_OBJECTS_DIR          := $(SRCS_DOMAIN_DIR)value_objects/
+SRCS_DOMAIN_SHARED_DIR                    := $(SRCS_DOMAIN_DIR)shared/
+SRCS_DOMAIN_SHARED_EXCEPTION_DIR          := $(SRCS_DOMAIN_SHARED_DIR)exceptions/
+SRCS_DOMAIN_SHARED_VALUE_OBJECTS_DIR      := $(SRCS_DOMAIN_SHARED_DIR)value_objects/
 
 SRCS_INFRASTRUCTURE_DIR         := $(SRCS_DIR)infrastructure/
 SRCS_ADAPTER_DIR                := $(SRCS_INFRASTRUCTURE_DIR)adapters/
@@ -70,6 +71,9 @@ SLEEP                           := sleep 0.01
 NAME_OUTPUT                     = webserv
 NAME                            = $(BIN_DIR)$(NAME_OUTPUT)
 
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_EXCEPTION_DIR), ErrorCodeException.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_VALUE_OBJECTS_DIR), ErrorCode.cpp)
+
 SRCS_FILES                      += $(addprefix $(SRCS_ENTITIES_DIR), CgiConfig.cpp \
 																	 ErrorPage.cpp \
 																	 HttpConfig.cpp \
@@ -78,8 +82,7 @@ SRCS_FILES                      += $(addprefix $(SRCS_ENTITIES_DIR), CgiConfig.c
 																	 Route.cpp \
 																	 ServerConfig.cpp \
 																	 UploadConfig.cpp)
-SRCS_FILES                      += $(addprefix $(SRCS_VALUE_OBJECTS_DIR), ErrorCode.cpp \
-																	 Host.cpp \
+SRCS_FILES                      += $(addprefix $(SRCS_VALUE_OBJECTS_DIR), Host.cpp \
 																	 HttpMethod.cpp \
 																	 Path.cpp \
 																	 Permission.cpp \
@@ -110,7 +113,6 @@ SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseExcep
 																	 CgiConfigException.cpp \
 																	 ConfigException.cpp \
 																	 DirectoryListerException.cpp \
-																	 ErrorCodeException.cpp \
 																	 ErrorPageException.cpp \
 																	 FileHandlerException.cpp \
 																	 FileSystemHelperException.cpp \

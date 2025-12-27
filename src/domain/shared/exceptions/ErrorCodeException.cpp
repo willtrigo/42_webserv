@@ -6,14 +6,15 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 11:06:17 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/20 11:20:08 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 02:13:54 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "shared/exceptions/ErrorCodeException.hpp"
+#include "domain/shared/exceptions/ErrorCodeException.hpp"
 
 #include <sstream>
 
+namespace domain {
 namespace shared {
 namespace exceptions {
 
@@ -64,3 +65,4 @@ std::string ErrorCodeException::getErrorMsg(
 
 }  // namespace exceptions
 }  // namespace shared
+}  // namespace domain
