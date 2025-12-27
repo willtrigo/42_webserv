@@ -6,14 +6,15 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/21 10:51:02 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/21 10:52:51 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 02:15:15 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "shared/exceptions/RegexPatternException.hpp"
+#include "domain/shared/exceptions/RegexPatternException.hpp"
 
 #include <sstream>
 
+namespace domain {
 namespace shared {
 namespace exceptions {
 
@@ -71,3 +72,4 @@ std::string RegexPatternException::getErrorMsg(
 
 }  // namespace exceptions
 }  // namespace shared
+}  // namespace domain
