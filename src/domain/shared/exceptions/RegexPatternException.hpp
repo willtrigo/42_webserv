@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/21 10:50:38 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/21 10:50:44 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 02:12:21 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,10 +15,11 @@
 
 #include "shared/exceptions/BaseException.hpp"
 
+namespace domain {
 namespace shared {
 namespace exceptions {
 
-class RegexPatternException : public BaseException {
+class RegexPatternException : public ::shared::exceptions::BaseException {
  public:
   enum ErrorCode {
     EMPTY_PATTERN,
@@ -47,5 +48,6 @@ class RegexPatternException : public BaseException {
 
 }  // namespace exceptions
 }  // namespace shared
+}  // namespace domain
 
 #endif  // REGEX_PATTERN_EXCEPTION_HPP
