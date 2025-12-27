@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/26 21:03:45 by dande-je         ###   ########.fr        #
+#    Updated: 2025/12/26 22:56:54 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -76,7 +76,8 @@ SRCS_FILES                      += $(addprefix $(SRCS_ENTITIES_DIR), CgiConfig.c
 																	 ListenDirective.cpp \
 																	 LocationConfig.cpp \
 																	 Route.cpp \
-																	 ServerConfig.cpp)
+																	 ServerConfig.cpp \
+																	 UploadConfig.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_VALUE_OBJECTS_DIR), ErrorCode.cpp \
 																	 Host.cpp \
 																	 HttpMethod.cpp \
@@ -129,6 +130,7 @@ SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseExcep
 																	 RouteMatcherException.cpp \
 																	 ServerConfigException.cpp \
 																	 SizeException.cpp \
+																	 UploadCondifException.cpp \
 																	 UriException.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_UTILS_DIR), TerminalColor.cpp)
 
