@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/21 10:51:25 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 02:16:12 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 18:29:29 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@
 
 namespace domain {
 namespace shared {
-namespace exceptions {
+namespace value_objects {
 
 class RegexPattern {
  public:
@@ -117,7 +117,7 @@ class RegexPattern {
                                  const std::string& specialChars);
 };
 
-}  // namespace exceptions
+}  // namespace value_objects
 }  // namespace shared
 }  // namespace domain
 
