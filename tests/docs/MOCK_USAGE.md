@@ -110,7 +110,7 @@ TEST(RouterTest, RejectsInvalidMethod) {
 
 **Example:**
 ```cpp
-#include "mocks/MockRequestBuilder.hpp"
+#include "mocks/MockResponseBuilder.hpp"
 
 TEST(FileHandlerTest, Returns404ForMissingFile) {
   mocks::MockResponseBuilder builder;
