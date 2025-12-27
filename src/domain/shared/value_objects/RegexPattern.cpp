@@ -6,12 +6,12 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/21 10:55:26 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 02:17:40 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 18:29:22 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "domain/shared/value_objects/RegexPattern.hpp"
 #include "domain/shared/exceptions/RegexPatternException.hpp"
+#include "domain/shared/value_objects/RegexPattern.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -19,7 +19,7 @@
 
 namespace domain {
 namespace shared {
-namespace exceptions {
+namespace value_objects {
 
 const std::string RegexPattern::SPECIAL_CHARACTERS = "\\^$.|?*+()[]{}";
 const std::string RegexPattern::CHARACTER_CLASS_SPECIAL = "\\^-]";
@@ -539,6 +539,6 @@ bool RegexPattern::isSpecialCharacter(char character,
   return specialChars.find(character) != std::string::npos;
 }
 
-}  // namespace exceptions
+}  // namespace value_objects
 }  // namespace shared
 }  // namespace domain
