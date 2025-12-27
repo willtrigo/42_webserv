@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 09:57:33 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/20 10:24:53 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 03:46:31 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 #include <string>
 
 namespace domain {
+namespace filesystem {
 namespace value_objects {
 
 class Size {
@@ -99,6 +100,7 @@ class Size {
 };
 
 }  // namespace value_objects
+}  // namespace filesystem
 }  // namespace domain
 
 #endif  // SIZE_HPP

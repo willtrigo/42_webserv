@@ -6,18 +6,19 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 10:04:57 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/20 10:25:44 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 03:50:20 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "domain/value_objects/Size.hpp"
-#include "shared/exceptions/SizeException.hpp"
+#include "domain/filesystem/exceptions/SizeException.hpp"
+#include "domain/filesystem/value_objects/Size.hpp"
 
 #include <cctype>
 #include <cstdlib>
 #include <sstream>
 
 namespace domain {
+namespace filesystem {
 namespace value_objects {
 
 const char* Size::UNIT_STRINGS[] = {"B", "K", "M", "G", "UNKNOWN"};
@@ -90,21 +91,19 @@ bool Size::isValidSizeString(const std::string& sizeString) {
   try {
     parseSizeString(sizeString);
     return true;
-  } catch (const shared::exceptions::SizeException&) {
+  } catch (const exceptions::SizeException&) {
     return false;
   }
 }
 
-bool Size::isValidBytes(std::size_t bytes) {
-  return bytes <= MAX_SIZE;
-}
+bool Size::isValidBytes(std::size_t bytes) { return bytes <= MAX_SIZE; }
 
 void Size::validate() const {
   if (m_bytes > MAX_SIZE) {
     std::ostringstream oss;
     oss << "Size value overflow: " << m_bytes << " (max: " << MAX_SIZE << ")";
-    throw shared::exceptions::SizeException(
-        oss.str(), shared::exceptions::SizeException::OVERFLOW);
+    throw exceptions::SizeException(oss.str(),
+                                    exceptions::SizeException::OVERFLOW);
   }
 }
 
@@ -134,27 +133,24 @@ bool Size::operator>=(const Size& other) const {
 
 Size Size::operator+(const Size& other) const {
   if (m_bytes > MAX_SIZE - other.m_bytes) {
-    throw shared::exceptions::SizeException(
-        "Addition would cause overflow",
-        shared::exceptions::SizeException::OVERFLOW);
+    throw exceptions::SizeException("Addition would cause overflow",
+                                    exceptions::SizeException::OVERFLOW);
   }
   return Size(m_bytes + other.m_bytes);
 }
 
 Size Size::operator-(const Size& other) const {
   if (other.m_bytes > m_bytes) {
-    throw shared::exceptions::SizeException(
-        "Subtraction would result in negative size",
-        shared::exceptions::SizeException::NEGATIVE_VALUE);
+    throw exceptions::SizeException("Subtraction would result in negative size",
+                                    exceptions::SizeException::NEGATIVE_VALUE);
   }
   return Size(m_bytes - other.m_bytes);
 }
 
 Size& Size::operator+=(const Size& other) {
   if (m_bytes > MAX_SIZE - other.m_bytes) {
-    throw shared::exceptions::SizeException(
-        "Addition would cause overflow",
-        shared::exceptions::SizeException::OVERFLOW);
+    throw exceptions::SizeException("Addition would cause overflow",
+                                    exceptions::SizeException::OVERFLOW);
   }
   m_bytes += other.m_bytes;
   return *this;
@@ -162,9 +158,8 @@ Size& Size::operator+=(const Size& other) {
 
 Size& Size::operator-=(const Size& other) {
   if (other.m_bytes > m_bytes) {
-    throw shared::exceptions::SizeException(
-        "Subtraction would result in negative size",
-        shared::exceptions::SizeException::NEGATIVE_VALUE);
+    throw exceptions::SizeException("Subtraction would result in negative size",
+                                    exceptions::SizeException::NEGATIVE_VALUE);
   }
   m_bytes -= other.m_bytes;
   return *this;
@@ -176,27 +171,27 @@ Size Size::fromString(const std::string& sizeString) {
 
 Size Size::fromKilobytes(std::size_t kilobytes) {
   if (isOverflowMultiplication(kilobytes, BYTES_PER_KB)) {
-    throw shared::exceptions::SizeException(
+    throw exceptions::SizeException(
         "Kilobytes to bytes conversion would overflow",
-        shared::exceptions::SizeException::OVERFLOW);
+        exceptions::SizeException::OVERFLOW);
   }
   return Size(kilobytes * BYTES_PER_KB);
 }
 
 Size Size::fromMegabytes(std::size_t megabytes) {
   if (isOverflowMultiplication(megabytes, BYTES_PER_MB)) {
-    throw shared::exceptions::SizeException(
+    throw exceptions::SizeException(
         "Megabytes to bytes conversion would overflow",
-        shared::exceptions::SizeException::OVERFLOW);
+        exceptions::SizeException::OVERFLOW);
   }
   return Size(megabytes * BYTES_PER_MB);
 }
 
 Size Size::fromGigabytes(std::size_t gigabytes) {
   if (isOverflowMultiplication(gigabytes, BYTES_PER_GB)) {
-    throw shared::exceptions::SizeException(
+    throw exceptions::SizeException(
         "Gigabytes to bytes conversion would overflow",
-        shared::exceptions::SizeException::OVERFLOW);
+        exceptions::SizeException::OVERFLOW);
   }
   return Size(gigabytes * BYTES_PER_GB);
 }
@@ -213,9 +208,8 @@ bool Size::isZero() const { return m_bytes == 0; }
 
 std::size_t Size::parseSizeString(const std::string& sizeString) {
   if (sizeString.empty()) {
-    throw shared::exceptions::SizeException(
-        "Size string cannot be empty",
-        shared::exceptions::SizeException::EMPTY_STRING);
+    throw exceptions::SizeException("Size string cannot be empty",
+                                    exceptions::SizeException::EMPTY_STRING);
   }
 
   std::string::size_type pos = 0;
@@ -225,6 +219,7 @@ std::size_t Size::parseSizeString(const std::string& sizeString) {
   return convertToBytes(number, unit);
 }
 
+// TODO: check if this func can use StringUtils
 std::size_t Size::extractNumber(const std::string& sizeString,
                                 std::string::size_type& pos) {
   while (pos < sizeString.size() &&
@@ -233,9 +228,9 @@ std::size_t Size::extractNumber(const std::string& sizeString,
   }
 
   if (pos >= sizeString.size()) {
-    throw shared::exceptions::SizeException(
+    throw exceptions::SizeException(
         "No number found in size string: '" + sizeString + "'",
-        shared::exceptions::SizeException::INVALID_FORMAT);
+        exceptions::SizeException::INVALID_FORMAT);
   }
 
   std::string::size_type start = pos;
@@ -245,9 +240,9 @@ std::size_t Size::extractNumber(const std::string& sizeString,
   }
 
   if (pos == start) {
-    throw shared::exceptions::SizeException(
+    throw exceptions::SizeException(
         "No digits found in size string: '" + sizeString + "'",
-        shared::exceptions::SizeException::INVALID_FORMAT);
+        exceptions::SizeException::INVALID_FORMAT);
   }
 
   std::string numberStr = sizeString.substr(start, pos - start);
@@ -256,15 +251,14 @@ std::size_t Size::extractNumber(const std::string& sizeString,
   unsigned long result = std::strtoul(numberStr.c_str(), &endptr, BASE_DECIMAL);
 
   if (endptr == numberStr.c_str() || *endptr != '\0') {
-    throw shared::exceptions::SizeException(
+    throw exceptions::SizeException(
         "Failed to convert number: '" + numberStr + "'",
-        shared::exceptions::SizeException::CONVERSION_FAILED);
+        exceptions::SizeException::CONVERSION_FAILED);
   }
 
   if (result > static_cast<unsigned long>(MAX_SIZE)) {
-    throw shared::exceptions::SizeException(
-        "Number too large: " + numberStr,
-        shared::exceptions::SizeException::OVERFLOW);
+    throw exceptions::SizeException("Number too large: " + numberStr,
+                                    exceptions::SizeException::OVERFLOW);
   }
 
   return static_cast<std::size_t>(result);
@@ -289,17 +283,17 @@ Size::Unit Size::extractUnit(const std::string& sizeString,
     std::ostringstream oss;
     oss << "Unknown unit: '" << sizeString[pos] << "' in size string: '"
         << sizeString + "'";
-    throw shared::exceptions::SizeException(
-        oss.str(), shared::exceptions::SizeException::UNKNOWN_UNIT);
+    throw exceptions::SizeException(oss.str(),
+                                    exceptions::SizeException::UNKNOWN_UNIT);
   }
 
   if (pos + 1 < sizeString.size()) {
     char nextChar = sizeString[pos + 1];
     if (std::tolower(static_cast<unsigned char>(nextChar)) != 'b' &&
         (std::isspace(static_cast<unsigned char>(nextChar)) == 0)) {
-      throw shared::exceptions::SizeException(
+      throw exceptions::SizeException(
           "Extra characters after unit in size string: '" + sizeString + "'",
-          shared::exceptions::SizeException::INVALID_FORMAT);
+          exceptions::SizeException::INVALID_FORMAT);
     }
   }
 
@@ -312,23 +306,23 @@ std::size_t Size::convertToBytes(std::size_t number, Unit unit) {
       return number;
     case UNIT_KILOBYTES:
       if (isOverflowMultiplication(number, BYTES_PER_KB)) {
-        throw shared::exceptions::SizeException(
+        throw exceptions::SizeException(
             "Kilobytes to bytes conversion would overflow",
-            shared::exceptions::SizeException::OVERFLOW);
+            exceptions::SizeException::OVERFLOW);
       }
       return number * BYTES_PER_KB;
     case UNIT_MEGABYTES:
       if (isOverflowMultiplication(number, BYTES_PER_MB)) {
-        throw shared::exceptions::SizeException(
+        throw exceptions::SizeException(
             "Megabytes to bytes conversion would overflow",
-            shared::exceptions::SizeException::OVERFLOW);
+            exceptions::SizeException::OVERFLOW);
       }
       return number * BYTES_PER_MB;
     case UNIT_GIGABYTES:
       if (isOverflowMultiplication(number, BYTES_PER_GB)) {
-        throw shared::exceptions::SizeException(
+        throw exceptions::SizeException(
             "Gigabytes to bytes conversion would overflow",
-            shared::exceptions::SizeException::OVERFLOW);
+            exceptions::SizeException::OVERFLOW);
       }
       return number * BYTES_PER_GB;
     default:
@@ -336,7 +330,8 @@ std::size_t Size::convertToBytes(std::size_t number, Unit unit) {
   }
 }
 
-bool Size::isOverflowMultiplication(std::size_t multiplicand, std::size_t multiplier) {
+bool Size::isOverflowMultiplication(std::size_t multiplicand,
+                                    std::size_t multiplier) {
   if (multiplicand == 0 || multiplier == 0) return false;
   return multiplicand > MAX_SIZE / multiplier;
 }
@@ -379,4 +374,5 @@ Size::Unit Size::charToUnit(char chr) {
 }
 
 }  // namespace value_objects
+}  // namespace filesystem
 }  // namespace domain
