@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/27 04:02:29 by dande-je         ###   ########.fr        #
+#    Updated: 2025/12/27 04:26:24 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -31,18 +31,22 @@ SRCS_APPLICATION_DIR            := $(SRCS_DIR)application/
 SRCS_USE_CASES_DIR              := $(SRCS_APPLICATION_DIR)use_cases/
 SRCS_SERVICES_DIR               := $(SRCS_APPLICATION_DIR)services/
 
-SRCS_DOMAIN_DIR                           := $(SRCS_DIR)domain/
-SRCS_DOMAIN_FILESYSTEM_DIR                := $(SRCS_DOMAIN_DIR)filesystem/
-SRCS_DOMAIN_FILESYSTEM_EXCEPTIONS_DIR     := $(SRCS_DOMAIN_FILESYSTEM_DIR)exceptions/
-SRCS_DOMAIN_FILESYSTEM_SERVICES_DIR       := $(SRCS_DOMAIN_FILESYSTEM_DIR)services/
-SRCS_DOMAIN_FILESYSTEM_VALUE_OBJECTS_DIR  := $(SRCS_DOMAIN_FILESYSTEM_DIR)value_objects/
-SRCS_DOMAIN_HTTP_DIR                      := $(SRCS_DOMAIN_DIR)http/
-SRCS_DOMAIN_HTTP_VALUE_OBJECTS_DIR        := $(SRCS_DOMAIN_HTTP_DIR)value_objects/
-SRCS_DOMAIN_HTTP_EXCEPTIONS_DIR           := $(SRCS_DOMAIN_HTTP_DIR)exceptions/
-SRCS_DOMAIN_SHARED_DIR                    := $(SRCS_DOMAIN_DIR)shared/
-SRCS_DOMAIN_SHARED_EXCEPTION_DIR          := $(SRCS_DOMAIN_SHARED_DIR)exceptions/
-SRCS_DOMAIN_SHARED_UTILS_DIR              := $(SRCS_DOMAIN_SHARED_DIR)utils/
-SRCS_DOMAIN_SHARED_VALUE_OBJECTS_DIR      := $(SRCS_DOMAIN_SHARED_DIR)value_objects/
+SRCS_DOMAIN_DIR                              := $(SRCS_DIR)domain/
+SRCS_DOMAIN_CONFIGURATION_DIR                := $(SRCS_DOMAIN_DIR)configuration/
+SRCS_DOMAIN_CONFIGURATION_ENTITIES_DIR       := $(SRCS_DOMAIN_CONFIGURATION_DIR)entities/
+SRCS_DOMAIN_CONFIGURATION_EXCEPTIONS_DIR     := $(SRCS_DOMAIN_CONFIGURATION_DIR)exceptions/
+SRCS_DOMAIN_CONFIGURATION_VALUE_OBJECTS_DIR  := $(SRCS_DOMAIN_CONFIGURATION_DIR)value_objects/
+SRCS_DOMAIN_FILESYSTEM_DIR                   := $(SRCS_DOMAIN_DIR)filesystem/
+SRCS_DOMAIN_FILESYSTEM_EXCEPTIONS_DIR        := $(SRCS_DOMAIN_FILESYSTEM_DIR)exceptions/
+SRCS_DOMAIN_FILESYSTEM_SERVICES_DIR          := $(SRCS_DOMAIN_FILESYSTEM_DIR)services/
+SRCS_DOMAIN_FILESYSTEM_VALUE_OBJECTS_DIR     := $(SRCS_DOMAIN_FILESYSTEM_DIR)value_objects/
+SRCS_DOMAIN_HTTP_DIR                         := $(SRCS_DOMAIN_DIR)http/
+SRCS_DOMAIN_HTTP_VALUE_OBJECTS_DIR           := $(SRCS_DOMAIN_HTTP_DIR)value_objects/
+SRCS_DOMAIN_HTTP_EXCEPTIONS_DIR              := $(SRCS_DOMAIN_HTTP_DIR)exceptions/
+SRCS_DOMAIN_SHARED_DIR                       := $(SRCS_DOMAIN_DIR)shared/
+SRCS_DOMAIN_SHARED_EXCEPTION_DIR             := $(SRCS_DOMAIN_SHARED_DIR)exceptions/
+SRCS_DOMAIN_SHARED_UTILS_DIR                 := $(SRCS_DOMAIN_SHARED_DIR)utils/
+SRCS_DOMAIN_SHARED_VALUE_OBJECTS_DIR         := $(SRCS_DOMAIN_SHARED_DIR)value_objects/
 
 SRCS_INFRASTRUCTURE_DIR         := $(SRCS_DIR)infrastructure/
 SRCS_ADAPTER_DIR                := $(SRCS_INFRASTRUCTURE_DIR)adapters/
@@ -79,6 +83,9 @@ SLEEP                           := sleep 0.01
 NAME_OUTPUT                     = webserv
 NAME                            = $(BIN_DIR)$(NAME_OUTPUT)
 
+# SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_ENTITIES_DIR), PathException.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_EXCEPTIONS_DIR), ListenDirectiveException.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_VALUE_OBJECTS_DIR), ListenDirective.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_FILESYSTEM_EXCEPTIONS_DIR), PathException.cpp \
 																	 PermissionException.cpp \
 																	 SizeException.cpp)
