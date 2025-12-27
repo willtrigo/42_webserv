@@ -6,15 +6,16 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/25 21:58:38 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/25 21:58:58 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 16:14:29 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "shared/exceptions/ErrorPageException.hpp"
+#include "domain/configuration/exceptions/ErrorPageException.hpp"
 
 #include <sstream>
 
-namespace shared {
+namespace domain {
+namespace configuration {
 namespace exceptions {
 
 const std::pair<ErrorPageException::ErrorCode, std::string>
@@ -65,4 +66,5 @@ std::string ErrorPageException::getErrorMsg(
 }
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace configuration
+}  // namespace domain
