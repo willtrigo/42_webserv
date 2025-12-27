@@ -6,39 +6,30 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/21 12:44:17 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/21 12:44:22 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 02:24:58 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "shared/exceptions/UriException.hpp"
+#include "domain/http/exceptions/UriException.hpp"
 
 #include <sstream>
 
-namespace shared {
+namespace domain {
+namespace http {
 namespace exceptions {
 
 const std::pair<UriException::ErrorCode, std::string>
     UriException::K_CODE_MSGS[] = {
-        std::make_pair(UriException::EMPTY_URI,
-                       "URI cannot be empty"),
-        std::make_pair(UriException::INVALID_FORMAT,
-                       "Invalid URI format"),
-        std::make_pair(UriException::INVALID_SCHEME,
-                       "Invalid URI scheme"),
-        std::make_pair(UriException::INVALID_HOST,
-                       "Invalid URI host"),
-        std::make_pair(UriException::INVALID_PORT,
-                       "Invalid URI port"),
-        std::make_pair(UriException::INVALID_PATH,
-                       "Invalid URI path"),
-        std::make_pair(UriException::INVALID_QUERY,
-                       "Invalid URI query string"),
-        std::make_pair(UriException::INVALID_FRAGMENT,
-                       "Invalid URI fragment"),
-        std::make_pair(UriException::MISSING_SCHEME,
-                       "URI scheme is missing"),
-        std::make_pair(UriException::MISSING_HOST,
-                       "URI host is missing"),
+        std::make_pair(UriException::EMPTY_URI, "URI cannot be empty"),
+        std::make_pair(UriException::INVALID_FORMAT, "Invalid URI format"),
+        std::make_pair(UriException::INVALID_SCHEME, "Invalid URI scheme"),
+        std::make_pair(UriException::INVALID_HOST, "Invalid URI host"),
+        std::make_pair(UriException::INVALID_PORT, "Invalid URI port"),
+        std::make_pair(UriException::INVALID_PATH, "Invalid URI path"),
+        std::make_pair(UriException::INVALID_QUERY, "Invalid URI query string"),
+        std::make_pair(UriException::INVALID_FRAGMENT, "Invalid URI fragment"),
+        std::make_pair(UriException::MISSING_SCHEME, "URI scheme is missing"),
+        std::make_pair(UriException::MISSING_HOST, "URI host is missing"),
         std::make_pair(UriException::PORT_OUT_OF_RANGE,
                        "URI port out of range"),
         std::make_pair(UriException::ENCODING_ERROR,
@@ -53,8 +44,7 @@ UriException::UriException(const std::string& msg, ErrorCode code)
   this->m_whatMsg = oss.str();
 }
 
-UriException::UriException(const UriException& other)
-    : BaseException(other) {}
+UriException::UriException(const UriException& other) : BaseException(other) {}
 
 UriException::~UriException() throw() {}
 
@@ -75,4 +65,5 @@ std::string UriException::getErrorMsg(UriException::ErrorCode code) {
 }
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace http
+}  // namespace domain

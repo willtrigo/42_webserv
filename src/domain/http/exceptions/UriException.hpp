@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/21 12:40:19 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/21 12:40:21 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 02:25:01 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,10 +15,11 @@
 
 #include "shared/exceptions/BaseException.hpp"
 
-namespace shared {
+namespace domain {
+namespace http {
 namespace exceptions {
 
-class UriException : public BaseException {
+class UriException : public ::shared::exceptions::BaseException {
  public:
   enum ErrorCode {
     EMPTY_URI,
@@ -50,6 +51,7 @@ class UriException : public BaseException {
 };
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace http
+}  // namespace domain
 
 #endif  // URI_EXCEPTION_HPP
