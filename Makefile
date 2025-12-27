@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/27 02:09:18 by dande-je         ###   ########.fr        #
+#    Updated: 2025/12/27 02:21:22 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -71,8 +71,10 @@ SLEEP                           := sleep 0.01
 NAME_OUTPUT                     = webserv
 NAME                            = $(BIN_DIR)$(NAME_OUTPUT)
 
-SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_EXCEPTION_DIR), ErrorCodeException.cpp)
-SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_VALUE_OBJECTS_DIR), ErrorCode.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_EXCEPTION_DIR), ErrorCodeException.cpp \
+																	 RegexPatternException.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_VALUE_OBJECTS_DIR), ErrorCode.cpp \
+																	 RegexPattern.cpp)
 
 SRCS_FILES                      += $(addprefix $(SRCS_ENTITIES_DIR), CgiConfig.cpp \
 																	 ErrorPage.cpp \
@@ -88,7 +90,6 @@ SRCS_FILES                      += $(addprefix $(SRCS_VALUE_OBJECTS_DIR), Host.c
 																	 Permission.cpp \
 																	 Port.cpp \
 																	 QueryStringBuilder.cpp \
-																	 RegexPattern.cpp \
 																	 Size.cpp \
 																	 Uri.cpp)
 
@@ -126,7 +127,6 @@ SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseExcep
 																	 PermissionException.cpp \
 																	 PortException.cpp \
 																	 QueryStringBuilderException.cpp \
-																	 RegexPatternException.cpp \
 																	 RequestParserException.cpp \
 																	 RouteException.cpp \
 																	 RouteMatcherException.cpp \
