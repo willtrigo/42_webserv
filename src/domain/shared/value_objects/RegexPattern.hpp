@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/21 10:51:25 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 20:03:11 by umeneses         ###   ########.fr       */
+/*   Updated: 2025/12/27 20:12:00 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@
 
 namespace domain {
 namespace shared {
-namespace exceptions {
+namespace value_objects {
 
 class RegexPattern {
  public:
@@ -117,7 +117,7 @@ class RegexPattern {
                                  const std::string& specialChars);
 };
 
-}  // namespace exceptions
+}  // namespace value_objects
 }  // namespace shared
 }  // namespace domain
 
