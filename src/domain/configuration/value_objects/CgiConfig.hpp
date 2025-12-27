@@ -6,21 +6,22 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 13:11:08 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/22 13:12:08 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 18:35:02 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef CGI_CONFIG_HPP
 #define CGI_CONFIG_HPP
 
-#include "domain/value_objects/Path.hpp"
-#include "domain/value_objects/RegexPattern.hpp"
+#include "domain/filesystem/value_objects/Path.hpp"
+#include "domain/shared/value_objects/RegexPattern.hpp"
 
 #include <map>
 #include <string>
 
 namespace domain {
-namespace entities {
+namespace configuration {
+namespace value_objects {
 
 class CgiConfig {
  public:
@@ -44,8 +45,9 @@ class CgiConfig {
 
   CgiConfig();
 
-  CgiConfig(const std::string& scriptPath, const value_objects::Path& cgiRoot,
-            const value_objects::RegexPattern& extensionPattern);
+  CgiConfig(const std::string& scriptPath,
+            const filesystem::value_objects::Path& cgiRoot,
+            const shared::value_objects::RegexPattern& extensionPattern);
 
   CgiConfig(const CgiConfig& other);
 
@@ -54,15 +56,15 @@ class CgiConfig {
   CgiConfig& operator=(const CgiConfig& other);
 
   const std::string& getScriptPath() const;
-  const value_objects::Path& getCgiRoot() const;
-  const value_objects::RegexPattern& getExtensionPattern() const;
+  const filesystem::value_objects::Path& getCgiRoot() const;
+  const shared::value_objects::RegexPattern& getExtensionPattern() const;
   const ParameterMap& getParameters() const;
   std::string getParameter(const std::string& name) const;
   bool hasParameter(const std::string& name) const;
 
   void setScriptPath(const std::string& scriptPath);
-  void setCgiRoot(const value_objects::Path& cgiRoot);
-  void setExtensionPattern(const value_objects::RegexPattern& pattern);
+  void setCgiRoot(const filesystem::value_objects::Path& cgiRoot);
+  void setExtensionPattern(const shared::value_objects::RegexPattern& pattern);
   void addParameter(const std::string& name, const std::string& value);
   void removeParameter(const std::string& name);
   void setParameters(const ParameterMap& parameters);
@@ -89,8 +91,8 @@ class CgiConfig {
 
  private:
   std::string m_scriptPath;
-  value_objects::Path m_cgiRoot;
-  value_objects::RegexPattern m_extensionPattern;
+  filesystem::value_objects::Path m_cgiRoot;
+  shared::value_objects::RegexPattern m_extensionPattern;
   ParameterMap m_parameters;
 
   void copyFrom(const CgiConfig& other);
@@ -107,7 +109,8 @@ class CgiConfig {
   static bool isAbsolutePath(const std::string& path);
 };
 
-}  // namespace entities
+}  // namespace value_objects
+}  // namespace configuration
 }  // namespace domain
 
 #endif  // CGI_CONFIG_HPP

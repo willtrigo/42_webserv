@@ -6,15 +6,16 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 13:10:48 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/22 13:12:27 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 18:26:26 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "shared/exceptions/CgiConfigException.hpp"
+#include "domain/configuration/exceptions/CgiConfigException.hpp"
 
 #include <sstream>
 
-namespace shared {
+namespace domain {
+namespace configuration {
 namespace exceptions {
 
 const std::pair<CgiConfigException::ErrorCode, std::string>
@@ -67,4 +68,5 @@ std::string CgiConfigException::getErrorMsg(
 }
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace configuration
+}  // namespace domain
