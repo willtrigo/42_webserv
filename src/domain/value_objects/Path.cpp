@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Path.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 01:10:52 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/20 01:32:18 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 13:08:39 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,7 +67,7 @@ std::string Path::getDirectory() const {
     return "";
   }
 
-  return m_path.substr(0, lastSlash + 1);
+  return m_path.substr(0, lastSlash);
 }
 
 std::string Path::getFilename() const {
@@ -149,6 +149,10 @@ Path Path::normalize() const {
     normalized += PATH_SEPARATOR;
   }
 
+  if (m_isAbsolute && !normalized.empty() && normalized[0] != PATH_SEPARATOR) {
+    normalized = PATH_SEPARATOR + normalized;
+  }
+
   return Path(normalized, m_isAbsolute);
 }
 
@@ -171,7 +175,7 @@ Path Path::rootDirectory() { return Path("/", true); }
 bool Path::operator==(const Path& other) const {
   Path norm1 = this->normalize();
   Path norm2 = other.normalize();
-  return norm1.m_path == norm2.m_path;
+  return norm1.m_path == norm2.m_path && norm1.m_isAbsolute == norm2.m_isAbsolute;
 }
 
 bool Path::operator!=(const Path& other) const { return !(*this == other); }
@@ -303,16 +307,20 @@ bool Path::isReservedFilename(const std::string& filename) {
 bool Path::hasDirectoryTraversal(const std::string& path) {
   std::vector<std::string> components = splitComponents(path);
 
+  bool isAbsolute = (!path.empty() && path[0] == PATH_SEPARATOR);
   int depth = 0;
+  
   for (std::size_t i = 0; i < components.size(); ++i) {
     if (components[i] == CURRENT_DIR) {
       continue;
     }
     if (components[i] == PARENT_DIR) {
-      if (depth == 0) {
+      if (depth == 0 && isAbsolute) {
         return true;
       }
-      --depth;
+      if (depth > 0) {
+        --depth;
+      }
     } else if (!components[i].empty()) {
       ++depth;
     }
