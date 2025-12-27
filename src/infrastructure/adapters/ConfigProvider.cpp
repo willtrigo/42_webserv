@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 13:53:39 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/18 20:50:33 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/19 13:03:55 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,9 +58,9 @@ void ConfigProvider::load(const std::string& configPath,
     this->m_globalDirectives.clear();
     this->m_valid = false;
 
-    this->m_parser->parsePath(configPath);
+    this->m_parser->parseFile(configPath);
     this->m_parser->mergeIncludes(includePath);
-    
+
     if (validateConfig()) {
       this->m_valid = true;
       // std::ostringstream oss;

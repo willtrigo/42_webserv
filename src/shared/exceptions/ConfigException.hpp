@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/18 12:05:20 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/18 20:24:17 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/19 23:45:01 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,17 +21,16 @@ namespace exceptions {
 class ConfigException : public BaseException {
  public:
   enum ErrorCode {
-    PARSE_SYNTAX = 100,
-    PARSE_BLOCK_MISMATCH = 101,
-    LOAD_FILE_NOT_FOUND = 102,
-    VALIDATION_DUPLICATE_PORT = 103,
-    VALIDATION_INVALID_PATH = 104,
-    VALIDATION_MISSING_DIRECTIVE = 105,
-    INCLUDE_RECURSION = 106,
-    LOAD_UNEXPECTED = 107,
-    INVALID_STATE = 108,
-    CODE_COUNT = 109,
-    STATUS_BEGIN_COUNT = 100
+    PARSE_SYNTAX,
+    PARSE_BLOCK_MISMATCH,
+    LOAD_FILE_NOT_FOUND,
+    VALIDATION_DUPLICATE_PORT,
+    VALIDATION_INVALID_PATH,
+    VALIDATION_MISSING_DIRECTIVE,
+    INCLUDE_RECURSION,
+    LOAD_UNEXPECTED,
+    INVALID_STATE,
+    CODE_COUNT
   };
 
   explicit ConfigException(const std::string& msg, ErrorCode code);
@@ -41,7 +40,9 @@ class ConfigException : public BaseException {
   ConfigException& operator=(const ConfigException& other);
 
  private:
-  static const char* m_codeMsgs[CODE_COUNT - STATUS_BEGIN_COUNT];
+  static const std::pair<ErrorCode, std::string> K_CODE_MSGS[];
+
+  static std::string getErrorMsg(ErrorCode code);
 };
 
 }  // namespace exceptions

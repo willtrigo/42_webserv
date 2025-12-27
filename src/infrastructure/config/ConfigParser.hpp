@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/18 18:10:12 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/18 21:03:46 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/26 23:01:23 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,8 @@
 
 #include "application/ports/IConfigParser.hpp"
 #include "application/ports/ILogger.hpp"
+#include "domain/entities/LocationConfig.hpp"
+#include "domain/entities/ServerConfig.hpp"
 
 #include <map>
 #include <string>
@@ -31,7 +33,7 @@ class ConfigParser : public application::ports::IConfigParser {
 
   ConfigParser& operator=(const ConfigParser& other);
 
-  virtual void parsePath(const std::string& configPath);
+  virtual void parseFile(const std::string& configPath);
   virtual void mergeIncludes(const std::string& includePath);
 
  private:
@@ -50,6 +52,8 @@ class ConfigParser : public application::ports::IConfigParser {
   std::size_t m_indexToken;
   std::map<std::string, std::string> m_globalDirectives;
 
+  static const std::size_t K_MAX_INCLUDE_DEPTH = 10;
+
   void lexFile(const std::string& path);
   static void skipWhiteSpace(const std::string& line, std::size_t& col);
   bool handleSingleCharToken(const std::string& line, std::size_t& col,
@@ -62,8 +66,8 @@ class ConfigParser : public application::ports::IConfigParser {
   void expect(Token::Type type, const std::string& context);
 
   void parseGlobal();
-  // void parseServerBlock(domain::entities::ServerConfig& server);
-  // void parseLocationBlock(domain::entities::LocationConfig& location);
+  void parseServerBlock(domain::entities::ServerConfig& server);
+  void parseLocationBlock(domain::entities::LocationConfig& location);
 
   static std::string tokenTypeToString(Token::Type type);
 };

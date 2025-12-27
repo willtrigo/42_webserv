@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/18 18:26:50 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/18 21:23:13 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/19 13:04:59 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,7 +48,7 @@ ConfigParser& ConfigParser::operator=(const ConfigParser& other) {
   return *this;
 }
 
-void ConfigParser::parsePath(const std::string& configPath) {
+void ConfigParser::parseFile(const std::string& configPath) {
   try {
     this->m_tokens.clear();
     this->m_indexToken = 0;
@@ -259,7 +259,36 @@ void ConfigParser::parseGlobal() {
 }
 
 void ConfigParser::mergeIncludes(const std::string& includePath) {
-  (void)includePath;
+  std::map<std::string, std::string>::iterator iter =
+      m_globalDirectives.find("include");
+  if (iter != m_globalDirectives.end()) {
+    std::istringstream iss(iter->second);
+    std::string includeFile;
+    while (iss >> includeFile) {
+      processInclude(includePath + "/" + includeFile);
+    }
+    m_globalDirectives.erase(iter);
+  }
+  m_logger.debug("Merged includes from path: " + includePath);
+}
+
+void ConfigParser::processInclude(const std::string& includeFile,
+                                  std::size_t depth) {
+  if (depth > kMaxIncludeDepth) {
+    throw shared::exceptions::ConfigException(
+        "Maximum include depth exceeded",
+        shared::exceptions::ConfigException::INCLUDE_RECURSION);
+  }
+  // Temporarily save state, lex/parse the include, merge globals/servers
+  std::vector<Token> savedTokens = m_tokens;
+  std::size_t savedIndex = m_indexToken;
+  lexFile(includeFile);
+  parseGlobal();  // Merge globals
+  // TODO: Merge servers if nested; for now, assume global-only
+  m_tokens = savedTokens;
+  m_indexToken = savedIndex;
+  m_logger.debug("Processed include: " + includeFile + " (depth " +
+                 std::to_string(depth) + ")");
 }
 
 std::string ConfigParser::tokenTypeToString(Token::Type type) {
