@@ -6,15 +6,16 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 23:50:27 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/20 01:03:50 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 02:27:43 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "shared/exceptions/PortException.hpp"
+#include "domain/http/exceptions/PortException.hpp"
 
 #include <sstream>
 
-namespace shared {
+namespace domain {
+namespace http {
 namespace exceptions {
 
 const std::pair<PortException::ErrorCode, std::string>
@@ -58,4 +59,5 @@ std::string PortException::getErrorMsg(PortException::ErrorCode code) {
 }
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace http
+}  // namespace domain

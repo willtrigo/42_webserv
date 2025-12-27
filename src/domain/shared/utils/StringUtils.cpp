@@ -6,11 +6,11 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 03:34:16 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/26 03:39:35 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 02:36:11 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "shared/utils/StringUtils.hpp"
+#include "domain/shared/utils/StringUtils.hpp"
 
 #include <cctype>
 #include <climits>
@@ -18,6 +18,7 @@
 #include <sstream>
 #include <stdexcept>
 
+namespace domain {
 namespace shared {
 namespace utils {
 
@@ -193,3 +194,4 @@ bool StringUtils::isValidBase(int base) {
 
 }  // namespace utils
 }  // namespace shared
+}  // namespace domain
