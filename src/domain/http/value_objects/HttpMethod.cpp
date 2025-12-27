@@ -6,17 +6,18 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 23:56:43 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/20 23:59:40 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 03:27:04 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "domain/value_objects/HttpMethod.hpp"
-#include "shared/exceptions/HttpMethodException.hpp"
+#include "domain/http/exceptions/HttpMethodException.hpp"
+#include "domain/http/value_objects/HttpMethod.hpp"
 
 #include <algorithm>
 #include <cctype>
 
 namespace domain {
+namespace http {
 namespace value_objects {
 
 const char* HttpMethod::METHOD_STRINGS[] = {
@@ -58,7 +59,7 @@ bool HttpMethod::isValidMethodString(const std::string& methodString) {
   try {
     parseMethodString(methodString);
     return true;
-  } catch (const shared::exceptions::HttpMethodException&) {
+  } catch (const exceptions::HttpMethodException&) {
     return false;
   }
 }
@@ -80,9 +81,9 @@ bool HttpMethod::isCacheableMethod(Method method) {
 
 void HttpMethod::validate() const {
   if (m_method == METHOD_UNKNOWN) {
-    throw shared::exceptions::HttpMethodException(
+    throw exceptions::HttpMethodException(
         "HTTP method is unknown",
-        shared::exceptions::HttpMethodException::UNKNOWN_METHOD);
+        exceptions::HttpMethodException::UNKNOWN_METHOD);
   }
 }
 
@@ -154,15 +155,15 @@ HttpMethod HttpMethod::fromString(const std::string& methodString) {
 HttpMethod::Method HttpMethod::parseMethodString(
     const std::string& methodString) {
   if (methodString.empty()) {
-    throw shared::exceptions::HttpMethodException(
+    throw exceptions::HttpMethodException(
         "HTTP method string cannot be empty",
-        shared::exceptions::HttpMethodException::EMPTY_STRING);
+        exceptions::HttpMethodException::EMPTY_STRING);
   }
 
   if (!isValidMethodFormat(methodString)) {
-    throw shared::exceptions::HttpMethodException(
+    throw exceptions::HttpMethodException(
         "Invalid HTTP method format: '" + methodString + "'",
-        shared::exceptions::HttpMethodException::INVALID_METHOD);
+        exceptions::HttpMethodException::INVALID_METHOD);
   }
 
   return stringToMethod(methodString);
@@ -197,10 +198,11 @@ HttpMethod::Method HttpMethod::stringToMethod(const std::string& methodString) {
   if (upperMethod == "CONNECT") return METHOD_CONNECT;
   if (upperMethod == "PATCH") return METHOD_PATCH;
 
-  throw shared::exceptions::HttpMethodException(
+  throw exceptions::HttpMethodException(
       "Unknown HTTP method: '" + methodString + "'",
-      shared::exceptions::HttpMethodException::UNKNOWN_METHOD);
+      exceptions::HttpMethodException::UNKNOWN_METHOD);
 }
 
 }  // namespace value_objects
+}  // namespace http
 }  // namespace domain
