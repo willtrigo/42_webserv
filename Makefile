@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/27 20:08:09 by umeneses         ###   ########.fr        #
+#    Updated: 2025/12/27 20:08:46 by umeneses         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -83,8 +83,10 @@ SLEEP                           := sleep 0.01
 NAME_OUTPUT                     = webserv
 NAME                            = $(BIN_DIR)$(NAME_OUTPUT)
 
-SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_FILESYSTEM_EXCEPTIONS_DIR), SizeException.cpp)
-SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_FILESYSTEM_VALUE_OBJECTS_DIR), SizeException.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_FILESYSTEM_EXCEPTIONS_DIR), PermissionException.cpp \
+																	 SizeException.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_FILESYSTEM_VALUE_OBJECTS_DIR), Permission.cpp \
+																	 SizeException.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_HTTP_EXCEPTIONS_DIR), HostException.cpp \
 																	 HttpMethodException.cpp \
 																	 PortException.cpp \
@@ -169,7 +171,6 @@ SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseExcep
 																	 LocationConfigException.cpp \
 																	 PathException.cpp \
 																	 PathResolverException.cpp \
-																	 PermissionException.cpp \
 																	 RequestParserException.cpp \
 																	 RouteException.cpp \
 																	 RouteMatcherException.cpp \

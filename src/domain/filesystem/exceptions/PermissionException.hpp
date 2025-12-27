@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   PermissionException.hpp                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/21 00:05:27 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 17:43:44 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 20:08:38 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
