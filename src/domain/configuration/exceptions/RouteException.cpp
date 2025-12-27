@@ -6,15 +6,16 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/24 21:51:38 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/24 21:52:42 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 20:01:13 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "shared/exceptions/RouteException.hpp"
+#include "domain/configuration/exceptions/RouteException.hpp"
 
 #include <sstream>
 
-namespace shared {
+namespace domain {
+namespace configuration {
 namespace exceptions {
 
 const std::pair<RouteException::ErrorCode, std::string>
@@ -64,4 +65,5 @@ std::string RouteException::getErrorMsg(ErrorCode code) {
 }
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace configuration
+}  // namespace domain

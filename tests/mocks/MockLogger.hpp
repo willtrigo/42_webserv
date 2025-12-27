@@ -3,19 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   MockLogger.hpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: test                                        +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/12/24 00:00:00 by test              #+#    #+#             */
-/*   Updated: 2025/12/26 00:00:00 by test             ###   ########.fr       */
+/*   Created: 2025/12/27 12:14:11 by umeneses          #+#    #+#             */
+/*   Updated: 2025/12/27 14:06:12 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef MOCK_LOGGER_HPP
 #define MOCK_LOGGER_HPP
 
-// This is a FAKE logger for testing
-// Instead of writing to a file or console, it saves messages in memory
-// So we can check what was logged during tests
 
 #include "application/ports/ILogger.hpp"
 #include <vector>

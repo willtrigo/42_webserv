@@ -6,23 +6,24 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/24 21:46:04 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/25 14:42:58 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 20:07:31 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef ROUTE_HPP
 #define ROUTE_HPP
 
-#include "domain/value_objects/ErrorCode.hpp"
-#include "domain/value_objects/HttpMethod.hpp"
-#include "domain/value_objects/Path.hpp"
-#include "domain/value_objects/Permission.hpp"
-#include "domain/value_objects/Size.hpp"
+#include "domain/shared/value_objects/ErrorCode.hpp"
+#include "domain/http/value_objects/HttpMethod.hpp"
+#include "domain/filesystem/value_objects/Path.hpp"
+#include "domain/filesystem/value_objects/Permission.hpp"
+#include "domain/filesystem/value_objects/Size.hpp"
 
 #include <map>
 #include <set>
 
 namespace domain {
+namespace configuration {
 namespace entities {
 
 class Route {
@@ -38,16 +39,16 @@ class Route {
   };
 
   Route();
-  Route(const value_objects::Path& path,
-        const std::set<value_objects::HttpMethod>& allowedMethods,
+  Route(const filesystem::value_objects::Path& path,
+        const std::set<http::value_objects::HttpMethod>& allowedMethods,
         HandlerType handlerType);
 
-  const value_objects::Path& getPath() const;
-  const std::set<value_objects::HttpMethod>& getAllowedMethods() const;
+  const filesystem::value_objects::Path& getPath() const;
+  const std::set<http::value_objects::HttpMethod>& getAllowedMethods() const;
   HandlerType getHandlerType() const;
   std::string getHandlerTarget() const;
 
-  bool allowsMethod(const value_objects::HttpMethod& method) const;
+  bool allowsMethod(const http::value_objects::HttpMethod& method) const;
   bool matches(const std::string& requestPath) const;
   bool isCgiRoute() const;
   bool isRedirect() const;
@@ -57,23 +58,23 @@ class Route {
   void setRootDirectory(const std::string& root);
   void setIndexFile(const std::string& index);
   void setUploadDirectory(const std::string& uploadDir);
-  void setMaxBodySize(const value_objects::Size& maxSize);
+  void setMaxBodySize(const filesystem::value_objects::Size& maxSize);
   void setDirectoryListing(bool enable);
   void setCgiConfig(const std::string& interpreter,
                     const std::string& extension);
   void setRedirect(const std::string& target,
-                   const value_objects::ErrorCode& code);
-  void setFilePermissions(const value_objects::Permission& permissions);
+                   const shared::value_objects::ErrorCode& code);
+  void setFilePermissions(const filesystem::value_objects::Permission& permissions);
 
   std::string getRootDirectory() const;
   std::string getIndexFile() const;
   std::string getUploadDirectory() const;
-  value_objects::Size getMaxBodySize() const;
-  value_objects::Permission getFilePermissions() const;
+  filesystem::value_objects::Size getMaxBodySize() const;
+  filesystem::value_objects::Permission getFilePermissions() const;
   std::string getCgiInterpreter() const;
   std::string getCgiExtension() const;
   std::string getRedirectTarget() const;
-  value_objects::ErrorCode getRedirectCode() const;
+  shared::value_objects::ErrorCode getRedirectCode() const;
 
   bool isStaticFileRoute() const;
   bool isPostRoute() const;
@@ -85,7 +86,7 @@ class Route {
   bool hasUploadConfig() const;
 
   struct MatchInfo {
-    value_objects::Path resolvedPath;
+    filesystem::value_objects::Path resolvedPath;
     bool isDirectory;
     std::string fileToServe;
     std::map<std::string, std::string> queryParams;
@@ -99,30 +100,31 @@ class Route {
           std::map<std::string, std::string>()) const;
 
  private:
-  value_objects::Path m_pathPattern;
-  std::set<value_objects::HttpMethod> m_allowedMethods;
+  filesystem::value_objects::Path m_pathPattern;
+  std::set<http::value_objects::HttpMethod> m_allowedMethods;
   HandlerType m_handlerType;
 
   std::string m_rootDirectory;
   std::string m_indexFile;
   std::string m_uploadDirectory;
-  value_objects::Size m_maxBodySize;
-  value_objects::Permission m_filePermissions;
+  filesystem::value_objects::Size m_maxBodySize;
+  filesystem::value_objects::Permission m_filePermissions;
   bool m_directoryListing;
 
   std::string m_cgiInterpreter;
   std::string m_cgiExtension;
 
   std::string m_redirectTarget;
-  value_objects::ErrorCode m_redirectCode;
+  shared::value_objects::ErrorCode m_redirectCode;
 
-  value_objects::Path buildFullPath(const std::string& requestPath) const;
+  filesystem::value_objects::Path buildFullPath(const std::string& requestPath) const;
   bool isPathMatch(const std::string& requestPath) const;
-  std::string findFileToServe(const value_objects::Path& fullPath) const;
+  std::string findFileToServe(const filesystem::value_objects::Path& fullPath) const;
   void validate() const;
 };
 
 }  // namespace entities
+}  // namespace configuration
 }  // namespace domain
 
 #endif  // ROUTE_HPP

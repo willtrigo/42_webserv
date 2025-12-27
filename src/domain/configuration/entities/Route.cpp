@@ -6,60 +6,62 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/24 21:56:57 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/25 14:55:49 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 20:12:32 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "domain/entities/Route.hpp"
-#include "shared/exceptions/RouteException.hpp"
+#include "domain/configuration/entities/Route.hpp"
+#include "domain/configuration/exceptions/RouteException.hpp"
 
 #include <sstream>
 
 namespace domain {
+namespace configuration {
 namespace entities {
 
 Route::MatchInfo::MatchInfo() : isDirectory(false) {}
 
 Route::Route()
     : m_handlerType(STATIC_FILE),
-      m_maxBodySize(value_objects::Size::megabyte()),
-      m_filePermissions(value_objects::Permission::
+      m_maxBodySize(filesystem::value_objects::Size::megabyte()),
+      m_filePermissions(filesystem::value_objects::Permission::
                             ownerAllGroupReadExecuteOtherReadExecute()),
       m_directoryListing(false),
-      m_redirectCode(value_objects::ErrorCode::movedPermanently()) {
+      m_redirectCode(shared::value_objects::ErrorCode::movedPermanently()) {
   try {
     validate();
   } catch (const std::exception& e) {
     std::ostringstream oss;
     oss << "Failed to create route: " << e.what();
-    throw shared::exceptions::RouteException(oss.str(), shared::exceptions::RouteException::CONFIGURATION_ERROR);
+    throw exceptions::RouteException(
+        oss.str(), exceptions::RouteException::CONFIGURATION_ERROR);
   }
 }
 
-Route::Route(const value_objects::Path& path,
-             const std::set<value_objects::HttpMethod>& allowedMethods,
+Route::Route(const filesystem::value_objects::Path& path,
+             const std::set<http::value_objects::HttpMethod>& allowedMethods,
              HandlerType handlerType)
     : m_pathPattern(path),
       m_allowedMethods(allowedMethods),
       m_handlerType(handlerType),
-      m_maxBodySize(value_objects::Size::megabyte()),
-      m_filePermissions(value_objects::Permission::
+      m_maxBodySize(filesystem::value_objects::Size::megabyte()),
+      m_filePermissions(filesystem::value_objects::Permission::
                             ownerAllGroupReadExecuteOtherReadExecute()),
       m_directoryListing(false),
-      m_redirectCode(value_objects::ErrorCode::movedPermanently()) {
+      m_redirectCode(shared::value_objects::ErrorCode::movedPermanently()) {
   try {
     validate();
   } catch (const std::exception& e) {
     std::ostringstream oss;
     oss << "Failed to create route: " << e.what();
-    throw shared::exceptions::RouteException(
-        oss.str(), shared::exceptions::RouteException::CONFIGURATION_ERROR);
+    throw exceptions::RouteException(
+        oss.str(), exceptions::RouteException::CONFIGURATION_ERROR);
   }
 }
 
-const value_objects::Path& Route::getPath() const { return m_pathPattern; }
+const filesystem::value_objects::Path& Route::getPath() const { return m_pathPattern; }
 
-const std::set<value_objects::HttpMethod>& Route::getAllowedMethods() const {
+const std::set<http::value_objects::HttpMethod>& Route::getAllowedMethods() const {
   return m_allowedMethods;
 }
 
@@ -84,12 +86,12 @@ std::string Route::getHandlerTarget() const {
     default:
       std::ostringstream oss;
       oss << "Unknown handler type: " << m_handlerType;
-      throw shared::exceptions::RouteException(
-          oss.str(), shared::exceptions::RouteException::INVALID_HANDLER);
+      throw exceptions::RouteException(
+          oss.str(), exceptions::RouteException::INVALID_HANDLER);
   }
 }
 
-bool Route::allowsMethod(const value_objects::HttpMethod& method) const {
+bool Route::allowsMethod(const http::value_objects::HttpMethod& method) const {
   return m_allowedMethods.find(method) != m_allowedMethods.end();
 }
 
@@ -97,8 +99,8 @@ bool Route::matches(const std::string& requestPath) const {
   if (requestPath.empty()) {
     std::ostringstream oss;
     oss << "Empty request path";
-    throw shared::exceptions::RouteException(
-        oss.str(), shared::exceptions::RouteException::INVALID_PATH);
+    throw exceptions::RouteException(
+        oss.str(), exceptions::RouteException::INVALID_PATH);
   }
 
   try {
@@ -106,8 +108,8 @@ bool Route::matches(const std::string& requestPath) const {
   } catch (const std::exception& e) {
     std::ostringstream oss;
     oss << "Failed to match path '" << requestPath << "': " << e.what();
-    throw shared::exceptions::RouteException(
-        oss.str(), shared::exceptions::RouteException::INVALID_PATH);
+    throw exceptions::RouteException(
+        oss.str(), exceptions::RouteException::INVALID_PATH);
   }
 }
 
@@ -125,18 +127,18 @@ void Route::setRootDirectory(const std::string& root) {
   if (root.empty()) {
     std::ostringstream oss;
     oss << "Root directory cannot be empty";
-    throw shared::exceptions::RouteException(
-        oss.str(), shared::exceptions::RouteException::CONFIGURATION_ERROR);
+    throw exceptions::RouteException(
+        oss.str(), exceptions::RouteException::CONFIGURATION_ERROR);
   }
 
   try {
-    value_objects::Path::isValidPath(root, true);
+    filesystem::value_objects::Path::isValidPath(root, true);
     m_rootDirectory = root;
   } catch (const std::exception& e) {
     std::ostringstream oss;
     oss << "Invalid root directory '" << root << "': " << e.what();
-    throw shared::exceptions::RouteException(
-        oss.str(), shared::exceptions::RouteException::CONFIGURATION_ERROR);
+    throw exceptions::RouteException(
+        oss.str(), exceptions::RouteException::CONFIGURATION_ERROR);
   }
 }
 
@@ -150,8 +152,8 @@ void Route::setIndexFile(const std::string& index) {
     if (index[i] == '/') {
       std::ostringstream oss;
       oss << "Index file cannot contain path separator: " << index;
-      throw shared::exceptions::RouteException(
-          oss.str(), shared::exceptions::RouteException::CONFIGURATION_ERROR);
+      throw exceptions::RouteException(
+          oss.str(), exceptions::RouteException::CONFIGURATION_ERROR);
     }
   }
 
@@ -162,27 +164,27 @@ void Route::setUploadDirectory(const std::string& uploadDir) {
   if (uploadDir.empty()) {
     std::ostringstream oss;
     oss << "Upload directory cannot be empty";
-    throw shared::exceptions::RouteException(
-        oss.str(), shared::exceptions::RouteException::CONFIGURATION_ERROR);
+    throw exceptions::RouteException(
+        oss.str(), exceptions::RouteException::CONFIGURATION_ERROR);
   }
 
   try {
-    value_objects::Path::isValidPath(uploadDir, true);
+    filesystem::value_objects::Path::isValidPath(uploadDir, true);
     m_uploadDirectory = uploadDir;
   } catch (const std::exception& e) {
     std::ostringstream oss;
     oss << "Invalid upload directory '" << uploadDir << "': " << e.what();
-    throw shared::exceptions::RouteException(
-        oss.str(), shared::exceptions::RouteException::CONFIGURATION_ERROR);
+    throw exceptions::RouteException(
+        oss.str(), exceptions::RouteException::CONFIGURATION_ERROR);
   }
 }
 
-void Route::setMaxBodySize(const value_objects::Size& maxSize) {
+void Route::setMaxBodySize(const filesystem::value_objects::Size& maxSize) {
   if (maxSize.getBytes() == 0) {
     std::ostringstream oss;
     oss << "Max body size cannot be zero";
-    throw shared::exceptions::RouteException(
-        oss.str(), shared::exceptions::RouteException::CONFIGURATION_ERROR);
+    throw exceptions::RouteException(
+        oss.str(), exceptions::RouteException::CONFIGURATION_ERROR);
   }
 
   m_maxBodySize = maxSize;
@@ -195,15 +197,15 @@ void Route::setCgiConfig(const std::string& interpreter,
   if (interpreter.empty()) {
     std::ostringstream oss;
     oss << "CGI interpreter cannot be empty";
-    throw shared::exceptions::RouteException(
-        oss.str(), shared::exceptions::RouteException::CONFIGURATION_ERROR);
+    throw exceptions::RouteException(
+        oss.str(), exceptions::RouteException::CONFIGURATION_ERROR);
   }
 
   if (extension.empty() || extension[0] != '.') {
     std::ostringstream oss;
     oss << "CGI extension must start with '.': " << extension;
-    throw shared::exceptions::RouteException(
-        oss.str(), shared::exceptions::RouteException::CONFIGURATION_ERROR);
+    throw exceptions::RouteException(
+        oss.str(), exceptions::RouteException::CONFIGURATION_ERROR);
   }
 
   m_cgiInterpreter = interpreter;
@@ -211,33 +213,33 @@ void Route::setCgiConfig(const std::string& interpreter,
 }
 
 void Route::setRedirect(const std::string& target,
-                        const value_objects::ErrorCode& code) {
+                        const shared::value_objects::ErrorCode& code) {
   if (target.empty()) {
     std::ostringstream oss;
     oss << "Redirect target cannot be empty";
-    throw shared::exceptions::RouteException(
-        oss.str(), shared::exceptions::RouteException::CONFIGURATION_ERROR);
+    throw exceptions::RouteException(
+        oss.str(), exceptions::RouteException::CONFIGURATION_ERROR);
   }
 
   if (!code.isRedirection()) {
     std::ostringstream oss;
     oss << "Redirect code must be a redirection code (3xx), got: "
         << code.getValue();
-    throw shared::exceptions::RouteException(
-        oss.str(), shared::exceptions::RouteException::CONFIGURATION_ERROR);
+    throw exceptions::RouteException(
+        oss.str(), exceptions::RouteException::CONFIGURATION_ERROR);
   }
 
   m_redirectTarget = target;
   m_redirectCode = code;
 }
 
-void Route::setFilePermissions(const value_objects::Permission& permissions) {
-  if (!domain::value_objects::Permission::isValidPermission(
+void Route::setFilePermissions(const filesystem::value_objects::Permission& permissions) {
+  if (!domain::filesystem::value_objects::Permission::isValidPermission(
           permissions.getOctalValue())) {
     std::ostringstream oss;
     oss << "Invalid file permissions: " << permissions.getOctalValue();
-    throw shared::exceptions::RouteException(
-        oss.str(), shared::exceptions::RouteException::CONFIGURATION_ERROR);
+    throw exceptions::RouteException(
+        oss.str(), exceptions::RouteException::CONFIGURATION_ERROR);
   }
 
   m_filePermissions = permissions;
@@ -249,9 +251,9 @@ std::string Route::getIndexFile() const { return m_indexFile; }
 
 std::string Route::getUploadDirectory() const { return m_uploadDirectory; }
 
-value_objects::Size Route::getMaxBodySize() const { return m_maxBodySize; }
+filesystem::value_objects::Size Route::getMaxBodySize() const { return m_maxBodySize; }
 
-value_objects::Permission Route::getFilePermissions() const {
+filesystem::value_objects::Permission Route::getFilePermissions() const {
   return m_filePermissions;
 }
 
@@ -261,7 +263,7 @@ std::string Route::getCgiExtension() const { return m_cgiExtension; }
 
 std::string Route::getRedirectTarget() const { return m_redirectTarget; }
 
-value_objects::ErrorCode Route::getRedirectCode() const {
+shared::value_objects::ErrorCode Route::getRedirectCode() const {
   return m_redirectCode;
 }
 
@@ -271,14 +273,14 @@ Route::MatchInfo Route::resolveRequest(
   if (requestPath.empty()) {
     std::ostringstream oss;
     oss << "Cannot resolve empty request path";
-    throw shared::exceptions::RouteException(
-        oss.str(), shared::exceptions::RouteException::INVALID_PATH);
+    throw exceptions::RouteException(
+        oss.str(), exceptions::RouteException::INVALID_PATH);
   }
 
   MatchInfo info;
 
   try {
-    value_objects::Path fullPath = buildFullPath(requestPath);
+    filesystem::value_objects::Path fullPath = buildFullPath(requestPath);
     info.resolvedPath = fullPath;
     info.queryParams = queryParams;
 
@@ -292,22 +294,22 @@ Route::MatchInfo Route::resolveRequest(
     std::ostringstream oss;
     oss << "Failed to resolve request path '" << requestPath
         << "': " << e.what();
-    throw shared::exceptions::RouteException(
-        oss.str(), shared::exceptions::RouteException::FILE_NOT_FOUND);
+    throw exceptions::RouteException(
+        oss.str(), exceptions::RouteException::FILE_NOT_FOUND);
   }
 
   return info;
 }
 
-value_objects::Path Route::buildFullPath(const std::string& requestPath) const {
+filesystem::value_objects::Path Route::buildFullPath(const std::string& requestPath) const {
   if (m_rootDirectory.empty()) {
     try {
-      return value_objects::Path::fromString(requestPath, true);
+      return filesystem::value_objects::Path::fromString(requestPath, true);
     } catch (const std::exception& e) {
       std::ostringstream oss;
       oss << "Invalid request path '" << requestPath << "': " << e.what();
-      throw shared::exceptions::RouteException(
-          oss.str(), shared::exceptions::RouteException::INVALID_PATH);
+      throw exceptions::RouteException(
+          oss.str(), exceptions::RouteException::INVALID_PATH);
     }
   }
 
@@ -326,12 +328,12 @@ value_objects::Path Route::buildFullPath(const std::string& requestPath) const {
   }
 
   try {
-    return value_objects::Path::fromString(fullPath, true);
+    return filesystem::value_objects::Path::fromString(fullPath, true);
   } catch (const std::exception& e) {
     std::ostringstream oss;
     oss << "Invalid full path '" << fullPath << "': " << e.what();
-    throw shared::exceptions::RouteException(
-        oss.str(), shared::exceptions::RouteException::INVALID_PATH);
+    throw exceptions::RouteException(
+        oss.str(), exceptions::RouteException::INVALID_PATH);
   }
 }
 
@@ -341,15 +343,15 @@ bool Route::isPathMatch(const std::string& requestPath) const {
   if (pattern.empty()) {
     std::ostringstream oss;
     oss << "Route pattern is empty";
-    throw shared::exceptions::RouteException(
-        oss.str(), shared::exceptions::RouteException::INVALID_PATH);
+    throw exceptions::RouteException(
+        oss.str(), exceptions::RouteException::INVALID_PATH);
   }
 
   if (requestPath.empty()) {
     std::ostringstream oss;
     oss << "Request path is empty";
-    throw shared::exceptions::RouteException(
-        oss.str(), shared::exceptions::RouteException::INVALID_PATH);
+    throw exceptions::RouteException(
+        oss.str(), exceptions::RouteException::INVALID_PATH);
   }
 
   if (pattern == requestPath) {
@@ -384,14 +386,14 @@ bool Route::isPathMatch(const std::string& requestPath) const {
 
 // TODO:Check if index file exists (in a real implementation, you'd check
 // filesystem) For now, we'll just return it
-std::string Route::findFileToServe(const value_objects::Path& fullPath) const {
+std::string Route::findFileToServe(const filesystem::value_objects::Path& fullPath) const {
   std::string pathStr = fullPath.toString();
 
   if (pathStr.empty()) {
     std::ostringstream oss;
     oss << "Empty path for file serving";
-    throw shared::exceptions::RouteException(
-        oss.str(), shared::exceptions::RouteException::FILE_NOT_FOUND);
+    throw exceptions::RouteException(
+        oss.str(), exceptions::RouteException::FILE_NOT_FOUND);
   }
 
   // If it's not a directory (doesn't end with '/'), return the path itself
@@ -423,51 +425,51 @@ std::string Route::findFileToServe(const value_objects::Path& fullPath) const {
 
 void Route::validate() const {
   if (m_pathPattern.isEmpty()) {
-    throw shared::exceptions::RouteException(
+    throw exceptions::RouteException(
         "Route path pattern cannot be empty",
-        shared::exceptions::RouteException::INVALID_PATH);
+        exceptions::RouteException::INVALID_PATH);
   }
 
   if (m_allowedMethods.empty()) {
-    throw shared::exceptions::RouteException(
+    throw exceptions::RouteException(
         "Route must have at least one allowed method",
-        shared::exceptions::RouteException::INVALID_METHOD);
+        exceptions::RouteException::INVALID_METHOD);
   }
 
   if (m_handlerType < STATIC_FILE || m_handlerType > UPLOAD) {
     std::ostringstream oss;
     oss << "Invalid handler type: " << m_handlerType;
-    throw shared::exceptions::RouteException(
-        oss.str(), shared::exceptions::RouteException::INVALID_HANDLER);
+    throw exceptions::RouteException(
+        oss.str(), exceptions::RouteException::INVALID_HANDLER);
   }
 
   if (m_handlerType == CGI_EXECUTION) {
     if (m_cgiInterpreter.empty() || m_cgiExtension.empty()) {
-      throw shared::exceptions::RouteException(
+      throw exceptions::RouteException(
           "CGI route requires both interpreter and extension",
-          shared::exceptions::RouteException::CONFIGURATION_ERROR);
+          exceptions::RouteException::CONFIGURATION_ERROR);
     }
   }
 
   if (m_handlerType == REDIRECT) {
     if (m_redirectTarget.empty()) {
-      throw shared::exceptions::RouteException(
+      throw exceptions::RouteException(
           "Redirect route requires a target",
-          shared::exceptions::RouteException::CONFIGURATION_ERROR);
+          exceptions::RouteException::CONFIGURATION_ERROR);
     }
     if (!m_redirectCode.isRedirection()) {
       std::ostringstream oss;
       oss << "Redirect code must be 3xx, got: " << m_redirectCode.getValue();
-      throw shared::exceptions::RouteException(
-          oss.str(), shared::exceptions::RouteException::CONFIGURATION_ERROR);
+      throw exceptions::RouteException(
+          oss.str(), exceptions::RouteException::CONFIGURATION_ERROR);
     }
   }
 
   if (m_handlerType == UPLOAD) {
     if (m_uploadDirectory.empty()) {
-      throw shared::exceptions::RouteException(
+      throw exceptions::RouteException(
           "Upload route requires an upload directory",
-          shared::exceptions::RouteException::CONFIGURATION_ERROR);
+          exceptions::RouteException::CONFIGURATION_ERROR);
     }
   }
 }
@@ -491,4 +493,5 @@ bool Route::hasRedirectConfig() const { return !m_redirectTarget.empty(); }
 bool Route::hasUploadConfig() const { return !m_uploadDirectory.empty(); }
 
 }  // namespace entities
+}  // namespace configuration
 }  // namespace domain

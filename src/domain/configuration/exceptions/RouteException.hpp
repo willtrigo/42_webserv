@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/24 21:51:11 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/24 21:52:21 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 20:00:19 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,10 +15,11 @@
 
 #include "shared/exceptions/BaseException.hpp"
 
-namespace shared {
+namespace domain {
+namespace configuration {
 namespace exceptions {
 
-class RouteException : public BaseException {
+class RouteException : public ::shared::exceptions::BaseException {
  public:
   enum ErrorCode {
     INVALID_PATH,
@@ -47,6 +48,7 @@ class RouteException : public BaseException {
 };
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace configuration
+}  // namespace domain
 
 #endif  // ROUTE_EXCEPTION_HPP
