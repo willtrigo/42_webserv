@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/27 04:26:24 by dande-je         ###   ########.fr        #
+#    Updated: 2025/12/27 17:22:21 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -71,7 +71,7 @@ BUILD_DIR                       := build/
 #******************************************************************************#
 #                                  COMMANDS                                    #
 #******************************************************************************#
-arser                          := rm -rf
+RM                              := rm -rf
 MKDIR                           := mkdir -p
 MAKEFLAGS                       += --no-print-directory
 SLEEP                           := sleep 0.01
@@ -84,14 +84,16 @@ NAME_OUTPUT                     = webserv
 NAME                            = $(BIN_DIR)$(NAME_OUTPUT)
 
 # SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_ENTITIES_DIR), PathException.cpp)
-SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_EXCEPTIONS_DIR), ListenDirectiveException.cpp)
-SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_VALUE_OBJECTS_DIR), ListenDirective.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_EXCEPTIONS_DIR), ErrorPageException.cpp \
+																	 ListenDirectiveException.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_VALUE_OBJECTS_DIR), ErrorPage.cpp \
+																	 ListenDirective.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_FILESYSTEM_EXCEPTIONS_DIR), PathException.cpp \
 																	 PermissionException.cpp \
 																	 SizeException.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_FILESYSTEM_VALUE_OBJECTS_DIR), Path.cpp \
 																	 Permission.cpp \
-																	 SizeException.cpp)
+																	 Size.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_HTTP_EXCEPTIONS_DIR), HostException.cpp \
 																	 HttpMethodException.cpp \
 																	 PortException.cpp \
@@ -105,53 +107,53 @@ SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_HTTP_VALUE_OBJECTS_
 
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_EXCEPTION_DIR), ErrorCodeException.cpp \
 																	 RegexPatternException.cpp)
-SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_UTILS_DIR), StringUtils.cpp \
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_UTILS_DIR), StringUtils.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_VALUE_OBJECTS_DIR), ErrorCode.cpp \
 																	 RegexPattern.cpp)
 
-SRCS_FILES                      += $(addprefix $(SRCS_ENTITIES_DIR), CgiConfig.cpp \
-																	 ErrorPage.cpp \
-																	 HttpConfig.cpp \
-																	 ListenDirective.cpp \
-																	 LocationConfig.cpp \
-																	 Route.cpp \
-																	 ServerConfig.cpp \
-																	 UploadConfig.cpp)
-
-SRCS_FILES                      += $(addprefix $(SRCS_ADAPTER_DIR), ConfigProvider.cpp)
-SRCS_FILES                      += $(addprefix $(SRCS_CONFIG_DIR), ConfigParser.cpp)
-SRCS_FILES                      += $(addprefix $(SRCS_FILESYSTEM_DIR), DirectoryEntryComparators.cpp \
-																	 HttpConfig.cpp \
-																	 DirectoryLister.cpp \
-																	 FileHandler.cpp \
-																	 FileSystemHelper.cpp \
-																	 PathResolver.cpp)
-SRCS_FILES                      += $(addprefix $(SRCS_HTTP_DIR), RequestParser.cpp)
+# SRCS_FILES                      += $(addprefix $(SRCS_ENTITIES_DIR), CgiConfig.cpp \
+# 																	 ErrorPage.cpp \
+# 																	 HttpConfig.cpp \
+# 																	 ListenDirective.cpp \
+# 																	 LocationConfig.cpp \
+# 																	 Route.cpp \
+# 																	 ServerConfig.cpp \
+# 																	 UploadConfig.cpp)
+#
+# SRCS_FILES                      += $(addprefix $(SRCS_ADAPTER_DIR), ConfigProvider.cpp)
+# SRCS_FILES                      += $(addprefix $(SRCS_CONFIG_DIR), ConfigParser.cpp)
+# SRCS_FILES                      += $(addprefix $(SRCS_FILESYSTEM_DIR), DirectoryEntryComparators.cpp \
+# 																	 HttpConfig.cpp \
+# 																	 DirectoryLister.cpp \
+# 																	 FileHandler.cpp \
+# 																	 FileSystemHelper.cpp \
+# 																	 PathResolver.cpp)
+# SRCS_FILES                      += $(addprefix $(SRCS_HTTP_DIR), RequestParser.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_IO_DIR), FileWriter.cpp \
 																	 StreamWriter.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_LOGGING_DIR), Logger.cpp)
-SRCS_FILES                      += $(addprefix $(SRCS_NETWORK_DIR), RouteMatcher.cpp)
+# SRCS_FILES                      += $(addprefix $(SRCS_NETWORK_DIR), RouteMatcher.cpp)
 
 SRCS_FILES                      += $(addprefix $(SRCS_CLI_DIR), CliController.cpp \
 																	 CliView.cpp)
 
-SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseException.cpp \
-																	 CgiConfigException.cpp \
-																	 ConfigException.cpp \
-																	 DirectoryListerException.cpp \
-																	 ErrorPageException.cpp \
-																	 FileHandlerException.cpp \
-																	 FileSystemHelperException.cpp \
-																	 HttpConfigException.cpp \
-																	 ListenDirectiveException.cpp \
-																	 LocationConfigException.cpp \
-																	 PathResolverException.cpp \
-																	 RequestParserException.cpp \
-																	 RouteException.cpp \
-																	 RouteMatcherException.cpp \
-																	 ServerConfigException.cpp \
-																	 UploadCondifException.cpp \
-																	 UriException.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseException.cpp)
+# 																	 CgiConfigException.cpp \
+# 																	 ConfigException.cpp \
+# 																	 DirectoryListerException.cpp \
+# 																	 ErrorPageException.cpp \
+# 																	 FileHandlerException.cpp \
+# 																	 FileSystemHelperException.cpp \
+# 																	 HttpConfigException.cpp \
+# 																	 ListenDirectiveException.cpp \
+# 																	 LocationConfigException.cpp \
+# 																	 PathResolverException.cpp \
+# 																	 RequestParserException.cpp \
+# 																	 RouteException.cpp \
+# 																	 RouteMatcherException.cpp \
+# 																	 ServerConfigException.cpp \
+# 																	 UploadCondifException.cpp \
+# 																	 UriException.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_UTILS_DIR), TerminalColor.cpp)
 
 SRCS_FILES                      += $(addprefix $(SRCS_DIR), main.cpp)
