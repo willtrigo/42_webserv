@@ -6,15 +6,16 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/21 00:07:21 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/21 00:12:22 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 03:53:18 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "shared/exceptions/PermissionException.hpp"
+#include "domain/filesystem/exceptions/PermissionException.hpp"
 
 #include <sstream>
 
-namespace shared {
+namespace domain {
+namespace filesystem {
 namespace exceptions {
 
 const std::pair<PermissionException::ErrorCode, std::string>
@@ -63,4 +64,5 @@ std::string PermissionException::getErrorMsg(
 }
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace filesystem
+}  // namespace domain
