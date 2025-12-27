@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 01:03:46 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 03:58:11 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 17:43:38 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@ namespace domain {
 namespace filesystem {
 namespace exceptions {
 
-class PathException : public shared::exceptions::BaseException {
+class PathException : public ::shared::exceptions::BaseException {
  public:
   enum ErrorCode {
     EMPTY_PATH,

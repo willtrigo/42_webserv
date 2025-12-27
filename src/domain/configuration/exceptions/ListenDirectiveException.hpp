@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 03:18:52 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 04:16:45 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 17:43:27 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@ namespace domain {
 namespace configuration {
 namespace exceptions {
 
-class ListenDirectiveException : public shared::exceptions::BaseException {
+class ListenDirectiveException : public ::shared::exceptions::BaseException {
  public:
   enum ErrorCode {
     INVALID_FORMAT,

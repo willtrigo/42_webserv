@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 09:55:17 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 03:45:17 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 17:43:49 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@ namespace domain {
 namespace filesystem {
 namespace exceptions {
 
-class SizeException : public shared::exceptions::BaseException {
+class SizeException : public ::shared::exceptions::BaseException {
  public:
   enum ErrorCode {
     EMPTY_STRING,
