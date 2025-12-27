@@ -6,12 +6,12 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/12 16:08:17 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/17 20:22:23 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 16:47:50 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "application/ports/IConfigProvider.hpp"
-#include "infrastructure/adapters/ConfigProvider.hpp"
+// #include "application/ports/IConfigProvider.hpp"
+// #include "infrastructure/adapters/ConfigProvider.hpp"
 #include "presentation/cli/CliController.hpp"
 #include "presentation/cli/CliView.hpp"
 
@@ -45,9 +45,9 @@ bool CliController::run(int argc, char** argv) {
              ? std::string(argv[K_LITERAL_ARGUMENT_INDEX])
              : "default.conf");
 
-    std::auto_ptr<application::ports::IConfigProvider> configProvider( new
-    infrastructure::adapters::ConfigProvider(this->m_view.getLogger()));
-    configProvider->load(configPath, "default.conf");
+    // std::auto_ptr<application::ports::IConfigProvider> configProvider( new
+    // infrastructure::adapters::ConfigProvider(this->m_view.getLogger()));
+    // configProvider->load(configPath, "default.conf");
 
   } catch (const std::exception& exception) {
     this->m_view.displayError(exception.what());
