@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>505 HTTP Version Not Supported - 42 Webserv</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #9d50bb 0%, #6e48aa 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .error-container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .protocol-icon {
+            font-size: 6rem;
+            margin-bottom: 1rem;
+            animation: bounce 2s ease-in-out infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .error-code {
+            font-size: 6rem;
+            font-weight: bold;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            color: #ffdd59;
+        }
+        
+        .error-title {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: #ffdd59;
+        }
+        
+        .error-message {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        .protocol-timeline {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+            position: relative;
+        }
+        
+        .protocol-timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: #ffdd59;
+            transform: translateX(-50%);
+        }
+        
+        .protocol-timeline h3 {
+            color: #ffdd59;
+            margin-bottom: 2rem;
+            font-size: 1.5rem;
+        }
+        
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            margin: 1.5rem 0;
+            position: relative;
+        }
+        
+        .timeline-item.left {
+            justify-content: flex-start;
+            text-align: right;
+            padding-right: 50%;
+        }
+        
+        .timeline-item.right {
+            justify-content: flex-end;
+            text-align: left;
+            padding-left: 50%;
+        }
+        
+        .timeline-marker {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #ffdd59;
+            border-radius: 50%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1;
+        }
+        
+        .protocol-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 1.5rem;
+            width: 90%;
+            transition: transform 0.3s ease;
+        }
+        
+        .protocol-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .protocol-card.supported {
+            border: 2px solid #00ff9d;
+        }
+        
+        .protocol-card.not-supported {
+            border: 2px solid #ff6b6b;
+            opacity: 0.7;
+        }
+        
+        .protocol-version {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .protocol-status {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        
+        .status-supported {
+            background: #00ff9d;
+            color: #333;
+        }
+        
+        .status-unsupported {
+            background: #ff6b6b;
+            color: white;
+        }
+        
+        .compatibility-info {
+            background: rgba(255, 221, 89, 0.1);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-left: 4px solid #ffdd59;
+            text-align: left;
+        }
+        
+        .compatibility-info h3 {
+            color: #ffdd59;
+            margin-bottom: 1rem;
+        }
+        
+        .btn-container {
+            margin: 2rem 0;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: #ffdd59;
+            color: #333;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-size: 1.1rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin: 0.5rem;
+            border: 2px solid transparent;
+        }
+        
+        .btn:hover {
+            background: transparent;
+            color: #ffdd59;
+            border-color: #ffdd59;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: white;
+        }
+        
+        .server-info {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        @media (max-width: 768px) {
+            .error-container {
+                padding: 2rem;
+            }
+            
+            .protocol-icon {
+                font-size: 4rem;
+            }
+            
+            .error-code {
+                font-size: 5rem;
+            }
+            
+            .error-title {
+                font-size: 2rem;
+            }
+            
+            .protocol-timeline::before {
+                left: 30px;
+            }
+            
+            .timeline-item {
+                flex-direction: column;
+                text-align: left;
+                padding: 0 0 0 60px !important;
+                margin: 2rem 0;
+            }
+            
+            .timeline-marker {
+                left: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="protocol-icon">📡</div>
+        <div class="error-code">505</div>
+        <h1 class="error-title">HTTP Version Not Supported</h1>
+        
+        <div class="error-message">
+            The server does not support the HTTP protocol version used in the request.
+            Please check your client configuration or try a different protocol version.
+        </div>
+        
+        <div class="protocol-timeline">
+            <h3>🌐 Supported HTTP Versions:</h3>
+            
+            <div class="timeline-item left">
+                <div class="timeline-marker"></div>
+                <div class="protocol-card supported">
+                    <div class="protocol-version">HTTP/0.9</div>
+                    <div class="protocol-status status-unsupported">Not Supported</div>
+                    <p>The first version of HTTP (1991). Single-line protocol with only GET method.</p>
+                </div>
+            </div>
+            
+            <div class="timeline-item right">
+                <div class="timeline-marker"></div>
+                <div class="protocol-card supported">
+                    <div class="protocol-version">HTTP/1.0</div>
+                    <div class="protocol-status status-supported">✅ Supported</div>
+                    <p>Added headers, status codes, and support for multiple methods (1996).</p>
+                </div>
+            </div>
+            
+            <div class="timeline-item left">
+                <div class="timeline-marker"></div>
+                <div class="protocol-card supported">
+                    <div class="protocol-version">HTTP/1.1</div>
+                    <div class="protocol-status status-supported">✅ Fully Supported</div>
+                    <p>Current standard with persistent connections, chunked encoding (1997).</p>
+                </div>
+            </div>
+            
+            <div class="timeline-item right">
+                <div class="timeline-marker"></div>
+                <div class="protocol-card not-supported">
+                    <div class="protocol-version">HTTP/2.0</div>
+                    <div class="protocol-status status-unsupported">Not Supported</div>
+                    <p>Binary protocol with multiplexing and header compression (2015).</p>
+                </div>
+            </div>
+            
+            <div class="timeline-item left">
+                <div class="timeline-marker"></div>
+                <div class="protocol-card not-supported">
+                    <div class="protocol-version">HTTP/3.0</div>
+                    <div class="protocol-status status-unsupported">Not Supported</div>
+                    <p>Based on QUIC protocol with improved performance (2022).</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="compatibility-info">
+            <h3>🔧 Technical Specifications:</h3>
+            <p><strong>42 Webserv supports:</strong> HTTP/1.1 (RFC 2616) with partial HTTP/1.0 compatibility</p>
+            <p><strong>Required Upgrade:</strong> Your client must use HTTP/1.1 or HTTP/1.0 protocol</p>
+            <p><strong>Connection:</strong> Persistent connections (Keep-Alive) supported</p>
+            <p><strong>Encoding:</strong> Chunked transfer encoding supported</p>
+        </div>
+        
+        <div class="btn-container">
+            <a href="/static/index.html" class="btn">🏠 Go to Homepage</a>
+            <a href="javascript:history.back()" class="btn btn-secondary">↩️ Go Back</a>
+            <button onclick="checkHTTPVersion()" class="btn">🔍 Check HTTP Version</button>
+        </div>
+        
+        <div class="server-info">
+            <p>42 Webserv v1.0 | HTTP/1.1 Server | Error 505 - HTTP Version Not Supported</p>
+            <p><small>Server supports: HTTP/1.1, HTTP/1.0 | Upgrade your client to use compatible protocol</small></p>
+        </div>
+    </div>
+    
+    <script>
+        function checkHTTPVersion() {
+            const userAgent = navigator.userAgent;
+            let httpVersion = "Unknown";
+            
+            // Try to detect HTTP version from user agent
+            if (userAgent.includes('Chrome') || userAgent.includes('Firefox') || userAgent.includes('Safari')) {
+                httpVersion = "HTTP/1.1 (via browser)";
+            }
+            
+            alert(`Your client is using: ${httpVersion}\n\n` +
+                  `This server supports:\n` +
+                  `✅ HTTP/1.1 (Primary)\n` +
+                  `✅ HTTP/1.0 (Compatibility)\n` +
+                  `❌ HTTP/2.0 (Not supported)\n` +
+                  `❌ HTTP/3.0 (Not supported)`);
+        }
+        
+        // Add click effects to protocol cards
+        document.querySelectorAll('.protocol-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const version = this.querySelector('.protocol-version').textContent;
+                const status = this.classList.contains('supported') ? 'supported' : 'not supported';
+                
+                alert(`HTTP Version: ${version}\n\n` +
+                      `Status: ${status.toUpperCase()}\n\n` +
+                      (status === 'supported' 
+                       ? 'This version is fully compatible with 42 Webserv.'
+                       : 'This version is not supported. Please use HTTP/1.1 instead.'));
+            });
+        });
+    </script>
+</body>
+</html>

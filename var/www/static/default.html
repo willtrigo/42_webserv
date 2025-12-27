@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Default Page - 42 Webserv</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .logo {
+            font-size: 4rem;
+            color: #667eea;
+            margin-bottom: 1rem;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+        
+        h1 {
+            color: #667eea;
+            margin-bottom: 1.5rem;
+            font-size: 2.5rem;
+        }
+        
+        p {
+            font-size: 1.2rem;
+            line-height: 1.8;
+            margin-bottom: 2rem;
+            color: #555;
+        }
+        
+        .info-box {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-left: 4px solid #667eea;
+            text-align: left;
+        }
+        
+        .info-box h3 {
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-size: 1.1rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin: 1rem;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn:hover {
+            background: #5a67d8;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin: 2rem 0;
+            text-align: left;
+        }
+        
+        .feature {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            transition: transform 0.3s ease;
+        }
+        
+        .feature:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .feature h4 {
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+        
+        footer {
+            margin-top: 3rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .card {
+                padding: 2rem;
+            }
+            
+            .logo {
+                font-size: 3rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .features {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="logo">webserv</div>
+        <h1>Default Page Served Successfully!</h1>
+        
+        <p>This page is served when a directory is accessed without specifying a file. The server automatically looks for <code>index.html</code>, <code>default.html</code>, or other configured index files.</p>
+        
+        <div class="info-box">
+            <h3>📋 Server Information</h3>
+            <ul style="list-style: none; padding-left: 0;">
+                <li>✅ Directory indexing is configured properly</li>
+                <li>✅ Default files are being served correctly</li>
+                <li>✅ Static content delivery is working</li>
+                <li>✅ MIME types are properly configured</li>
+            </ul>
+        </div>
+        
+        <div class="features">
+            <div class="feature">
+                <h4>🔧 Configuration</h4>
+                <p>This behavior is configured in the server's location blocks using the <code>index</code> directive.</p>
+            </div>
+            <div class="feature">
+                <h4>📁 Directory Listing</h4>
+                <p>If no index files are found, the server can be configured to show directory listings.</p>
+            </div>
+            <div class="feature">
+                <h4>⚡ Performance</h4>
+                <p>Static files are served efficiently with proper caching headers and non-blocking I/O.</p>
+            </div>
+            <div class="feature">
+                <h4>🛡️ Security</h4>
+                <p>Proper path validation prevents directory traversal attacks and unauthorized access.</p>
+            </div>
+        </div>
+        
+        <div style="margin: 2rem 0;">
+            <a href="/static/index.html" class="btn">🏠 Go to Homepage</a>
+            <a href="/static/" class="btn btn-secondary">📁 View Directory</a>
+        </div>
+        
+        <footer>
+            <p>Served by <strong>42 Webserv v1.0</strong> | C++98 HTTP Server</p>
+            <p><small>This page demonstrates the default file serving capability.</small></p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>405 Method Not Allowed - 42 Webserv</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .error-container {
+            max-width: 700px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .method-icon {
+            font-size: 6rem;
+            margin-bottom: 1rem;
+            animation: spin 10s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-code {
+            font-size: 6rem;
+            font-weight: bold;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            color: #ffdd59;
+        }
+        
+        .error-title {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: #ffdd59;
+        }
+        
+        .error-message {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        .methods-container {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+        
+        .methods-container h3 {
+            color: #ffdd59;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+        
+        .methods-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        
+        .method-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .method-card.allowed {
+            border: 2px solid #00ff9d;
+            box-shadow: 0 0 20px rgba(0, 255, 157, 0.3);
+        }
+        
+        .method-card.not-allowed {
+            border: 2px solid #ff6b6b;
+            opacity: 0.7;
+        }
+        
+        .method-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .method-name {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .method-desc {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .method-status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 1.5rem;
+        }
+        
+        .btn-container {
+            margin: 2rem 0;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: #ffdd59;
+            color: #333;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-size: 1.1rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin: 0.5rem;
+            border: 2px solid transparent;
+        }
+        
+        .btn:hover {
+            background: transparent;
+            color: #ffdd59;
+            border-color: #ffdd59;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: white;
+        }
+        
+        .http-info {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            text-align: left;
+            border-left: 4px solid #ffdd59;
+        }
+        
+        .http-info h3 {
+            color: #ffdd59;
+            margin-bottom: 1rem;
+        }
+        
+        .server-info {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        @media (max-width: 768px) {
+            .error-container {
+                padding: 2rem;
+            }
+            
+            .method-icon {
+                font-size: 4rem;
+            }
+            
+            .error-code {
+                font-size: 5rem;
+            }
+            
+            .error-title {
+                font-size: 2rem;
+            }
+            
+            .methods-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .methods-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="method-icon">🔄</div>
+        <div class="error-code">405</div>
+        <h1 class="error-title">Method Not Allowed</h1>
+        
+        <div class="error-message">
+            The request method is not supported for the requested resource.
+            The server knows the request method, but the target resource doesn't support it.
+        </div>
+        
+        <div class="methods-container">
+            <h3>📡 HTTP Methods for This Resource:</h3>
+            <div class="methods-grid">
+                <div class="method-card allowed">
+                    <div class="method-status">✅</div>
+                    <div class="method-name">GET</div>
+                    <div class="method-desc">Retrieve resource representation</div>
+                </div>
+                
+                <div class="method-card not-allowed">
+                    <div class="method-status">❌</div>
+                    <div class="method-name">POST</div>
+                    <div class="method-desc">Submit entity to the resource</div>
+                </div>
+                
+                <div class="method-card not-allowed">
+                    <div class="method-status">❌</div>
+                    <div class="method-name">PUT</div>
+                    <div class="method-desc">Replace the resource</div>
+                </div>
+                
+                <div class="method-card not-allowed">
+                    <div class="method-status">❌</div>
+                    <div class="method-name">DELETE</div>
+                    <div class="method-desc">Remove the resource</div>
+                </div>
+                
+                <div class="method-card allowed">
+                    <div class="method-status">✅</div>
+                    <div class="method-name">HEAD</div>
+                    <div class="method-desc">GET without response body</div>
+                </div>
+                
+                <div class="method-card allowed">
+                    <div class="method-status">✅</div>
+                    <div class="method-name">OPTIONS</div>
+                    <div class="method-desc">Describe communication options</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="http-info">
+            <h3>📋 HTTP Specification Reference:</h3>
+            <p>The Allow header field MUST be present in a 405 response to indicate which request methods are supported by the target resource.</p>
+            <p><code>Allow: GET, HEAD, OPTIONS</code></p>
+        </div>
+        
+        <div class="btn-container">
+            <a href="/static/index.html" class="btn">🏠 Go to Homepage</a>
+            <a href="javascript:history.back()" class="btn btn-secondary">↩️ Go Back</a>
+            <button onclick="tryGetMethod()" class="btn btn-secondary">🔄 Try GET Instead</button>
+        </div>
+        
+        <div class="server-info">
+            <p>42 Webserv v1.0 | HTTP/1.1 | Error 405 - Method Not Allowed</p>
+            <p><small>Allowed methods are specified in the server configuration</small></p>
+        </div>
+    </div>
+    
+    <script>
+        function tryGetMethod() {
+            // Try to reload the page with GET method
+            window.location.href = window.location.pathname;
+        }
+        
+        // Add click effects to method cards
+        document.querySelectorAll('.method-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const method = this.querySelector('.method-name').textContent;
+                if (this.classList.contains('allowed')) {
+                    alert(`Method ${method} is allowed for this resource.`);
+                } else {
+                    alert(`Method ${method} is NOT allowed for this resource.\n\nTry using GET or HEAD instead.`);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

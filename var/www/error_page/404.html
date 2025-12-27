@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 Not Found - 42 Webserv</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .error-container {
+            max-width: 700px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .astronaut {
+            font-size: 8rem;
+            margin-bottom: 1rem;
+            animation: float 3s ease-in-out infinite;
+            filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.3));
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .error-code {
+            font-size: 6rem;
+            font-weight: bold;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            color: #00ff9d;
+        }
+        
+        .error-title {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: #00ff9d;
+        }
+        
+        .error-message {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        .search-box {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 50px;
+            padding: 1rem 1.5rem;
+            margin: 2rem 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .search-box input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.1rem;
+            padding: 0.5rem;
+            outline: none;
+        }
+        
+        .search-box input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .search-box button {
+            background: #00ff9d;
+            color: #333;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .search-box button:hover {
+            background: #00e68a;
+            transform: scale(1.05);
+        }
+        
+        .suggestions {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            text-align: left;
+            border-left: 4px solid #00ff9d;
+        }
+        
+        .suggestions h3 {
+            color: #00ff9d;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+        
+        .suggestion-links {
+            list-style: none;
+        }
+        
+        .suggestion-links li {
+            margin: 0.8rem 0;
+        }
+        
+        .suggestion-links a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            display: block;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+        
+        .suggestion-links a:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #00ff9d;
+            transform: translateX(5px);
+        }
+        
+        .btn-container {
+            margin: 2rem 0;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: #00ff9d;
+            color: #333;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-size: 1.1rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin: 0.5rem;
+            border: 2px solid transparent;
+        }
+        
+        .btn:hover {
+            background: transparent;
+            color: #00ff9d;
+            border-color: #00ff9d;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: white;
+        }
+        
+        .server-info {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        @media (max-width: 768px) {
+            .error-container {
+                padding: 2rem;
+            }
+            
+            .astronaut {
+                font-size: 6rem;
+            }
+            
+            .error-code {
+                font-size: 5rem;
+            }
+            
+            .error-title {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="astronaut">👨‍🚀</div>
+        <div class="error-code">404</div>
+        <h1 class="error-title">Page Lost in Space</h1>
+        
+        <div class="error-message">
+            The requested URL was not found on this server. 
+            The resource may have been moved, deleted, or never existed.
+        </div>
+        
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="What are you looking for?">
+            <button onclick="searchSite()">🔍 Search</button>
+        </div>
+        
+        <div class="suggestions">
+            <h3>🚀 Try These Instead:</h3>
+            <ul class="suggestion-links">
+                <li><a href="/static/index.html">🏠 Homepage</a></li>
+                <li><a href="/static/default.html">📄 Default Page</a></li>
+                <li><a href="/uploads/">📁 Upload Directory</a></li>
+                <li><a href="/static/">📂 Static Files</a></li>
+            </ul>
+        </div>
+        
+        <div class="btn-container">
+            <a href="/static/index.html" class="btn">🏠 Go to Homepage</a>
+            <a href="javascript:history.back()" class="btn btn-secondary">↩️ Go Back</a>
+            <button onclick="location.reload()" class="btn btn-secondary">🔄 Refresh</button>
+        </div>
+        
+        <div class="server-info">
+            <p>42 Webserv v1.0 | HTTP/1.1 | Error 404 - Not Found</p>
+            <p><small>The server looked, but couldn't find what you requested</small></p>
+        </div>
+    </div>
+    
+    <script>
+        function searchSite() {
+            const query = document.getElementById('searchInput').value;
+            if (query.trim()) {
+                alert(`Searching for: "${query}"\n\nThis is a demo. In a real implementation, this would search the site.`);
+            }
+        }
+        
+        // Make search work on Enter key
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchSite();
+            }
+        });
+        
+        // Add floating animation to astronaut
+        const astronaut = document.querySelector('.astronaut');
+        let floatDirection = 1;
+        
+        function animateAstronaut() {
+            const currentTransform = astronaut.style.transform || 'translateY(0px)';
+            const currentY = parseInt(currentTransform.match(/-?\d+/)[0]) || 0;
+            
+            if (currentY > 10) floatDirection = -1;
+            if (currentY < -10) floatDirection = 1;
+            
+            astronaut.style.transform = `translateY(${currentY + floatDirection}px)`;
+            requestAnimationFrame(animateAstronaut);
+        }
+        
+        // Start animation
+        setTimeout(animateAstronaut, 100);
+    </script>
+</body>
+</html>
