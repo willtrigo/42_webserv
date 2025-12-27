@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/26 16:14:30 by dande-je         ###   ########.fr        #
+#    Updated: 2025/12/26 21:03:45 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -72,6 +72,7 @@ NAME                            = $(BIN_DIR)$(NAME_OUTPUT)
 
 SRCS_FILES                      += $(addprefix $(SRCS_ENTITIES_DIR), CgiConfig.cpp \
 																	 ErrorPage.cpp \
+																	 HttpConfig.cpp \
 																	 ListenDirective.cpp \
 																	 LocationConfig.cpp \
 																	 Route.cpp \
@@ -90,6 +91,7 @@ SRCS_FILES                      += $(addprefix $(SRCS_VALUE_OBJECTS_DIR), ErrorC
 SRCS_FILES                      += $(addprefix $(SRCS_ADAPTER_DIR), ConfigProvider.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_CONFIG_DIR), ConfigParser.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_FILESYSTEM_DIR), DirectoryEntryComparators.cpp \
+																	 HttpConfig.cpp \
 																	 DirectoryLister.cpp \
 																	 FileHandler.cpp \
 																	 FileSystemHelper.cpp \
@@ -112,6 +114,7 @@ SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseExcep
 																	 FileHandlerException.cpp \
 																	 FileSystemHelperException.cpp \
 																	 HostException.cpp \
+																	 HttpConfigException.cpp \
 																	 HttpMethodException.cpp \
 																	 ListenDirectiveException.cpp \
 																	 LocationConfigException.cpp \
