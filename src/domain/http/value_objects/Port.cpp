@@ -6,19 +6,20 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 19:13:44 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/26 03:43:58 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 02:36:44 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "domain/value_objects/Port.hpp"
-#include "shared/exceptions/PortException.hpp"
-#include "shared/utils/StringUtils.hpp"
+#include "domain/http/value_objects/Port.hpp"
+#include "domain/http/exceptions/PortException.hpp"
+#include "domain/shared/utils/StringUtils.hpp"
 
 #include <cctype>
 #include <cstdlib>
 #include <sstream>
 
 namespace domain {
+namespace http {
 namespace value_objects {
 
 Port::Port() : m_value(MIN_PORT) {}
@@ -52,8 +53,8 @@ void Port::validate() const {
     std::ostringstream oss;
     oss << "Port value out of range: " << m_value
         << " (valid range: " << MIN_PORT << "-" << MAX_PORT << ")";
-    throw shared::exceptions::PortException(
-        oss.str(), shared::exceptions::PortException::OUT_OF_RANGE);
+    throw exceptions::PortException(
+        oss.str(), exceptions::PortException::OUT_OF_RANGE);
   }
 }
 
@@ -113,21 +114,21 @@ bool Port::isAllDigits(const std::string& str) {
 
 unsigned int Port::parsePortString(const std::string& portString) {
   if (portString.empty()) {
-    throw shared::exceptions::PortException(
+    throw exceptions::PortException(
         "Port string cannot be empty",
-        shared::exceptions::PortException::EMPTY_STRING);
+        exceptions::PortException::EMPTY_STRING);
   }
 
   if (!isAllDigits(portString)) {
-    throw shared::exceptions::PortException(
+    throw exceptions::PortException(
         "Port contains non-digit characters: '" + portString + "'",
-        shared::exceptions::PortException::NON_DIGIT_CHARACTER);
+        exceptions::PortException::NON_DIGIT_CHARACTER);
   }
 
   if (portString.size() > 1 && portString[0] == '0') {
-    throw shared::exceptions::PortException(
+    throw exceptions::PortException(
         "Port cannot have leading zero: '" + portString + "'",
-        shared::exceptions::PortException::INVALID_STRING);
+        exceptions::PortException::INVALID_STRING);
   }
 
   try {
@@ -138,23 +139,24 @@ unsigned int Port::parsePortString(const std::string& portString) {
       std::ostringstream oss;
       oss << "Port value out of range: '" << portString
           << "' (max: " << MAX_PORT << ")";
-      throw shared::exceptions::PortException(
-          oss.str(), shared::exceptions::PortException::OUT_OF_RANGE);
+      throw exceptions::PortException(
+          oss.str(), exceptions::PortException::OUT_OF_RANGE);
     }
 
     return static_cast<unsigned int>(result);
   } catch (const std::invalid_argument& exception) {
-    throw shared::exceptions::PortException(
+    throw exceptions::PortException(
         "Failed to convert port string to number: '" + portString + "'",
-        shared::exceptions::PortException::CONVERSION_FAILED);
+        exceptions::PortException::CONVERSION_FAILED);
   } catch (const std::out_of_range& exception) {
     std::ostringstream oss;
     oss << "Port value out of range: '" << portString << "' (max: " << MAX_PORT
         << ")";
-    throw shared::exceptions::PortException(
-        oss.str(), shared::exceptions::PortException::OUT_OF_RANGE);
+    throw exceptions::PortException(
+        oss.str(), exceptions::PortException::OUT_OF_RANGE);
   }
 }
 
 }  // namespace value_objects
+}  // namespace http
 }  // namespace domain

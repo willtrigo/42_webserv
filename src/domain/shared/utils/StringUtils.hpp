@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 03:32:26 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/26 03:37:31 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 02:35:22 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 
 #include <string>
 
+namespace domain {
 namespace shared {
 namespace utils {
 
@@ -57,5 +58,6 @@ class StringUtils {
 
 }  // namespace utils
 }  // namespace shared
+}  // namespace domain
 
 #endif  // STRING_UTILS_HPP

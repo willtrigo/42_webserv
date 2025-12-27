@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/27 02:21:22 by dande-je         ###   ########.fr        #
+#    Updated: 2025/12/27 02:59:46 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -31,9 +31,13 @@ SRCS_APPLICATION_DIR            := $(SRCS_DIR)application/
 SRCS_USE_CASES_DIR              := $(SRCS_APPLICATION_DIR)use_cases/
 SRCS_SERVICES_DIR               := $(SRCS_APPLICATION_DIR)services/
 
-SRCS_DOMAIN_DIR                 := $(SRCS_DIR)domain/
+SRCS_DOMAIN_DIR                           := $(SRCS_DIR)domain/
+SRCS_DOMAIN_HTTP_DIR                      := $(SRCS_DOMAIN_DIR)http/
+SRCS_DOMAIN_HTTP_VALUE_OBJECTS_DIR        := $(SRCS_DOMAIN_HTTP_DIR)value_objects/
+SRCS_DOMAIN_HTTP_EXCEPTIONS_DIR           := $(SRCS_DOMAIN_HTTP_DIR)exceptions/
 SRCS_DOMAIN_SHARED_DIR                    := $(SRCS_DOMAIN_DIR)shared/
 SRCS_DOMAIN_SHARED_EXCEPTION_DIR          := $(SRCS_DOMAIN_SHARED_DIR)exceptions/
+SRCS_DOMAIN_SHARED_UTILS_DIR              := $(SRCS_DOMAIN_SHARED_DIR)utils/
 SRCS_DOMAIN_SHARED_VALUE_OBJECTS_DIR      := $(SRCS_DOMAIN_SHARED_DIR)value_objects/
 
 SRCS_INFRASTRUCTURE_DIR         := $(SRCS_DIR)infrastructure/
@@ -71,8 +75,12 @@ SLEEP                           := sleep 0.01
 NAME_OUTPUT                     = webserv
 NAME                            = $(BIN_DIR)$(NAME_OUTPUT)
 
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_HTTP_EXCEPTIONS_DIR), PortException.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_HTTP_VALUE_OBJECTS_DIR), Port.cpp)
+
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_EXCEPTION_DIR), ErrorCodeException.cpp \
 																	 RegexPatternException.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_UTILS_DIR), StringUtils.cpp \
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_VALUE_OBJECTS_DIR), ErrorCode.cpp \
 																	 RegexPattern.cpp)
 
@@ -88,7 +96,6 @@ SRCS_FILES                      += $(addprefix $(SRCS_VALUE_OBJECTS_DIR), Host.c
 																	 HttpMethod.cpp \
 																	 Path.cpp \
 																	 Permission.cpp \
-																	 Port.cpp \
 																	 QueryStringBuilder.cpp \
 																	 Size.cpp \
 																	 Uri.cpp)
@@ -125,7 +132,6 @@ SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseExcep
 																	 PathException.cpp \
 																	 PathResolverException.cpp \
 																	 PermissionException.cpp \
-																	 PortException.cpp \
 																	 QueryStringBuilderException.cpp \
 																	 RequestParserException.cpp \
 																	 RouteException.cpp \
