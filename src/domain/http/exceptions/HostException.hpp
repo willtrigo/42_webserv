@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/24 14:45:49 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/24 14:45:51 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 03:32:08 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,10 +15,11 @@
 
 #include "shared/exceptions/BaseException.hpp"
 
-namespace shared {
+namespace domain {
+namespace http {
 namespace exceptions {
 
-class HostException : public BaseException {
+class HostException : public shared::exceptions::BaseException {
  public:
   enum ErrorCode {
     EMPTY_HOST,
@@ -44,6 +45,7 @@ class HostException : public BaseException {
 };
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace http
+}  // namespace domain
 
 #endif  // HOST_EXCEPTION_HPP

@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/24 14:44:40 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/24 14:56:07 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 03:33:33 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 #include <string>
 
 namespace domain {
+namespace http {
 namespace value_objects {
 
 class Host {
@@ -97,6 +98,7 @@ class Host {
 };
 
 }  // namespace value_objects
+}  // namespace http
 }  // namespace domain
 
 #endif  // HOST_HPP

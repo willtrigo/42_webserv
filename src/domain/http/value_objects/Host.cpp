@@ -6,18 +6,19 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/24 14:45:29 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/24 14:56:55 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 03:34:45 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "domain/value_objects/Host.hpp"
-#include "shared/exceptions/HostException.hpp"
+#include "domain/http/exceptions/HostException.hpp"
+#include "domain/http/value_objects/Host.hpp"
 
 #include <cctype>
 #include <sstream>
 #include <vector>
 
 namespace domain {
+namespace http {
 namespace value_objects {
 
 const std::string Host::LOCALHOST_IPV4 = "127.0.0.1";
@@ -74,7 +75,7 @@ bool Host::isValidHost(const std::string& host) {
   try {
     validateHostString(host);
     return true;
-  } catch (const shared::exceptions::HostException&) {
+  } catch (const exceptions::HostException&) {
     return false;
   }
 }
@@ -125,23 +126,23 @@ void Host::validate() const { validateHostString(m_value); }
 
 void Host::validateHostString(const std::string& host) {
   if (host.empty()) {
-    throw shared::exceptions::HostException(
-        "Host cannot be empty", shared::exceptions::HostException::EMPTY_HOST);
+    throw exceptions::HostException(
+        "Host cannot be empty", exceptions::HostException::EMPTY_HOST);
   }
 
   if (host.length() > MAX_HOST_LENGTH) {
     std::ostringstream oss;
     oss << "Host too long: " << host.length()
         << " characters (max: " << MAX_HOST_LENGTH << ")";
-    throw shared::exceptions::HostException(
-        oss.str(), shared::exceptions::HostException::TOO_LONG);
+    throw exceptions::HostException(
+        oss.str(), exceptions::HostException::TOO_LONG);
   }
 
   HostType type = determineType(host);
   if (type == TYPE_UNKNOWN) {
-    throw shared::exceptions::HostException(
+    throw exceptions::HostException(
         "Invalid host format: '" + host + "'",
-        shared::exceptions::HostException::INVALID_FORMAT);
+        exceptions::HostException::INVALID_FORMAT);
   }
 }
 
@@ -277,4 +278,5 @@ bool Host::isAllDigits(const std::string& str) {
 }
 
 }  // namespace value_objects
+}  // namespace http
 }  // namespace domain
