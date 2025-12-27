@@ -6,13 +6,13 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/21 12:50:29 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/22 01:07:08 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 03:06:12 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "domain/value_objects/Uri.hpp"
-#include "shared/exceptions/PortException.hpp"
-#include "shared/exceptions/UriException.hpp"
+#include "domain/http/value_objects/Uri.hpp"
+#include "domain/http/exceptions/PortException.hpp"
+#include "domain/http/exceptions/UriException.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -20,6 +20,7 @@
 #include <vector>
 
 namespace domain {
+namespace http {
 namespace value_objects {
 
 const std::string Uri::HTTP_SCHEME = "http";
@@ -198,7 +199,7 @@ bool Uri::isValidUri(const std::string& uriString) {
   try {
     Uri uri(uriString);
     return true;
-  } catch (const shared::exceptions::UriException&) {
+  } catch (const exceptions::UriException&) {
     return false;
   }
 }
@@ -224,18 +225,18 @@ bool Uri::isRelativeUri(const std::string& uriString) {
 void Uri::validate() const {
   if (m_isAbsolute) {
     if (m_scheme.empty()) {
-      throw shared::exceptions::UriException(
+      throw exceptions::UriException(
           "Absolute URI must have a scheme",
-          shared::exceptions::UriException::MISSING_SCHEME);
+          exceptions::UriException::MISSING_SCHEME);
     }
 
     validateUriComponent(m_scheme, "scheme");
     validateUriComponent(m_host, "host");
 
     if (m_scheme != FILE_SCHEME && m_host.empty()) {
-      throw shared::exceptions::UriException(
+      throw exceptions::UriException(
           "URI with scheme '" + m_scheme + "' must have a host",
-          shared::exceptions::UriException::MISSING_HOST);
+          exceptions::UriException::MISSING_HOST);
     }
   }
 
@@ -295,9 +296,9 @@ Uri Uri::resolve(const Uri& baseUri) const {
   }
 
   if (!baseUri.isAbsolute()) {
-    throw shared::exceptions::UriException(
+    throw exceptions::UriException(
         "Base URI must be absolute for resolution",
-        shared::exceptions::UriException::INVALID_FORMAT);
+        exceptions::UriException::INVALID_FORMAT);
   }
 
   if (!m_path.empty() && m_path[0] == '/') {
@@ -397,9 +398,9 @@ Uri Uri::parseAuthority(const std::string& authority) {
   std::string remaining = parseAuthorityComponent(authority, host, port);
 
   if (!remaining.empty()) {
-    throw shared::exceptions::UriException(
+    throw exceptions::UriException(
         "Extra characters in authority string: '" + authority + "'",
-        shared::exceptions::UriException::INVALID_FORMAT);
+        exceptions::UriException::INVALID_FORMAT);
   }
 
   return Uri(UriParameters()
@@ -566,17 +567,17 @@ std::string Uri::getQueryParameter(const std::string& queryString,
 
 void Uri::parseUriString(const std::string& uriString) {
   if (uriString.empty()) {
-    throw shared::exceptions::UriException(
+    throw exceptions::UriException(
         "URI string cannot be empty",
-        shared::exceptions::UriException::EMPTY_URI);
+        exceptions::UriException::EMPTY_URI);
   }
 
   if (uriString.length() > MAX_URI_LENGTH) {
     std::ostringstream oss;
     oss << "URI too long: " << uriString.length()
         << " characters (max: " << MAX_URI_LENGTH << ")";
-    throw shared::exceptions::UriException(
-        oss.str(), shared::exceptions::UriException::INVALID_FORMAT);
+    throw exceptions::UriException(
+        oss.str(), exceptions::UriException::INVALID_FORMAT);
   }
 
   std::size_t position = 0;
@@ -619,9 +620,9 @@ void Uri::validateUriComponent(const std::string& component,
   for (std::size_t i = 0; i < component.length(); ++i) {
     unsigned char chr = static_cast<unsigned char>(component[i]);
     if (chr < ' ' || chr == 'W') {
-      throw shared::exceptions::UriException(
+      throw exceptions::UriException(
           "Invalid character in " + componentName + ": '" + component + "'",
-          shared::exceptions::UriException::INVALID_FORMAT);
+          exceptions::UriException::INVALID_FORMAT);
     }
   }
 }
@@ -829,9 +830,9 @@ std::string Uri::parseScheme(const std::string& uriString,
   position = colonPos + 1;
 
   if (!isValidScheme(scheme)) {
-    throw shared::exceptions::UriException(
+    throw exceptions::UriException(
         "Invalid scheme: '" + scheme + "'",
-        shared::exceptions::UriException::INVALID_SCHEME);
+        exceptions::UriException::INVALID_SCHEME);
   }
 
   std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
@@ -856,17 +857,17 @@ std::string Uri::parseAuthorityComponent(const std::string& authorityString,
 
   std::string portStr = authorityString.substr(colonPos + 1);
   if (portStr.empty()) {
-    throw shared::exceptions::UriException(
+    throw exceptions::UriException(
         "Port cannot be empty after colon: '" + authorityString + "'",
-        shared::exceptions::UriException::INVALID_PORT);
+        exceptions::UriException::INVALID_PORT);
   }
 
   try {
     port = Port::fromString(portStr);
-  } catch (const shared::exceptions::PortException& e) {
-    throw shared::exceptions::UriException(
+  } catch (const exceptions::PortException& e) {
+    throw exceptions::UriException(
         "Invalid port in authority: '" + authorityString + "' - " + e.what(),
-        shared::exceptions::UriException::INVALID_PORT);
+        exceptions::UriException::INVALID_PORT);
   }
 
   return "";
@@ -893,9 +894,9 @@ std::string Uri::parsePath(const std::string& uriString,
   position = endPos;
 
   if (!isValidPath(path)) {
-    throw shared::exceptions::UriException(
+    throw exceptions::UriException(
         "Invalid path: '" + path + "'",
-        shared::exceptions::UriException::INVALID_PATH);
+        exceptions::UriException::INVALID_PATH);
   }
 
   return path;
@@ -917,9 +918,9 @@ std::string Uri::parseQuery(const std::string& uriString,
   position = endPos;
 
   if (!isValidQuery(query)) {
-    throw shared::exceptions::UriException(
+    throw exceptions::UriException(
         "Invalid query: '" + query + "'",
-        shared::exceptions::UriException::INVALID_QUERY);
+        exceptions::UriException::INVALID_QUERY);
   }
 
   return query;
@@ -937,13 +938,14 @@ std::string Uri::parseFragment(const std::string& uriString,
   position = uriString.length();
 
   if (!isValidFragment(fragment)) {
-    throw shared::exceptions::UriException(
+    throw exceptions::UriException(
         "Invalid fragment: '" + fragment + "'",
-        shared::exceptions::UriException::INVALID_FRAGMENT);
+        exceptions::UriException::INVALID_FRAGMENT);
   }
 
   return fragment;
 }
 
 }  // namespace value_objects
+}  // namespace http
 }  // namespace domain
