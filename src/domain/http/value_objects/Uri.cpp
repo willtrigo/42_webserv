@@ -6,13 +6,14 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/21 12:50:29 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 03:06:12 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 17:15:24 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "domain/http/value_objects/Uri.hpp"
 #include "domain/http/exceptions/PortException.hpp"
 #include "domain/http/exceptions/UriException.hpp"
+#include "domain/http/value_objects/Uri.hpp"
+#include "domain/shared/utils/StringUtils.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -225,9 +226,8 @@ bool Uri::isRelativeUri(const std::string& uriString) {
 void Uri::validate() const {
   if (m_isAbsolute) {
     if (m_scheme.empty()) {
-      throw exceptions::UriException(
-          "Absolute URI must have a scheme",
-          exceptions::UriException::MISSING_SCHEME);
+      throw exceptions::UriException("Absolute URI must have a scheme",
+                                     exceptions::UriException::MISSING_SCHEME);
     }
 
     validateUriComponent(m_scheme, "scheme");
@@ -296,9 +296,8 @@ Uri Uri::resolve(const Uri& baseUri) const {
   }
 
   if (!baseUri.isAbsolute()) {
-    throw exceptions::UriException(
-        "Base URI must be absolute for resolution",
-        exceptions::UriException::INVALID_FORMAT);
+    throw exceptions::UriException("Base URI must be absolute for resolution",
+                                   exceptions::UriException::INVALID_FORMAT);
   }
 
   if (!m_path.empty() && m_path[0] == '/') {
@@ -567,48 +566,50 @@ std::string Uri::getQueryParameter(const std::string& queryString,
 
 void Uri::parseUriString(const std::string& uriString) {
   if (uriString.empty()) {
-    throw exceptions::UriException(
-        "URI string cannot be empty",
-        exceptions::UriException::EMPTY_URI);
+    throw exceptions::UriException("URI string cannot be empty",
+                                   exceptions::UriException::EMPTY_URI);
   }
 
   if (uriString.length() > MAX_URI_LENGTH) {
     std::ostringstream oss;
     oss << "URI too long: " << uriString.length()
         << " characters (max: " << MAX_URI_LENGTH << ")";
-    throw exceptions::UriException(
-        oss.str(), exceptions::UriException::INVALID_FORMAT);
+    throw exceptions::UriException(oss.str(),
+                                   exceptions::UriException::INVALID_FORMAT);
   }
 
   std::size_t position = 0;
 
-  std::size_t colonPos = uriString.find(':');
-  if (colonPos != std::string::npos && colonPos > 0) {
-    std::string potentialScheme = uriString.substr(0, colonPos);
-    if (isValidScheme(potentialScheme)) {
-      m_scheme = parseScheme(uriString, position);
-      m_isAbsolute = true;
+  std::size_t colonPos = findSchemeSeparator(uriString);
+  if (colonPos != std::string::npos) {
+    m_scheme = parseScheme(uriString, position);
+    m_isAbsolute = true;
 
-      if (position + 1 < uriString.length() && uriString[position] == '/' &&
-          uriString[position + 1] == '/') {
-        position += 2;
-
-        std::size_t authorityEnd = findAuthorityEnd(uriString, position);
-        if (authorityEnd > position) {
-          std::string authority =
-              uriString.substr(position, authorityEnd - position);
-          parseAuthorityComponent(authority, m_host, m_port);
-          position = authorityEnd;
-        }
+    std::size_t authorityStart = findAuthorityStart(uriString, position);
+    if (authorityStart != std::string::npos) {
+      std::size_t authorityEnd = findAuthorityEnd(uriString, authorityStart);
+      if (authorityEnd > authorityStart) {
+        std::string authority =
+            uriString.substr(authorityStart, authorityEnd - authorityStart);
+        parseAuthorityComponent(authority, m_host, m_port);
+        position = authorityEnd;
       }
     }
   }
 
   m_path = parsePath(uriString, position);
 
-  m_query = parseQuery(uriString, position);
+  std::size_t queryStart = findQueryStart(uriString, position);
+  if (queryStart != std::string::npos) {
+    position = queryStart;
+    m_query = parseQuery(uriString, position);
+  }
 
-  m_fragment = parseFragment(uriString, position);
+  std::size_t fragmentStart = findFragmentStart(uriString, position);
+  if (fragmentStart != std::string::npos) {
+    position = fragmentStart;
+    m_fragment = parseFragment(uriString, position);
+  }
 
   if (m_path.empty() && (m_scheme == HTTP_SCHEME || m_scheme == HTTPS_SCHEME)) {
     m_path = "/";
@@ -819,6 +820,187 @@ bool Uri::isDefaultPortForScheme(const std::string& scheme, const Port& port) {
   return defaultPort.getValue() > 0 && port == defaultPort;
 }
 
+std::size_t Uri::findSchemeSeparator(const std::string& uriString) {
+  std::size_t colonPos = uriString.find(':');
+
+  if (colonPos == std::string::npos || colonPos == 0) {
+    return std::string::npos;
+  }
+
+  std::string potentialScheme = uriString.substr(0, colonPos);
+
+  static const std::string SCHEME_CHARS =
+      "abcdefghijklmnopqrstuvwxyz"
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+      "0123456789"
+      "+-.";
+
+  if (!shared::utils::StringUtils::containsOnly(potentialScheme,
+                                                SCHEME_CHARS)) {
+    return std::string::npos;
+  }
+
+  if (std::isalpha(static_cast<unsigned char>(uriString[0])) == 0) {
+    return std::string::npos;
+  }
+
+  return colonPos;
+}
+
+std::size_t Uri::findAuthorityStart(const std::string& uriString,
+                                    std::size_t schemeEnd) {
+  if (schemeEnd + 2 >= uriString.length()) {
+    return std::string::npos;
+  }
+
+  if (uriString[schemeEnd] == '/' && uriString[schemeEnd + 1] == '/') {
+    return schemeEnd + 2;
+  }
+
+  return std::string::npos;
+}
+
+std::size_t Uri::findAuthorityEnd(const std::string& uriString,
+                                  std::size_t authorityStart) {
+  if (authorityStart >= uriString.length()) {
+    return authorityStart;
+  }
+
+  std::size_t position = authorityStart;
+  std::size_t length = uriString.length();
+  static const std::string AUTHORITY_CHARS =
+      "abcdefghijklmnopqrstuvwxyz"
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+      "0123456789"
+      ".-:[]";
+
+  bool inIpv6Brackets = false;
+  bool foundPortSeparator = false;
+
+  while (position < length) {
+    char chr = uriString[position];
+
+    if (chr == '[') {
+      if (inIpv6Brackets) {
+        return position;
+      }
+      inIpv6Brackets = true;
+    } else if (chr == ']') {
+      if (!inIpv6Brackets) {
+        return position;
+      }
+      inIpv6Brackets = false;
+    }
+
+    bool isValidChar = AUTHORITY_CHARS.find(chr) != std::string::npos;
+
+    if (!isValidChar && !inIpv6Brackets) {
+      if (chr == '/' || chr == '?' || chr == '#' ||
+          std::isspace(static_cast<unsigned char>(chr)) != 0) {
+        return position;
+      }
+      if (chr == ':') {
+        if (inIpv6Brackets) {
+          position++;
+          continue;
+        }
+        if (!foundPortSeparator) {
+          foundPortSeparator = true;
+          std::size_t nextPos = position + 1;
+          if (nextPos < length) {
+            position++;
+            continue;
+          }
+        } else {
+          return position;
+        }
+      }
+      return position;
+    }
+    position++;
+  }
+
+  return length;
+}
+
+std::size_t Uri::findPathStart(const std::string& uriString,
+                               std::size_t authorityEnd) {
+  if (authorityEnd >= uriString.length()) {
+    return authorityEnd;
+  }
+
+  if (uriString[authorityEnd] == ':') {
+    return authorityEnd + 1;
+  }
+
+  return authorityEnd;
+}
+
+std::size_t Uri::findQueryStart(const std::string& uriString,
+                                std::size_t pathStart) {
+  if (pathStart >= uriString.length()) {
+    return std::string::npos;
+  }
+
+  std::size_t position = pathStart;
+  std::size_t length = uriString.length();
+
+  while (position < length) {
+    char chr = uriString[position];
+
+    if (chr == '?') {
+      if (position > pathStart && uriString[position - 1] == '%' &&
+          position + 2 < length) {
+        std::string hex = uriString.substr(position, 2);
+        if (shared::utils::StringUtils::isAllHexDigits(hex)) {
+          position += 3;  // Skip %3F
+          continue;
+        }
+      }
+      return position;
+    }
+    if (chr == '#') {
+      return std::string::npos;
+    }
+
+    position++;
+  }
+
+  return std::string::npos;
+}
+
+std::size_t Uri::findFragmentStart(const std::string& uriString,
+                                   std::size_t queryStart) {
+  std::size_t startPos = (queryStart == std::string::npos) ? 0 : queryStart;
+
+  if (startPos >= uriString.length()) {
+    return std::string::npos;
+  }
+
+  std::size_t position = startPos;
+  std::size_t length = uriString.length();
+
+  while (position < length) {
+    char chr = uriString[position];
+
+    if (chr == '#') {
+      if (position > startPos && uriString[position - 1] == '%' &&
+          position + 2 < length) {
+        std::string hex = uriString.substr(position, 2);
+        if (shared::utils::StringUtils::isAllHexDigits(hex)) {
+          position += 3;
+          continue;
+        }
+      }
+      return position;
+    }
+
+    position++;
+  }
+
+  return std::string::npos;
+}
+
 std::string Uri::parseScheme(const std::string& uriString,
                              std::size_t& position) {
   std::size_t colonPos = uriString.find(':');
@@ -830,9 +1012,8 @@ std::string Uri::parseScheme(const std::string& uriString,
   position = colonPos + 1;
 
   if (!isValidScheme(scheme)) {
-    throw exceptions::UriException(
-        "Invalid scheme: '" + scheme + "'",
-        exceptions::UriException::INVALID_SCHEME);
+    throw exceptions::UriException("Invalid scheme: '" + scheme + "'",
+                                   exceptions::UriException::INVALID_SCHEME);
   }
 
   std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
@@ -894,9 +1075,8 @@ std::string Uri::parsePath(const std::string& uriString,
   position = endPos;
 
   if (!isValidPath(path)) {
-    throw exceptions::UriException(
-        "Invalid path: '" + path + "'",
-        exceptions::UriException::INVALID_PATH);
+    throw exceptions::UriException("Invalid path: '" + path + "'",
+                                   exceptions::UriException::INVALID_PATH);
   }
 
   return path;
@@ -918,9 +1098,8 @@ std::string Uri::parseQuery(const std::string& uriString,
   position = endPos;
 
   if (!isValidQuery(query)) {
-    throw exceptions::UriException(
-        "Invalid query: '" + query + "'",
-        exceptions::UriException::INVALID_QUERY);
+    throw exceptions::UriException("Invalid query: '" + query + "'",
+                                   exceptions::UriException::INVALID_QUERY);
   }
 
   return query;
@@ -938,9 +1117,8 @@ std::string Uri::parseFragment(const std::string& uriString,
   position = uriString.length();
 
   if (!isValidFragment(fragment)) {
-    throw exceptions::UriException(
-        "Invalid fragment: '" + fragment + "'",
-        exceptions::UriException::INVALID_FRAGMENT);
+    throw exceptions::UriException("Invalid fragment: '" + fragment + "'",
+                                   exceptions::UriException::INVALID_FRAGMENT);
   }
 
   return fragment;
