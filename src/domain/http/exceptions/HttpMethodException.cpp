@@ -6,15 +6,16 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 23:54:03 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/20 23:54:19 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 03:24:55 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "shared/exceptions/HttpMethodException.hpp"
+#include "domain/http/exceptions/HttpMethodException.hpp"
 
 #include <sstream>
 
-namespace shared {
+namespace domain {
+namespace http {
 namespace exceptions {
 
 const std::pair<HttpMethodException::ErrorCode, std::string>
@@ -57,4 +58,5 @@ std::string HttpMethodException::getErrorMsg(
 }
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace http
+}  // namespace domain

@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   HtppMethodException.hpp                            :+:      :+:    :+:   */
+/*   HttpMethodException.hpp                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 23:53:11 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/20 23:53:15 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 03:23:57 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,17 +15,13 @@
 
 #include "shared/exceptions/BaseException.hpp"
 
-namespace shared {
+namespace domain {
+namespace http {
 namespace exceptions {
 
-class HttpMethodException : public BaseException {
+class HttpMethodException : public shared::exceptions::BaseException {
  public:
-  enum ErrorCode {
-    EMPTY_STRING,
-    INVALID_METHOD,
-    UNKNOWN_METHOD,
-    CODE_COUNT
-  };
+  enum ErrorCode { EMPTY_STRING, INVALID_METHOD, UNKNOWN_METHOD, CODE_COUNT };
 
   explicit HttpMethodException(const std::string& msg, ErrorCode code);
   HttpMethodException(const HttpMethodException& other);
@@ -40,6 +36,7 @@ class HttpMethodException : public BaseException {
 };
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace http
+}  // namespace domain
 
 #endif  // HTTP_METHOD_EXCEPTION_HPP
