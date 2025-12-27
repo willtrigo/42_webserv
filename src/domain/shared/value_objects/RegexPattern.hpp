@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   RegexPattern.hpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/21 10:51:25 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 18:29:29 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 20:03:11 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@
 
 namespace domain {
 namespace shared {
-namespace value_objects {
+namespace exceptions {
 
 class RegexPattern {
  public:
@@ -117,7 +117,7 @@ class RegexPattern {
                                  const std::string& specialChars);
 };
 
-}  // namespace value_objects
+}  // namespace exceptions
 }  // namespace shared
 }  // namespace domain
 

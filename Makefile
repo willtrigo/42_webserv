@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/27 19:59:43 by umeneses         ###   ########.fr        #
+#    Updated: 2025/12/27 20:01:49 by umeneses         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -83,8 +83,10 @@ SLEEP                           := sleep 0.01
 NAME_OUTPUT                     = webserv
 NAME                            = $(BIN_DIR)$(NAME_OUTPUT)
 
-SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_EXCEPTION_DIR), ErrorCodeException.cpp)
-SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_VALUE_OBJECTS_DIR), ErrorCode.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_EXCEPTION_DIR), ErrorCodeException.cpp \
+																	 RegexPatternException.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_VALUE_OBJECTS_DIR), ErrorCode.cpp \
+																	 RegexPattern.cpp)
 
 # SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_ENTITIES_DIR), PathException.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_EXCEPTIONS_DIR), ErrorPageException.cpp \
@@ -106,6 +108,7 @@ SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_HTTP_VALUE_OBJECTS_
 																	 HttpMethod.cpp \
 																	 Port.cpp \
 																	 QueryStringBuilder.cpp \
+																	 Size.cpp \
 																	 Uri.cpp)
 
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_EXCEPTION_DIR), ErrorCodeException.cpp \
@@ -140,23 +143,30 @@ SRCS_FILES                      += $(addprefix $(SRCS_LOGGING_DIR), Logger.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_CLI_DIR), CliController.cpp \
 																	 CliView.cpp)
 
-SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseException.cpp)
-# 																	 CgiConfigException.cpp \
-# 																	 ConfigException.cpp \
-# 																	 DirectoryListerException.cpp \
-# 																	 ErrorPageException.cpp \
-# 																	 FileHandlerException.cpp \
-# 																	 FileSystemHelperException.cpp \
-# 																	 HttpConfigException.cpp \
-# 																	 ListenDirectiveException.cpp \
-# 																	 LocationConfigException.cpp \
-# 																	 PathResolverException.cpp \
-# 																	 RequestParserException.cpp \
-# 																	 RouteException.cpp \
-# 																	 RouteMatcherException.cpp \
-# 																	 ServerConfigException.cpp \
-# 																	 UploadCondifException.cpp \
-# 																	 UriException.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseException.cpp \
+																	 CgiConfigException.cpp \
+																	 ConfigException.cpp \
+																	 DirectoryListerException.cpp \
+																	 ErrorPageException.cpp \
+																	 FileHandlerException.cpp \
+																	 FileSystemHelperException.cpp \
+																	 HostException.cpp \
+																	 HttpConfigException.cpp \
+																	 HttpMethodException.cpp \
+																	 ListenDirectiveException.cpp \
+																	 LocationConfigException.cpp \
+																	 PathException.cpp \
+																	 PathResolverException.cpp \
+																	 PermissionException.cpp \
+																	 PortException.cpp \
+																	 QueryStringBuilderException.cpp \
+																	 RequestParserException.cpp \
+																	 RouteException.cpp \
+																	 RouteMatcherException.cpp \
+																	 ServerConfigException.cpp \
+																	 SizeException.cpp \
+																	 UploadCondifException.cpp \
+																	 UriException.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_UTILS_DIR), TerminalColor.cpp)
 
 SRCS_FILES                      += $(addprefix $(SRCS_DIR), main.cpp)
