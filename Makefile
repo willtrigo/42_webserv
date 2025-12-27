@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/27 20:07:30 by umeneses         ###   ########.fr        #
+#    Updated: 2025/12/27 20:07:50 by umeneses         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -83,11 +83,13 @@ SLEEP                           := sleep 0.01
 NAME_OUTPUT                     = webserv
 NAME                            = $(BIN_DIR)$(NAME_OUTPUT)
 
-SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_HTTP_EXCEPTIONS_DIR), HttpMethodException.cpp \
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_HTTP_EXCEPTIONS_DIR), HostException.cpp \
+																	 HttpMethodException.cpp \
 																	 PortException.cpp \
 																	 QueryStringBuilderException.cpp \
 																	 UriException.cpp)
-SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_HTTP_VALUE_OBJECTS_DIR), HttpMethod.cpp \
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_HTTP_VALUE_OBJECTS_DIR), Host.cpp \
+																	 HttpMethod.cpp \
 																	 Port.cpp \
 																	 QueryStringBuilder.cpp \
 																	 Uri.cpp)
@@ -160,7 +162,6 @@ SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseExcep
 																	 ErrorPageException.cpp \
 																	 FileHandlerException.cpp \
 																	 FileSystemHelperException.cpp \
-																	 HostException.cpp \
 																	 HttpConfigException.cpp \
 																	 ListenDirectiveException.cpp \
 																	 LocationConfigException.cpp \
