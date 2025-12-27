@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/14 15:43:45 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/18 11:16:17 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/19 11:18:14 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,7 @@ namespace ports {
 class IFileWriter {
  public:
   virtual ~IFileWriter() {}
-  
+
   virtual void write(const std::string& str, bool newLine) = 0;
   virtual void writeToFile(const std::string& filename,
                            std::ios_base::openmode mode,
