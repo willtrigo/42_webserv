@@ -6,18 +6,19 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 01:10:52 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/20 01:32:18 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 04:00:54 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "domain/value_objects/Path.hpp"
-#include "shared/exceptions/PathException.hpp"
+#include "domain/filesystem/exceptions/PathException.hpp"
+#include "domain/filesystem/value_objects/Path.hpp"
 
 #include <algorithm>
 #include <cctype>
 #include <sstream>
 
 namespace domain {
+namespace filesystem {
 namespace value_objects {
 
 const std::string Path::CURRENT_DIR = ".";
@@ -107,7 +108,7 @@ bool Path::isValidPath(const std::string& path, bool mustBeAbsolute) {
   try {
     validatePathString(path, mustBeAbsolute);
     return true;
-  } catch (const shared::exceptions::PathException&) {
+  } catch (const exceptions::PathException&) {
     return false;
   }
 }
@@ -194,83 +195,79 @@ void Path::validate() const { validatePathString(m_path, m_isAbsolute); }
 
 void Path::validatePathString(const std::string& path, bool mustBeAbsolute) {
   validateBasicProperties(path, mustBeAbsolute);
-  
+
   validatePathSecurity(path);
-  
+
   if (!path.empty() && path[path.length() - 1] != PATH_SEPARATOR) {
     validateFilenameProperties(path);
   }
 }
 
-void Path::validateBasicProperties(const std::string& path, bool mustBeAbsolute) {
+void Path::validateBasicProperties(const std::string& path,
+                                   bool mustBeAbsolute) {
   if (path.empty()) {
-    throw shared::exceptions::PathException(
-        "Path cannot be empty",
-        shared::exceptions::PathException::EMPTY_PATH);
+    throw exceptions::PathException(
+        "Path cannot be empty", exceptions::PathException::EMPTY_PATH);
   }
-  
+
   if (path.length() > MAX_PATH_LENGTH) {
     std::ostringstream oss;
     oss << "Path too long: " << path.length()
         << " characters (max: " << MAX_PATH_LENGTH << ")";
-    throw shared::exceptions::PathException(
-        oss.str(),
-        shared::exceptions::PathException::TOO_LONG);
+    throw exceptions::PathException(
+        oss.str(), exceptions::PathException::TOO_LONG);
   }
-  
+
   if (mustBeAbsolute && (path.empty() || path[0] != PATH_SEPARATOR)) {
-    throw shared::exceptions::PathException(
+    throw exceptions::PathException(
         "Path must be absolute: '" + path + "'",
-        shared::exceptions::PathException::NOT_ABSOLUTE);
+        exceptions::PathException::NOT_ABSOLUTE);
   }
-  
+
   if (!mustBeAbsolute && !path.empty() && path[0] == PATH_SEPARATOR) {
-    throw shared::exceptions::PathException(
+    throw exceptions::PathException(
         "Path must be relative: '" + path + "'",
-        shared::exceptions::PathException::NOT_RELATIVE);
+        exceptions::PathException::NOT_RELATIVE);
   }
 }
 
 void Path::validatePathSecurity(const std::string& path) {
   if (containsInvalidChars(path)) {
-    throw shared::exceptions::PathException(
+    throw exceptions::PathException(
         "Path contains invalid characters: '" + path + "'",
-        shared::exceptions::PathException::INVALID_CHARACTER);
+        exceptions::PathException::INVALID_CHARACTER);
   }
-  
+
   if (hasDirectoryTraversal(path)) {
-    throw shared::exceptions::PathException(
+    throw exceptions::PathException(
         "Path contains directory traversal: '" + path + "'",
-        shared::exceptions::PathException::TRAVERSAL_ATTEMPT);
+        exceptions::PathException::TRAVERSAL_ATTEMPT);
   }
 }
 
 void Path::validateFilenameProperties(const std::string& path) {
   std::size_t lastSlash = path.find_last_of(PATH_SEPARATOR);
-  std::string filename = (lastSlash == std::string::npos) 
-                        ? path 
-                        : path.substr(lastSlash + 1);
-  
+  std::string filename =
+      (lastSlash == std::string::npos) ? path : path.substr(lastSlash + 1);
+
   if (filename.length() > MAX_FILENAME_LENGTH) {
     std::ostringstream oss;
-    oss << "Filename too long: '" << filename << "' ("
-        << filename.length() << " characters, max: " 
-        << MAX_FILENAME_LENGTH << ")";
-    throw shared::exceptions::PathException(
-        oss.str(),
-        shared::exceptions::PathException::TOO_LONG);
+    oss << "Filename too long: '" << filename << "' (" << filename.length()
+        << " characters, max: " << MAX_FILENAME_LENGTH << ")";
+    throw exceptions::PathException(
+        oss.str(), exceptions::PathException::TOO_LONG);
   }
-  
+
   if (filename.find_first_of(INVALID_FILENAME_CHARS) != std::string::npos) {
-    throw shared::exceptions::PathException(
+    throw exceptions::PathException(
         "Filename contains invalid characters: '" + filename + "'",
-        shared::exceptions::PathException::INVALID_FILENAME);
+        exceptions::PathException::INVALID_FILENAME);
   }
-  
+
   if (isReservedFilename(filename)) {
-    throw shared::exceptions::PathException(
+    throw exceptions::PathException(
         "Filename is reserved: '" + filename + "'",
-        shared::exceptions::PathException::INVALID_FILENAME);
+        exceptions::PathException::INVALID_FILENAME);
   }
 }
 
@@ -378,4 +375,5 @@ std::string Path::normalizeComponents(
 }
 
 }  // namespace value_objects
+}  // namespace filesystem
 }  // namespace domain

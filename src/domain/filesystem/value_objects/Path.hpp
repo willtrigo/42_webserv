@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 01:07:22 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/20 01:29:34 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 03:59:11 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@
 #include <vector>
 
 namespace domain {
+namespace filesystem {
 namespace value_objects {
 
 class Path {
@@ -88,6 +89,7 @@ class Path {
 };
 
 }  // namespace value_objects
+}  // namespace filesystem
 }  // namespace domain
 
 #endif  // PATH_HPP
