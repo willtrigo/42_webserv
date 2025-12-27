@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/27 20:06:45 by umeneses         ###   ########.fr        #
+#    Updated: 2025/12/27 20:07:10 by umeneses         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -84,8 +84,10 @@ NAME_OUTPUT                     = webserv
 NAME                            = $(BIN_DIR)$(NAME_OUTPUT)
 
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_HTTP_EXCEPTIONS_DIR), PortException.cpp \
+																	 QueryStringBuilderException.cpp \
 																	 UriException.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_HTTP_VALUE_OBJECTS_DIR), Port.cpp \
+																	 QueryStringBuilder.cpp \
 																	 Uri.cpp)
 
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_EXCEPTION_DIR), ErrorCodeException.cpp \
@@ -164,7 +166,6 @@ SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseExcep
 																	 PathException.cpp \
 																	 PathResolverException.cpp \
 																	 PermissionException.cpp \
-																	 QueryStringBuilderException.cpp \
 																	 RequestParserException.cpp \
 																	 RouteException.cpp \
 																	 RouteMatcherException.cpp \
