@@ -6,19 +6,20 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 13:12:24 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/22 13:15:10 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 18:41:16 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "domain/entities/CgiConfig.hpp"
-#include "shared/exceptions/CgiConfigException.hpp"
+#include "domain/configuration/exceptions/CgiConfigException.hpp"
+#include "domain/configuration/value_objects/CgiConfig.hpp"
 
 #include <cctype>
 #include <cstring>
 #include <sstream>
 
 namespace domain {
-namespace entities {
+namespace configuration {
+namespace value_objects {
 
 const std::string CgiConfig::DEFAULT_QUERY_STRING = "QUERY_STRING";
 const std::string CgiConfig::DEFAULT_REQUEST_METHOD = "REQUEST_METHOD";
@@ -37,14 +38,15 @@ const std::string CgiConfig::DEFAULT_REMOTE_PORT = "REMOTE_PORT";
 const std::string CgiConfig::DEFAULT_REQUEST_URI = "REQUEST_URI";
 
 CgiConfig::CgiConfig()
-    : m_cgiRoot(value_objects::Path::rootDirectory()),
-      m_extensionPattern(value_objects::RegexPattern::phpExtension()) {
+    : m_cgiRoot(filesystem::value_objects::Path::rootDirectory()),
+      m_extensionPattern(shared::value_objects::RegexPattern::phpExtension()) {
   initializeDefaultParameters();
 }
 
-CgiConfig::CgiConfig(const std::string& scriptPath,
-                     const value_objects::Path& cgiRoot,
-                     const value_objects::RegexPattern& extensionPattern)
+CgiConfig::CgiConfig(
+    const std::string& scriptPath,
+    const filesystem::value_objects::Path& cgiRoot,
+    const shared::value_objects::RegexPattern& extensionPattern)
     : m_scriptPath(normalizeScriptPath(scriptPath)),
       m_cgiRoot(cgiRoot),
       m_extensionPattern(extensionPattern) {
@@ -72,9 +74,12 @@ void CgiConfig::copyFrom(const CgiConfig& other) {
 
 const std::string& CgiConfig::getScriptPath() const { return m_scriptPath; }
 
-const value_objects::Path& CgiConfig::getCgiRoot() const { return m_cgiRoot; }
+const filesystem::value_objects::Path& CgiConfig::getCgiRoot() const {
+  return m_cgiRoot;
+}
 
-const value_objects::RegexPattern& CgiConfig::getExtensionPattern() const {
+const shared::value_objects::RegexPattern& CgiConfig::getExtensionPattern()
+    const {
   return m_extensionPattern;
 }
 
@@ -98,42 +103,42 @@ void CgiConfig::setScriptPath(const std::string& scriptPath) {
   std::string normalizedPath = normalizeScriptPath(scriptPath);
 
   if (normalizedPath.empty()) {
-    throw shared::exceptions::CgiConfigException(
+    throw exceptions::CgiConfigException(
         "CGI script path cannot be empty",
-        shared::exceptions::CgiConfigException::EMPTY_SCRIPT_PATH);
+        exceptions::CgiConfigException::EMPTY_SCRIPT_PATH);
   }
 
   if (!isAbsolutePath(normalizedPath)) {
-    throw shared::exceptions::CgiConfigException(
+    throw exceptions::CgiConfigException(
         "CGI script path must be absolute: " + normalizedPath,
-        shared::exceptions::CgiConfigException::INVALID_SCRIPT_PATH);
+        exceptions::CgiConfigException::INVALID_SCRIPT_PATH);
   }
 
   m_scriptPath = normalizedPath;
 }
 
-void CgiConfig::setCgiRoot(const value_objects::Path& cgiRoot) {
+void CgiConfig::setCgiRoot(const filesystem::value_objects::Path& cgiRoot) {
   if (cgiRoot.isEmpty()) {
-    throw shared::exceptions::CgiConfigException(
+    throw exceptions::CgiConfigException(
         "CGI root directory cannot be empty",
-        shared::exceptions::CgiConfigException::EMPTY_CGI_ROOT);
+        exceptions::CgiConfigException::EMPTY_CGI_ROOT);
   }
 
   if (!cgiRoot.isAbsolute()) {
-    throw shared::exceptions::CgiConfigException(
+    throw exceptions::CgiConfigException(
         "CGI root directory must be absolute",
-        shared::exceptions::CgiConfigException::INVALID_CGI_ROOT);
+        exceptions::CgiConfigException::INVALID_CGI_ROOT);
   }
 
   m_cgiRoot = cgiRoot;
 }
 
 void CgiConfig::setExtensionPattern(
-    const value_objects::RegexPattern& pattern) {
+    const shared::value_objects::RegexPattern& pattern) {
   if (pattern.isEmpty()) {
-    throw shared::exceptions::CgiConfigException(
+    throw exceptions::CgiConfigException(
         "CGI extension pattern cannot be empty",
-        shared::exceptions::CgiConfigException::INVALID_EXTENSION_PATTERN);
+        exceptions::CgiConfigException::INVALID_EXTENSION_PATTERN);
   }
 
   m_extensionPattern = pattern;
@@ -144,23 +149,23 @@ void CgiConfig::addParameter(const std::string& name,
   if (!isValidParameterName(name)) {
     std::ostringstream oss;
     oss << "Invalid CGI parameter name: '" << name << "'";
-    throw shared::exceptions::CgiConfigException(
-        oss.str(), shared::exceptions::CgiConfigException::INVALID_CGI_PARAM);
+    throw exceptions::CgiConfigException(
+        oss.str(), exceptions::CgiConfigException::INVALID_CGI_PARAM);
   }
 
   if (!isValidParameterValue(value)) {
     std::ostringstream oss;
     oss << "Invalid CGI parameter value for '" << name << "': '" << value
         << "'";
-    throw shared::exceptions::CgiConfigException(
-        oss.str(), shared::exceptions::CgiConfigException::INVALID_CGI_PARAM);
+    throw exceptions::CgiConfigException(
+        oss.str(), exceptions::CgiConfigException::INVALID_CGI_PARAM);
   }
 
   if (m_parameters.find(name) != m_parameters.end()) {
     std::ostringstream oss;
     oss << "Duplicate CGI parameter: '" << name << "'";
-    throw shared::exceptions::CgiConfigException(
-        oss.str(), shared::exceptions::CgiConfigException::DUPLICATE_CGI_PARAM);
+    throw exceptions::CgiConfigException(
+        oss.str(), exceptions::CgiConfigException::DUPLICATE_CGI_PARAM);
   }
 
   m_parameters[name] = value;
@@ -176,16 +181,16 @@ void CgiConfig::setParameters(const ParameterMap& parameters) {
     if (!isValidParameterName(it->first)) {
       std::ostringstream oss;
       oss << "Invalid CGI parameter name in batch: '" << it->first << "'";
-      throw shared::exceptions::CgiConfigException(
-          oss.str(), shared::exceptions::CgiConfigException::INVALID_CGI_PARAM);
+      throw exceptions::CgiConfigException(
+          oss.str(), exceptions::CgiConfigException::INVALID_CGI_PARAM);
     }
 
     if (!isValidParameterValue(it->second)) {
       std::ostringstream oss;
       oss << "Invalid CGI parameter value in batch for '" << it->first << "': '"
           << it->second << "'";
-      throw shared::exceptions::CgiConfigException(
-          oss.str(), shared::exceptions::CgiConfigException::INVALID_CGI_PARAM);
+      throw exceptions::CgiConfigException(
+          oss.str(), exceptions::CgiConfigException::INVALID_CGI_PARAM);
     }
   }
 
@@ -195,7 +200,8 @@ void CgiConfig::setParameters(const ParameterMap& parameters) {
 CgiConfig CgiConfig::createPhpCgi(const std::string& phpBinary) {
   CgiConfig config;
   config.setScriptPath(phpBinary);
-  config.setExtensionPattern(value_objects::RegexPattern::phpExtension());
+  config.setExtensionPattern(
+      shared::value_objects::RegexPattern::phpExtension());
 
   config.addParameter("REDIRECT_STATUS", "200");
   config.addParameter("PHP_VALUE", "auto_prepend_file=none");
@@ -206,7 +212,8 @@ CgiConfig CgiConfig::createPhpCgi(const std::string& phpBinary) {
 CgiConfig CgiConfig::createPythonCgi(const std::string& pythonBinary) {
   CgiConfig config;
   config.setScriptPath(pythonBinary);
-  config.setExtensionPattern(value_objects::RegexPattern::pythonExtension());
+  config.setExtensionPattern(
+      shared::value_objects::RegexPattern::pythonExtension());
 
   config.addParameter("PYTHONPATH", "/usr/lib/python3.8");
 
@@ -217,8 +224,9 @@ CgiConfig CgiConfig::createPerlCgi(const std::string& perlBinary) {
   CgiConfig config;
   config.setScriptPath(perlBinary);
 
-  value_objects::RegexPattern perlPattern(
-      "\\.(pl|cgi)$", value_objects::RegexPattern::FLAG_CASE_INSENSITIVE);
+  shared::value_objects::RegexPattern perlPattern(
+      "\\.(pl|cgi)$",
+      shared::value_objects::RegexPattern::FLAG_CASE_INSENSITIVE);
   config.setExtensionPattern(perlPattern);
 
   config.addParameter("PERL5LIB", "/usr/local/lib/perl5");
@@ -230,7 +238,7 @@ bool CgiConfig::isValid() const {
   try {
     validate();
     return true;
-  } catch (const shared::exceptions::CgiConfigException&) {
+  } catch (const exceptions::CgiConfigException&) {
     return false;
   }
 }
@@ -250,46 +258,45 @@ void CgiConfig::validate() const {
     if (!hasParameter(REQUIRED_PARAMS[i])) {
       std::ostringstream oss;
       oss << "Missing required CGI parameter: " << REQUIRED_PARAMS[i];
-      throw shared::exceptions::CgiConfigException(
-          oss.str(),
-          shared::exceptions::CgiConfigException::MISSING_REQUIRED_PARAMS);
+      throw exceptions::CgiConfigException(
+          oss.str(), exceptions::CgiConfigException::MISSING_REQUIRED_PARAMS);
     }
   }
 }
 
 void CgiConfig::validateScriptPath() const {
   if (m_scriptPath.empty()) {
-    throw shared::exceptions::CgiConfigException(
+    throw exceptions::CgiConfigException(
         "CGI script path cannot be empty",
-        shared::exceptions::CgiConfigException::EMPTY_SCRIPT_PATH);
+        exceptions::CgiConfigException::EMPTY_SCRIPT_PATH);
   }
 
   if (!isAbsolutePath(m_scriptPath)) {
-    throw shared::exceptions::CgiConfigException(
+    throw exceptions::CgiConfigException(
         "CGI script path must be absolute: " + m_scriptPath,
-        shared::exceptions::CgiConfigException::INVALID_SCRIPT_PATH);
+        exceptions::CgiConfigException::INVALID_SCRIPT_PATH);
   }
 }
 
 void CgiConfig::validateCgiRoot() const {
   if (m_cgiRoot.isEmpty()) {
-    throw shared::exceptions::CgiConfigException(
+    throw exceptions::CgiConfigException(
         "CGI root directory cannot be empty",
-        shared::exceptions::CgiConfigException::EMPTY_CGI_ROOT);
+        exceptions::CgiConfigException::EMPTY_CGI_ROOT);
   }
 
   if (!m_cgiRoot.isAbsolute()) {
-    throw shared::exceptions::CgiConfigException(
+    throw exceptions::CgiConfigException(
         "CGI root directory must be absolute",
-        shared::exceptions::CgiConfigException::INVALID_CGI_ROOT);
+        exceptions::CgiConfigException::INVALID_CGI_ROOT);
   }
 }
 
 void CgiConfig::validateExtensionPattern() const {
   if (m_extensionPattern.isEmpty()) {
-    throw shared::exceptions::CgiConfigException(
+    throw exceptions::CgiConfigException(
         "CGI extension pattern cannot be empty",
-        shared::exceptions::CgiConfigException::INVALID_EXTENSION_PATTERN);
+        exceptions::CgiConfigException::INVALID_EXTENSION_PATTERN);
   }
 }
 
@@ -299,16 +306,16 @@ void CgiConfig::validateParameters() const {
     if (!isValidParameterName(it->first)) {
       std::ostringstream oss;
       oss << "Invalid CGI parameter name: '" << it->first << "'";
-      throw shared::exceptions::CgiConfigException(
-          oss.str(), shared::exceptions::CgiConfigException::INVALID_CGI_PARAM);
+      throw exceptions::CgiConfigException(
+          oss.str(), exceptions::CgiConfigException::INVALID_CGI_PARAM);
     }
 
     if (!isValidParameterValue(it->second)) {
       std::ostringstream oss;
       oss << "Invalid CGI parameter value for '" << it->first << "': '"
           << it->second << "'";
-      throw shared::exceptions::CgiConfigException(
-          oss.str(), shared::exceptions::CgiConfigException::INVALID_CGI_PARAM);
+      throw exceptions::CgiConfigException(
+          oss.str(), exceptions::CgiConfigException::INVALID_CGI_PARAM);
     }
   }
 }
@@ -364,8 +371,8 @@ bool CgiConfig::operator!=(const CgiConfig& other) const {
 
 void CgiConfig::clear() {
   m_scriptPath.clear();
-  m_cgiRoot = value_objects::Path::rootDirectory();
-  m_extensionPattern = value_objects::RegexPattern::phpExtension();
+  m_cgiRoot = filesystem::value_objects::Path::rootDirectory();
+  m_extensionPattern = shared::value_objects::RegexPattern::phpExtension();
   m_parameters.clear();
   initializeDefaultParameters();
 }
@@ -433,5 +440,6 @@ bool CgiConfig::isAbsolutePath(const std::string& path) {
   return !path.empty() && path[0] == '/';
 }
 
-}  // namespace entities
+}  // namespace value_objects
+}  // namespace configuration
 }  // namespace domain
