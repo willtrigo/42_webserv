@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 23:40:45 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/19 23:50:06 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 02:26:50 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,8 @@
 
 #include "shared/exceptions/BaseException.hpp"
 
-namespace shared {
+namespace domain {
+namespace http {
 namespace exceptions {
 
 class PortException : public shared::exceptions::BaseException {
@@ -42,6 +43,7 @@ class PortException : public shared::exceptions::BaseException {
 };
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace http
+}  // namespace domain
 
 #endif  // PORT_EXCEPTION_HPP

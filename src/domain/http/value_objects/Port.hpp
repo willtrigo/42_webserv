@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 19:12:04 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/20 00:40:21 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 02:28:20 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 #include <string>
 
 namespace domain {
+namespace http {
 namespace value_objects {
 
 class Port {
@@ -78,6 +79,7 @@ class Port {
 };
 
 }  // namespace value_objects
+}  // namespace http
 }  // namespace domain
 
 #endif  // PORT_HPP
