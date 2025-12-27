@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 11:08:29 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 01:51:57 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 17:19:51 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -90,7 +90,7 @@ class ErrorCode {
     STATUS_EARLY_HINTS = 103
   };
 
-  static const int BASE_DECIMAL;
+  static const int BASE_DECIMAL = 10;
 
   ErrorCode();
   explicit ErrorCode(unsigned int code);

@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 11:20:04 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 01:55:13 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 16:53:06 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -144,8 +144,8 @@ void ErrorCode::validate() const {
     std::ostringstream oss;
     oss << "Error code out of range: " << m_value
         << " (valid range: " << MIN_CODE << "-" << MAX_CODE << ")";
-    throw shared::exceptions::ErrorCodeException(
-        oss.str(), shared::exceptions::ErrorCodeException::OUT_OF_RANGE);
+    throw exceptions::ErrorCodeException(
+        oss.str(), exceptions::ErrorCodeException::OUT_OF_RANGE);
   }
 }
 
@@ -277,15 +277,15 @@ bool ErrorCode::isConflict() const { return m_value == STATUS_CONFLICT; }
 
 unsigned int ErrorCode::parseCodeString(const std::string& codeString) {
   if (codeString.empty()) {
-    throw shared::exceptions::ErrorCodeException(
+    throw exceptions::ErrorCodeException(
         "Error code string cannot be empty",
-        shared::exceptions::ErrorCodeException::EMPTY_STRING);
+        exceptions::ErrorCodeException::EMPTY_STRING);
   }
 
   if (!isAllDigits(codeString)) {
-    throw shared::exceptions::ErrorCodeException(
+    throw exceptions::ErrorCodeException(
         "Error code contains non-digit characters: '" + codeString + "'",
-        shared::exceptions::ErrorCodeException::INVALID_CODE);
+        exceptions::ErrorCodeException::INVALID_CODE);
   }
 
   char* endPointer = NULL;
@@ -293,17 +293,17 @@ unsigned int ErrorCode::parseCodeString(const std::string& codeString) {
       std::strtoul(codeString.c_str(), &endPointer, BASE_DECIMAL);
 
   if (endPointer == codeString.c_str() || *endPointer != '\0') {
-    throw shared::exceptions::ErrorCodeException(
+    throw exceptions::ErrorCodeException(
         "Failed to convert error code string to number: '" + codeString + "'",
-        shared::exceptions::ErrorCodeException::CONVERSION_FAILED);
+        exceptions::ErrorCodeException::CONVERSION_FAILED);
   }
 
   if (result > static_cast<unsigned long>(MAX_CODE)) {
     std::ostringstream oss;
     oss << "Error code value out of range: '" << codeString
         << "' (max: " << MAX_CODE << ")";
-    throw shared::exceptions::ErrorCodeException(
-        oss.str(), shared::exceptions::ErrorCodeException::OUT_OF_RANGE);
+    throw exceptions::ErrorCodeException(
+        oss.str(), exceptions::ErrorCodeException::OUT_OF_RANGE);
   }
 
   return static_cast<unsigned int>(result);

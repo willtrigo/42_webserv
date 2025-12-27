@@ -6,20 +6,21 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/25 21:59:54 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/26 02:14:06 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 16:20:03 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "domain/entities/ErrorPage.hpp"
-#include "domain/value_objects/ErrorCode.hpp"
-#include "domain/value_objects/Path.hpp"
-#include "domain/value_objects/Size.hpp"
-#include "shared/exceptions/ErrorPageException.hpp"
+#include "domain/configuration/value_objects/ErrorPage.hpp"
+#include "domain/configuration/exceptions/ErrorPageException.hpp"
+#include "domain/filesystem/value_objects/Path.hpp"
+#include "domain/filesystem/value_objects/Size.hpp"
+#include "domain/shared/value_objects/ErrorCode.hpp"
 
 #include <fstream>
 #include <sstream>
 
 namespace domain {
+namespace configuration {
 namespace entities {
 
 const std::string ErrorPage::DEFAULT_CONTENT_TYPE = "text/html";
@@ -55,16 +56,17 @@ const std::string ErrorPage::DEFAULT_ERROR_PAGE_TEMPLATE =
     "</body>\n"
     "</html>";
 
-const value_objects::Path ErrorPage::DEFAULT_ERROR_PAGES_DIR =
-    value_objects::Path("error_pages");
+const filesystem::value_objects::Path ErrorPage::DEFAULT_ERROR_PAGES_DIR =
+    filesystem::value_objects::Path("error_pages");
 
 ErrorPage::ErrorPage()
-    : m_errorCode(value_objects::ErrorCode::STATUS_INTERNAL_SERVER_ERROR),
+    : m_errorCode(
+          shared::value_objects::ErrorCode::STATUS_INTERNAL_SERVER_ERROR),
       m_contentType(DEFAULT_CONTENT_TYPE),
       m_hasFile(false),
       m_hasContent(false) {}
 
-ErrorPage::ErrorPage(const value_objects::ErrorCode& errorCode)
+ErrorPage::ErrorPage(const shared::value_objects::ErrorCode& errorCode)
     : m_errorCode(errorCode),
       m_contentType(DEFAULT_CONTENT_TYPE),
       m_hasFile(false),
@@ -74,7 +76,7 @@ ErrorPage::ErrorPage(const value_objects::ErrorCode& errorCode)
   validate();
 }
 
-ErrorPage::ErrorPage(const value_objects::ErrorCode& errorCode,
+ErrorPage::ErrorPage(const shared::value_objects::ErrorCode& errorCode,
                      const std::string& content)
     : m_errorCode(errorCode),
       m_content(content),
@@ -84,8 +86,8 @@ ErrorPage::ErrorPage(const value_objects::ErrorCode& errorCode,
   validate();
 }
 
-ErrorPage::ErrorPage(const value_objects::ErrorCode& errorCode,
-                     const value_objects::Path& filePath)
+ErrorPage::ErrorPage(const shared::value_objects::ErrorCode& errorCode,
+                     const filesystem::value_objects::Path& filePath)
     : m_errorCode(errorCode),
       m_filePath(filePath),
       m_contentType(DEFAULT_CONTENT_TYPE),
@@ -95,7 +97,7 @@ ErrorPage::ErrorPage(const value_objects::ErrorCode& errorCode,
   validate();
 }
 
-ErrorPage::ErrorPage(const value_objects::ErrorCode& errorCode,
+ErrorPage::ErrorPage(const shared::value_objects::ErrorCode& errorCode,
                      const std::string& content, const std::string& contentType)
     : m_errorCode(errorCode),
       m_content(content),
@@ -105,8 +107,8 @@ ErrorPage::ErrorPage(const value_objects::ErrorCode& errorCode,
   validate();
 }
 
-ErrorPage::ErrorPage(const value_objects::ErrorCode& errorCode,
-                     const value_objects::Path& filePath,
+ErrorPage::ErrorPage(const shared::value_objects::ErrorCode& errorCode,
+                     const filesystem::value_objects::Path& filePath,
                      const std::string& contentType)
     : m_errorCode(errorCode),
       m_filePath(filePath),
@@ -139,16 +141,20 @@ ErrorPage& ErrorPage::operator=(const ErrorPage& other) {
   return *this;
 }
 
-value_objects::ErrorCode ErrorPage::getErrorCode() const { return m_errorCode; }
+shared::value_objects::ErrorCode ErrorPage::getErrorCode() const {
+  return m_errorCode;
+}
 
 std::string ErrorPage::getContent() const { return m_content; }
 
-value_objects::Path ErrorPage::getFilePath() const { return m_filePath; }
+filesystem::value_objects::Path ErrorPage::getFilePath() const {
+  return m_filePath;
+}
 
 std::string ErrorPage::getContentType() const { return m_contentType; }
 
-value_objects::Size ErrorPage::getContentSize() const {
-  return value_objects::Size(m_content.size());
+filesystem::value_objects::Size ErrorPage::getContentSize() const {
+  return filesystem::value_objects::Size(m_content.size());
 }
 
 std::string ErrorPage::toString() const {
@@ -164,7 +170,8 @@ bool ErrorPage::isValidErrorPage(const std::string& content) {
   return content.size() <= MAX_CONTENT_LENGTH;
 }
 
-bool ErrorPage::isValidErrorPageFile(const value_objects::Path& filePath) {
+bool ErrorPage::isValidErrorPageFile(
+    const filesystem::value_objects::Path& filePath) {
   if (!filePath.isAbsolute()) {
     return false;
   }
@@ -199,7 +206,7 @@ void ErrorPage::setContent(const std::string& content) {
   validateContent();
 }
 
-void ErrorPage::setFilePath(const value_objects::Path& filePath) {
+void ErrorPage::setFilePath(const filesystem::value_objects::Path& filePath) {
   m_filePath = filePath;
   m_hasFile = true;
   m_hasContent = false;
@@ -212,7 +219,8 @@ void ErrorPage::setContentType(const std::string& contentType) {
   validateContentType();
 }
 
-void ErrorPage::setErrorCode(const value_objects::ErrorCode& errorCode) {
+void ErrorPage::setErrorCode(
+    const shared::value_objects::ErrorCode& errorCode) {
   m_errorCode = errorCode;
 }
 
@@ -285,56 +293,60 @@ ErrorPage ErrorPage::fromString(const std::string& errorPageString) {
   std::string content;
 
   if (!std::getline(iss, codeStr, '|') || !std::getline(iss, content)) {
-    throw shared::exceptions::ErrorPageException(
+    throw exceptions::ErrorPageException(
         "Invalid error page string format: '" + errorPageString + "'",
-        shared::exceptions::ErrorPageException::INVALID_FORMAT);
+        exceptions::ErrorPageException::INVALID_FORMAT);
   }
 
-  value_objects::ErrorCode code = value_objects::ErrorCode::fromString(codeStr);
+  shared::value_objects::ErrorCode code =
+      shared::value_objects::ErrorCode::fromString(codeStr);
   return ErrorPage(code, content);
 }
 
-ErrorPage ErrorPage::fromFile(const value_objects::Path& filePath,
-                              const value_objects::ErrorCode& errorCode) {
+ErrorPage ErrorPage::fromFile(
+    const filesystem::value_objects::Path& filePath,
+    const shared::value_objects::ErrorCode& errorCode) {
   return ErrorPage(errorCode, filePath);
 }
 
-ErrorPage ErrorPage::fromContent(const std::string& content,
-                                 const value_objects::ErrorCode& errorCode) {
+ErrorPage ErrorPage::fromContent(
+    const std::string& content,
+    const shared::value_objects::ErrorCode& errorCode) {
   return ErrorPage(errorCode, content);
 }
 
-ErrorPage ErrorPage::createDefault(const value_objects::ErrorCode& errorCode) {
+ErrorPage ErrorPage::createDefault(
+    const shared::value_objects::ErrorCode& errorCode) {
   return ErrorPage(errorCode);
 }
 
 ErrorPage ErrorPage::createHtmlDefault(
-    const value_objects::ErrorCode& errorCode) {
+    const shared::value_objects::ErrorCode& errorCode) {
   std::string content = generateHtmlDefaultContent(errorCode);
   return ErrorPage(errorCode, content, HTML_CONTENT_TYPE);
 }
 
 ErrorPage ErrorPage::createPlainTextDefault(
-    const value_objects::ErrorCode& errorCode) {
+    const shared::value_objects::ErrorCode& errorCode) {
   std::string content = generatePlainTextDefaultContent(errorCode);
   return ErrorPage(errorCode, content, PLAIN_TEXT_CONTENT_TYPE);
 }
 
-std::map<value_objects::ErrorCode, ErrorPage>
+std::map<shared::value_objects::ErrorCode, ErrorPage>
 ErrorPage::createDefaultErrorPages() {
-  std::map<value_objects::ErrorCode, ErrorPage> errorPages;
+  std::map<shared::value_objects::ErrorCode, ErrorPage> errorPages;
 
-  value_objects::ErrorCode commonCodes[] = {
-      value_objects::ErrorCode::badRequest(),
-      value_objects::ErrorCode::notFound(),
-      value_objects::ErrorCode::methodNotAllowed(),
-      value_objects::ErrorCode::payloadTooLarge(),
-      value_objects::ErrorCode::internalServerError(),
-      value_objects::ErrorCode::serviceUnavailable(),
-      value_objects::ErrorCode::forbidden(),
-      value_objects::ErrorCode::unauthorized(),
-      value_objects::ErrorCode::requestTimeout(),
-      value_objects::ErrorCode::conflict()};
+  shared::value_objects::ErrorCode commonCodes[] = {
+      shared::value_objects::ErrorCode::badRequest(),
+      shared::value_objects::ErrorCode::notFound(),
+      shared::value_objects::ErrorCode::methodNotAllowed(),
+      shared::value_objects::ErrorCode::payloadTooLarge(),
+      shared::value_objects::ErrorCode::internalServerError(),
+      shared::value_objects::ErrorCode::serviceUnavailable(),
+      shared::value_objects::ErrorCode::forbidden(),
+      shared::value_objects::ErrorCode::unauthorized(),
+      shared::value_objects::ErrorCode::requestTimeout(),
+      shared::value_objects::ErrorCode::conflict()};
 
   for (size_t i = 0; i < sizeof(commonCodes) / sizeof(commonCodes[0]); ++i) {
     errorPages[commonCodes[i]] = createDefault(commonCodes[i]);
@@ -345,11 +357,11 @@ ErrorPage::createDefaultErrorPages() {
 
 std::map<unsigned int, ErrorPage> ErrorPage::createDefaultErrorPagesByCode() {
   std::map<unsigned int, ErrorPage> errorPages;
-  std::map<value_objects::ErrorCode, ErrorPage> byErrorCode =
+  std::map<shared::value_objects::ErrorCode, ErrorPage> byErrorCode =
       createDefaultErrorPages();
 
-  for (std::map<value_objects::ErrorCode, ErrorPage>::const_iterator it =
-           byErrorCode.begin();
+  for (std::map<shared::value_objects::ErrorCode, ErrorPage>::const_iterator
+           it = byErrorCode.begin();
        it != byErrorCode.end(); ++it) {
     errorPages[it->first.getValue()] = it->second;
   }
@@ -359,15 +371,15 @@ std::map<unsigned int, ErrorPage> ErrorPage::createDefaultErrorPagesByCode() {
 
 void ErrorPage::validate() const {
   if (!m_hasFile && !m_hasContent) {
-    throw shared::exceptions::ErrorPageException(
+    throw exceptions::ErrorPageException(
         "ErrorPage must have either file path or content",
-        shared::exceptions::ErrorPageException::NO_CONTENT);
+        exceptions::ErrorPageException::NO_CONTENT);
   }
 
   if (m_hasFile && m_hasContent) {
-    throw shared::exceptions::ErrorPageException(
+    throw exceptions::ErrorPageException(
         "ErrorPage cannot have both file path and content",
-        shared::exceptions::ErrorPageException::CONFLICTING_SOURCES);
+        exceptions::ErrorPageException::CONFLICTING_SOURCES);
   }
 
   if (m_hasFile) {
@@ -383,32 +395,32 @@ void ErrorPage::validate() const {
 
 void ErrorPage::validateContent() const {
   if (!isValidErrorPage(m_content)) {
-    throw shared::exceptions::ErrorPageException(
+    throw exceptions::ErrorPageException(
         "Error page content exceeds maximum length",
-        shared::exceptions::ErrorPageException::CONTENT_TOO_LARGE);
+        exceptions::ErrorPageException::CONTENT_TOO_LARGE);
   }
 }
 
 void ErrorPage::validateFilePath() const {
   if (!m_filePath.isAbsolute()) {
-    throw shared::exceptions::ErrorPageException(
+    throw exceptions::ErrorPageException(
         "Error page file path must be absolute: '" + m_filePath.toString() +
             "'",
-        shared::exceptions::ErrorPageException::INVALID_PATH);
+        exceptions::ErrorPageException::INVALID_PATH);
   }
 
   if (!isValidErrorPageFile(m_filePath)) {
-    throw shared::exceptions::ErrorPageException(
+    throw exceptions::ErrorPageException(
         "Invalid error page file: '" + m_filePath.toString() + "'",
-        shared::exceptions::ErrorPageException::FILE_ERROR);
+        exceptions::ErrorPageException::FILE_ERROR);
   }
 }
 
 void ErrorPage::validateContentType() const {
   if (!isValidContentType(m_contentType)) {
-    throw shared::exceptions::ErrorPageException(
+    throw exceptions::ErrorPageException(
         "Invalid content type: '" + m_contentType + "'",
-        shared::exceptions::ErrorPageException::INVALID_CONTENT_TYPE);
+        exceptions::ErrorPageException::INVALID_CONTENT_TYPE);
   }
 }
 
@@ -417,12 +429,13 @@ void ErrorPage::initializeFromFile() {
   m_hasContent = true;
 }
 
-std::string ErrorPage::loadFileContent(const value_objects::Path& filePath) {
+std::string ErrorPage::loadFileContent(
+    const filesystem::value_objects::Path& filePath) {
   std::ifstream file(filePath.toString().c_str());
   if (!file.is_open()) {
-    throw shared::exceptions::ErrorPageException(
+    throw exceptions::ErrorPageException(
         "Cannot open error page file: '" + filePath.toString() + "'",
-        shared::exceptions::ErrorPageException::FILE_ERROR);
+        exceptions::ErrorPageException::FILE_ERROR);
   }
 
   std::ostringstream contentStream;
@@ -432,16 +445,16 @@ std::string ErrorPage::loadFileContent(const value_objects::Path& filePath) {
   std::string content = contentStream.str();
 
   if (content.size() > MAX_CONTENT_LENGTH) {
-    throw shared::exceptions::ErrorPageException(
+    throw exceptions::ErrorPageException(
         "Error page file too large: '" + filePath.toString() + "'",
-        shared::exceptions::ErrorPageException::CONTENT_TOO_LARGE);
+        exceptions::ErrorPageException::CONTENT_TOO_LARGE);
   }
 
   return content;
 }
 
 std::string ErrorPage::generateDefaultContent(
-    const value_objects::ErrorCode& errorCode) {
+    const shared::value_objects::ErrorCode& errorCode) {
   std::string htmlTemplate = DEFAULT_ERROR_PAGE_TEMPLATE;
 
   std::string codeStr = errorCode.toString();
@@ -460,27 +473,28 @@ std::string ErrorPage::generateDefaultContent(
 }
 
 std::string ErrorPage::generateHtmlDefaultContent(
-    const value_objects::ErrorCode& errorCode) {
+    const shared::value_objects::ErrorCode& errorCode) {
   return generateDefaultContent(errorCode);
 }
 
 std::string ErrorPage::generatePlainTextDefaultContent(
-    const value_objects::ErrorCode& errorCode) {
+    const shared::value_objects::ErrorCode& errorCode) {
   std::ostringstream oss;
   oss << "Error " << errorCode.toString() << ": " << errorCode.getDescription();
   return oss.str();
 }
 
 std::string ErrorPage::buildStatusLine(
-    const value_objects::ErrorCode& errorCode) {
+    const shared::value_objects::ErrorCode& errorCode) {
   std::ostringstream oss;
   oss << "HTTP/1.1 " << errorCode.toString() << " "
       << errorCode.getDescription() << "\r\n";
   return oss.str();
 }
 
-std::string ErrorPage::buildHeaders(const std::string& contentType,
-                                    const value_objects::Size& contentSize) {
+std::string ErrorPage::buildHeaders(
+    const std::string& contentType,
+    const filesystem::value_objects::Size& contentSize) {
   std::ostringstream oss;
   oss << "Content-Type: " << contentType << "\r\n";
   oss << "Content-Length: " << contentSize.getBytes() << "\r\n";
@@ -509,4 +523,5 @@ std::string ErrorPage::normalizeContentType(const std::string& contentType) {
 }
 
 }  // namespace entities
+}  // namespace configuration
 }  // namespace domain
