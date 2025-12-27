@@ -152,8 +152,12 @@ Path Path::normalize() const {
     normalized += PATH_SEPARATOR;
   }
 
-  if (m_isAbsolute && !normalized.empty() && normalized[0] != PATH_SEPARATOR) {
-    normalized = PATH_SEPARATOR + normalized;
+  if (m_isAbsolute) {
+    if (normalized.empty()) {
+      normalized = std::string(1, PATH_SEPARATOR);
+    } else if (normalized[0] != PATH_SEPARATOR) {
+      normalized = PATH_SEPARATOR + normalized;
+    }
   }
 
   return Path(normalized, m_isAbsolute);
