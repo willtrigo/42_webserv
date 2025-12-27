@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: test                                        +#+  +:+       +#+         #
+#    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
-#    Created: 2025/12/24 00:00:00 by test              #+#    #+#              #
-#    Updated: 2025/12/24 00:00:00 by test             ###   ########.fr        #
+#    Created: 2025/12/27 10:49:05 by umeneses          #+#    #+#              #
+#    Updated: 2025/12/27 10:49:09 by umeneses         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -46,6 +46,12 @@ NAME                            := $(BIN_DIR)/test_runner
 # - Route.cpp, RouteMatcher.cpp, RouteConfigAdapter.cpp depend on ErrorCode
 # - CgiConfig.cpp uses RegexPattern which has empty pattern initialization issues
 # - DirectoryLister.cpp has static RegexPattern members that initialize with empty patterns
+# - ConfigProvider.cpp and ConfigParser.cpp have missing parsePath() implementation (DANDE'S BROKEN CODE)
+# - ServerConfig.cpp, LocationConfig.cpp, ErrorPage.cpp depend on ErrorCode (which is excluded)
+# - UploadConfig.cpp depends on DirectoryLister (which is excluded)
+# - HttpConfig.cpp depends on ServerConfig (which is excluded)
+# - CliController.cpp depends on ConfigProvider (which is excluded)
+# - ListenDirective.cpp depends on Port (keep Port, exclude ListenDirective to avoid static init issues)
 PROJECT_SRCS                    := $(shell find $(SRC_DIR) -name '*.cpp' \
                                       ! -name 'main.cpp' \
                                       ! -name 'ErrorCode.cpp' \
@@ -54,7 +60,16 @@ PROJECT_SRCS                    := $(shell find $(SRC_DIR) -name '*.cpp' \
                                       ! -name 'RouteMatcher.cpp' \
                                       ! -name 'RouteConfigAdapter.cpp' \
                                       ! -name 'CgiConfig.cpp' \
-                                      ! -name 'DirectoryLister.cpp')
+                                      ! -name 'DirectoryLister.cpp' \
+                                      ! -name 'ConfigProvider.cpp' \
+                                      ! -name 'ConfigParser.cpp' \
+                                      ! -name 'ServerConfig.cpp' \
+                                      ! -name 'LocationConfig.cpp' \
+                                      ! -name 'ErrorPage.cpp' \
+                                      ! -name 'UploadConfig.cpp' \
+                                      ! -name 'HttpConfig.cpp' \
+                                      ! -name 'CliController.cpp' \
+                                      ! -name 'ListenDirective.cpp')
 
 # Test files
 TEST_SRCS                       := test_main.cpp
