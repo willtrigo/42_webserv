@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/27 20:08:57 by umeneses         ###   ########.fr        #
+#    Updated: 2025/12/27 20:09:30 by umeneses         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -83,6 +83,9 @@ SLEEP                           := sleep 0.01
 NAME_OUTPUT                     = webserv
 NAME                            = $(BIN_DIR)$(NAME_OUTPUT)
 
+# SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_ENTITIES_DIR), PathException.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_EXCEPTIONS_DIR), ListenDirectiveException.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_VALUE_OBJECTS_DIR), ListenDirective.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_FILESYSTEM_EXCEPTIONS_DIR), PathException.cpp \
 																	 PermissionException.cpp \
 																	 SizeException.cpp)
