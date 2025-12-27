@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/27 03:21:47 by dande-je         ###   ########.fr        #
+#    Updated: 2025/12/27 03:29:47 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -75,10 +75,12 @@ SLEEP                           := sleep 0.01
 NAME_OUTPUT                     = webserv
 NAME                            = $(BIN_DIR)$(NAME_OUTPUT)
 
-SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_HTTP_EXCEPTIONS_DIR), PortException.cpp \
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_HTTP_EXCEPTIONS_DIR), HttpMethodException.cpp \
+																	 PortException.cpp \
 																	 QueryStringBuilderException.cpp \
 																	 UriException.cpp)
-SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_HTTP_VALUE_OBJECTS_DIR), Port.cpp \
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_HTTP_VALUE_OBJECTS_DIR), HttpMethod.cpp \
+																	 Port.cpp \
 																	 QueryStringBuilder.cpp \
 																	 Uri.cpp)
 
@@ -97,7 +99,6 @@ SRCS_FILES                      += $(addprefix $(SRCS_ENTITIES_DIR), CgiConfig.c
 																	 ServerConfig.cpp \
 																	 UploadConfig.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_VALUE_OBJECTS_DIR), Host.cpp \
-																	 HttpMethod.cpp \
 																	 Path.cpp \
 																	 Permission.cpp \
 																	 Size.cpp \
@@ -129,7 +130,6 @@ SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseExcep
 																	 FileSystemHelperException.cpp \
 																	 HostException.cpp \
 																	 HttpConfigException.cpp \
-																	 HttpMethodException.cpp \
 																	 ListenDirectiveException.cpp \
 																	 LocationConfigException.cpp \
 																	 PathException.cpp \

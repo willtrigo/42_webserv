@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 23:55:05 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/20 23:57:20 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 03:25:26 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 #include <string>
 
 namespace domain {
+namespace http {
 namespace value_objects {
 
 class HttpMethod {
@@ -49,8 +50,7 @@ class HttpMethod {
 
   static bool isValidMethodString(const std::string& methodString);
   static bool isSafeMethod(Method method);
-  static bool isIdempotentMethod(
-      Method method);
+  static bool isIdempotentMethod(Method method);
   static bool isCacheableMethod(Method method);
 
   bool isGet() const;
@@ -98,6 +98,7 @@ class HttpMethod {
 };
 
 }  // namespace value_objects
+}  // namespace http
 }  // namespace domain
 
 #endif  // HTTP_METHOD_HPP
