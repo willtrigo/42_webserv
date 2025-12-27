@@ -6,15 +6,16 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 09:56:36 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/20 10:01:27 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 03:46:03 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "shared/exceptions/SizeException.hpp"
+#include "domain/filesystem/exceptions/SizeException.hpp"
 
 #include <sstream>
 
-namespace shared {
+namespace domain {
+namespace filesystem {
 namespace exceptions {
 
 const std::pair<SizeException::ErrorCode, std::string>
@@ -58,4 +59,5 @@ std::string SizeException::getErrorMsg(SizeException::ErrorCode code) {
 }
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace filesystem
+}  // namespace domain

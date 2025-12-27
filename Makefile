@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/27 03:39:01 by dande-je         ###   ########.fr        #
+#    Updated: 2025/12/27 03:51:27 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -32,6 +32,10 @@ SRCS_USE_CASES_DIR              := $(SRCS_APPLICATION_DIR)use_cases/
 SRCS_SERVICES_DIR               := $(SRCS_APPLICATION_DIR)services/
 
 SRCS_DOMAIN_DIR                           := $(SRCS_DIR)domain/
+SRCS_DOMAIN_FILESYSTEM_DIR                := $(SRCS_DOMAIN_DIR)filesystem/
+SRCS_DOMAIN_FILESYSTEM_EXCEPTIONS_DIR     := $(SRCS_DOMAIN_FILESYSTEM_DIR)exceptions/
+SRCS_DOMAIN_FILESYSTEM_SERVICES_DIR       := $(SRCS_DOMAIN_FILESYSTEM_DIR)services/
+SRCS_DOMAIN_FILESYSTEM_VALUE_OBJECTS_DIR  := $(SRCS_DOMAIN_FILESYSTEM_DIR)value_objects/
 SRCS_DOMAIN_HTTP_DIR                      := $(SRCS_DOMAIN_DIR)http/
 SRCS_DOMAIN_HTTP_VALUE_OBJECTS_DIR        := $(SRCS_DOMAIN_HTTP_DIR)value_objects/
 SRCS_DOMAIN_HTTP_EXCEPTIONS_DIR           := $(SRCS_DOMAIN_HTTP_DIR)exceptions/
@@ -75,6 +79,8 @@ SLEEP                           := sleep 0.01
 NAME_OUTPUT                     = webserv
 NAME                            = $(BIN_DIR)$(NAME_OUTPUT)
 
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_FILESYSTEM_EXCEPTIONS_DIR), SizeException.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_FILESYSTEM_VALUE_OBJECTS_DIR), SizeException.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_HTTP_EXCEPTIONS_DIR), HostException.cpp \
 																	 HttpMethodException.cpp \
 																	 PortException.cpp \
@@ -102,7 +108,6 @@ SRCS_FILES                      += $(addprefix $(SRCS_ENTITIES_DIR), CgiConfig.c
 																	 UploadConfig.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_VALUE_OBJECTS_DIR), Path.cpp \
 																	 Permission.cpp \
-																	 Size.cpp \
 																	 Uri.cpp)
 
 SRCS_FILES                      += $(addprefix $(SRCS_ADAPTER_DIR), ConfigProvider.cpp)
@@ -139,7 +144,6 @@ SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseExcep
 																	 RouteException.cpp \
 																	 RouteMatcherException.cpp \
 																	 ServerConfigException.cpp \
-																	 SizeException.cpp \
 																	 UploadCondifException.cpp \
 																	 UriException.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_UTILS_DIR), TerminalColor.cpp)
