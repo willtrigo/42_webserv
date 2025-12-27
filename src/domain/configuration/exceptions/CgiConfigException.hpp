@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 13:10:17 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/22 13:12:28 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 18:22:45 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,10 +15,11 @@
 
 #include "shared/exceptions/BaseException.hpp"
 
-namespace shared {
+namespace domain {
+namespace configuration {
 namespace exceptions {
 
-class CgiConfigException : public BaseException {
+class CgiConfigException : public ::shared::exceptions::BaseException {
  public:
   enum ErrorCode {
     EMPTY_SCRIPT_PATH,
@@ -45,6 +46,7 @@ class CgiConfigException : public BaseException {
 };
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace configuration
+}  // namespace domain
 
 #endif  // CGI_CONFIG_EXCEPTION_HPP
