@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/23 00:38:11 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/23 01:08:55 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 03:11:45 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 #include <vector>
 
 namespace domain {
+namespace http {
 namespace value_objects {
 
 class QueryStringBuilder {
@@ -108,6 +109,7 @@ class QueryStringBuilder {
 };
 
 }  // namespace value_objects
+}  // namespace http
 }  // namespace domain
 
 #endif  // QUERY_STRING_BUILDER_HPP

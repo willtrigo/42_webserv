@@ -6,15 +6,16 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/23 00:37:42 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/23 00:37:46 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 03:11:10 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "shared/exceptions/QueryStringBuilderException.hpp"
+#include "domain/http/exceptions/QueryStringBuilderException.hpp"
 
 #include <sstream>
 
-namespace shared {
+namespace domain {
+namespace http {
 namespace exceptions {
 
 const std::pair<QueryStringBuilderException::ErrorCode, std::string>
@@ -69,4 +70,5 @@ std::string QueryStringBuilderException::getErrorMsg(
 }
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace http
+}  // namespace domain
