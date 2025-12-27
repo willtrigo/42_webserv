@@ -6,15 +6,16 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 03:19:15 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/26 16:48:50 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 04:17:32 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "shared/exceptions/ListenDirectiveException.hpp"
+#include "domain/configuration/exceptions/ListenDirectiveException.hpp"
 
 #include <sstream>
 
-namespace shared {
+namespace domain {
+namespace configuration {
 namespace exceptions {
 
 const std::pair<ListenDirectiveException::ErrorCode, std::string>
@@ -65,4 +66,5 @@ std::string ListenDirectiveException::getErrorMsg(
 }
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace configuration
+}  // namespace domain
