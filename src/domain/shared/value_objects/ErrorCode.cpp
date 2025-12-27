@@ -6,18 +6,19 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 11:20:04 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/25 22:13:47 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 01:55:13 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "domain/value_objects/ErrorCode.hpp"
-#include "shared/exceptions/ErrorCodeException.hpp"
+#include "domain/shared/exceptions/ErrorCodeException.hpp"
+#include "domain/shared/value_objects/ErrorCode.hpp"
 
 #include <cctype>
 #include <cstdlib>
 #include <sstream>
 
 namespace domain {
+namespace shared {
 namespace value_objects {
 
 ErrorCode::StatusCodeEntry ErrorCode::K_STATUS_CODE_MSGS[] = {
@@ -354,4 +355,5 @@ ErrorCode::StatusCodeIterator ErrorCode::statusCodesEnd() {
 }
 
 }  // namespace value_objects
+}  // namespace shared
 }  // namespace domain

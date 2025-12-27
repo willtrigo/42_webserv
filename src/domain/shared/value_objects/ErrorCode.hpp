@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 11:08:29 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/25 22:16:24 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 01:51:57 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 #include <string>
 
 namespace domain {
+namespace shared {
 namespace value_objects {
 
 class ErrorCode {
@@ -183,6 +184,7 @@ class ErrorCode {
 };
 
 }  // namespace value_objects
+}  // namespace shared
 }  // namespace domain
 
 #endif  // ERROR_CODE_HPP
