@@ -6,15 +6,16 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 01:05:38 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/20 01:06:53 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 03:58:52 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "shared/exceptions/PathException.hpp"
+#include "domain/filesystem/exceptions/PathException.hpp"
 
 #include <sstream>
 
-namespace shared {
+namespace domain {
+namespace filesystem {
 namespace exceptions {
 
 const std::pair<PathException::ErrorCode, std::string>
@@ -62,4 +63,5 @@ std::string PathException::getErrorMsg(PathException::ErrorCode code) {
 }
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace filesystem
+}  // namespace domain
