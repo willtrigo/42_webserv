@@ -6,12 +6,12 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/23 00:39:57 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/23 01:02:56 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 03:22:43 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "domain/value_objects/QueryStringBuilder.hpp"
-#include "shared/exceptions/QueryStringBuilderException.hpp"
+#include "domain/http/exceptions/QueryStringBuilderException.hpp"
+#include "domain/http/value_objects/QueryStringBuilder.hpp"
 
 #include <cctype>
 #include <cstdlib>
@@ -19,6 +19,7 @@
 #include <sstream>
 
 namespace domain {
+namespace http {
 namespace value_objects {
 
 QueryStringBuilder::QueryStringBuilder() {}
@@ -44,36 +45,34 @@ QueryStringBuilder& QueryStringBuilder::operator=(
 
 void QueryStringBuilder::validateBaseUrl(const std::string& url) {
   if (url.empty()) {
-    throw shared::exceptions::QueryStringBuilderException(
+    throw exceptions::QueryStringBuilderException(
         "Base URL cannot be empty",
-        shared::exceptions::QueryStringBuilderException::EMPTY_URL);
+        exceptions::QueryStringBuilderException::EMPTY_URL);
   }
 
   if (url.length() > MAX_URL_LENGTH) {
     std::ostringstream oss;
     oss << "URL too long: " << url.length()
         << " characters (max: " << MAX_URL_LENGTH << ")";
-    throw shared::exceptions::QueryStringBuilderException(
-        oss.str(),
-        shared::exceptions::QueryStringBuilderException::INVALID_URL_FORMAT);
+    throw exceptions::QueryStringBuilderException(
+        oss.str(), exceptions::QueryStringBuilderException::INVALID_URL_FORMAT);
   }
 }
 
 void QueryStringBuilder::validateParameterName(const std::string& name) {
   if (name.empty()) {
-    throw shared::exceptions::QueryStringBuilderException(
+    throw exceptions::QueryStringBuilderException(
         "Parameter name cannot be empty",
-        shared::exceptions::QueryStringBuilderException::
-            INVALID_PARAMETER_NAME);
+        exceptions::QueryStringBuilderException::INVALID_PARAMETER_NAME);
   }
 
   if (name.length() > MAX_PARAMETER_NAME_LENGTH) {
     std::ostringstream oss;
     oss << "Parameter name too long: '" << name << "' (" << name.length()
         << " characters, max: " << MAX_PARAMETER_NAME_LENGTH << ")";
-    throw shared::exceptions::QueryStringBuilderException(
-        oss.str(), shared::exceptions::QueryStringBuilderException::
-                       INVALID_PARAMETER_NAME);
+    throw exceptions::QueryStringBuilderException(
+        oss.str(),
+        exceptions::QueryStringBuilderException::INVALID_PARAMETER_NAME);
   }
 
   for (std::size_t i = 0; i < name.length(); ++i) {
@@ -81,9 +80,9 @@ void QueryStringBuilder::validateParameterName(const std::string& name) {
     if (chr < ' ' || chr == '=' || chr == '&' || chr == '?' || chr == '#') {
       std::ostringstream oss;
       oss << "Invalid character in parameter name: '" << name << "'";
-      throw shared::exceptions::QueryStringBuilderException(
-          oss.str(), shared::exceptions::QueryStringBuilderException::
-                         INVALID_PARAMETER_NAME);
+      throw exceptions::QueryStringBuilderException(
+          oss.str(),
+          exceptions::QueryStringBuilderException::INVALID_PARAMETER_NAME);
     }
   }
 }
@@ -93,9 +92,9 @@ void QueryStringBuilder::validateParameterValue(const std::string& value) {
     std::ostringstream oss;
     oss << "Parameter value too long: " << value.length()
         << " characters (max: " << MAX_PARAMETER_VALUE_LENGTH << ")";
-    throw shared::exceptions::QueryStringBuilderException(
-        oss.str(), shared::exceptions::QueryStringBuilderException::
-                       INVALID_PARAMETER_VALUE);
+    throw exceptions::QueryStringBuilderException(
+        oss.str(),
+        exceptions::QueryStringBuilderException::INVALID_PARAMETER_VALUE);
   }
 }
 
@@ -104,9 +103,8 @@ void QueryStringBuilder::validateParameterCount() const {
     std::ostringstream oss;
     oss << "Too many parameters: " << m_parameters.size()
         << " (max: " << MAX_PARAMETERS_COUNT << ")";
-    throw shared::exceptions::QueryStringBuilderException(
-        oss.str(),
-        shared::exceptions::QueryStringBuilderException::INVALID_URL_FORMAT);
+    throw exceptions::QueryStringBuilderException(
+        oss.str(), exceptions::QueryStringBuilderException::INVALID_URL_FORMAT);
   }
 }
 
@@ -116,9 +114,8 @@ void QueryStringBuilder::validateUrlLength() const {
     std::ostringstream oss;
     oss << "Resulting URL too long: " << builtUrl.length()
         << " characters (max: " << MAX_URL_LENGTH << ")";
-    throw shared::exceptions::QueryStringBuilderException(
-        oss.str(),
-        shared::exceptions::QueryStringBuilderException::INVALID_URL_FORMAT);
+    throw exceptions::QueryStringBuilderException(
+        oss.str(), exceptions::QueryStringBuilderException::INVALID_URL_FORMAT);
   }
 }
 
@@ -143,9 +140,9 @@ void QueryStringBuilder::addParameterInternal(const std::string& key,
   if (m_parameters.find(key) != m_parameters.end()) {
     std::ostringstream ossKey;
     ossKey << "Parameter '" << key << "' already exists";
-    throw shared::exceptions::QueryStringBuilderException(
+    throw exceptions::QueryStringBuilderException(
         ossKey.str(),
-        shared::exceptions::QueryStringBuilderException::DUPLICATE_PARAMETER);
+        exceptions::QueryStringBuilderException::DUPLICATE_PARAMETER);
   }
 
   m_parameters[key] = valueStr;
@@ -401,11 +398,10 @@ std::string QueryStringBuilder::encode(const std::string& value) {
         encoded << '%' << std::hex << std::uppercase << std::setw(2)
                 << std::setfill('0') << static_cast<int>(chr);
       } catch (...) {
-        throw shared::exceptions::QueryStringBuilderException(
-            "Failed to encode character at position " +
-                static_cast<std::ostringstream*>(&(std::ostringstream() << i))
-                    ->str(),
-            shared::exceptions::QueryStringBuilderException::ENCODING_ERROR);
+        std::ostringstream oss;
+        oss << "Failed to encode character at position " << i;
+        throw exceptions::QueryStringBuilderException(
+            oss.str(), exceptions::QueryStringBuilderException::ENCODING_ERROR);
       }
     }
   }
@@ -413,6 +409,7 @@ std::string QueryStringBuilder::encode(const std::string& value) {
   return encoded.str();
 }
 
+// TODO: remove magic number
 std::string QueryStringBuilder::decode(const std::string& value) {
   if (value.empty()) {
     return "";
@@ -431,9 +428,9 @@ std::string QueryStringBuilder::decode(const std::string& value) {
         decoded << static_cast<char>(charCode);
         i += 2;
       } else {
-        throw shared::exceptions::QueryStringBuilderException(
+        throw exceptions::QueryStringBuilderException(
             "Invalid percent encoding: '%" + hex + "'",
-            shared::exceptions::QueryStringBuilderException::DECODING_ERROR);
+            exceptions::QueryStringBuilderException::DECODING_ERROR);
       }
     } else if (value[i] == '+') {
       decoded << ' ';
@@ -447,18 +444,17 @@ std::string QueryStringBuilder::decode(const std::string& value) {
 
 QueryStringBuilder QueryStringBuilder::fromString(const std::string& url) {
   if (url.empty()) {
-    throw shared::exceptions::QueryStringBuilderException(
+    throw exceptions::QueryStringBuilderException(
         "URL string cannot be empty",
-        shared::exceptions::QueryStringBuilderException::EMPTY_URL);
+        exceptions::QueryStringBuilderException::EMPTY_URL);
   }
 
   if (url.length() > MAX_URL_LENGTH) {
     std::ostringstream oss;
     oss << "URL too long: " << url.length()
         << " characters (max: " << MAX_URL_LENGTH << ")";
-    throw shared::exceptions::QueryStringBuilderException(
-        oss.str(),
-        shared::exceptions::QueryStringBuilderException::INVALID_URL_FORMAT);
+    throw exceptions::QueryStringBuilderException(
+        oss.str(), exceptions::QueryStringBuilderException::INVALID_URL_FORMAT);
   }
 
   std::size_t questionPos = url.find('?');
@@ -477,6 +473,7 @@ QueryStringBuilder QueryStringBuilder::fromString(const std::string& url) {
   return builder;
 }
 
+// TODO: refactor this func
 QueryStringBuilder QueryStringBuilder::parseQueryString(
     const std::string& queryString) {
   QueryStringBuilder builder("");
@@ -510,9 +507,9 @@ QueryStringBuilder QueryStringBuilder::parseQueryString(
       if (!isValidParameterName(key)) {
         std::ostringstream oss;
         oss << "Invalid parameter name: '" << key << "'";
-        throw shared::exceptions::QueryStringBuilderException(
-            oss.str(), shared::exceptions::QueryStringBuilderException::
-                           INVALID_PARAMETER_NAME);
+        throw exceptions::QueryStringBuilderException(
+            oss.str(),
+            exceptions::QueryStringBuilderException::INVALID_PARAMETER_NAME);
       }
 
       builder.m_parameters[key] = value;
@@ -522,9 +519,9 @@ QueryStringBuilder QueryStringBuilder::parseQueryString(
       if (!isValidParameterName(key)) {
         std::ostringstream oss;
         oss << "Invalid parameter name: '" << key << "'";
-        throw shared::exceptions::QueryStringBuilderException(
-            oss.str(), shared::exceptions::QueryStringBuilderException::
-                           INVALID_PARAMETER_NAME);
+        throw exceptions::QueryStringBuilderException(
+            oss.str(),
+            exceptions::QueryStringBuilderException::INVALID_PARAMETER_NAME);
       }
 
       builder.m_parameters[key] = "";
@@ -589,6 +586,7 @@ bool QueryStringBuilder::isUnreservedCharacter(char chr) {
          chr == '~';
 }
 
+// TODO: remove magic number
 char QueryStringBuilder::hexToChar(const std::string& hex) {
   char* endPtr = NULL;
   long value = std::strtol(hex.c_str(), &endPtr, 16);
@@ -606,4 +604,5 @@ std::string QueryStringBuilder::charToHex(char chr) {
 }
 
 }  // namespace value_objects
+}  // namespace http
 }  // namespace domain

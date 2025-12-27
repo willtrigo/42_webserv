@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/23 00:37:19 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/23 00:37:23 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 03:10:24 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,10 +15,11 @@
 
 #include "shared/exceptions/BaseException.hpp"
 
-namespace shared {
+namespace domain {
+namespace http {
 namespace exceptions {
 
-class QueryStringBuilderException : public BaseException {
+class QueryStringBuilderException : public shared::exceptions::BaseException {
  public:
   enum ErrorCode {
     EMPTY_URL,
@@ -46,6 +47,7 @@ class QueryStringBuilderException : public BaseException {
 };
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace http
+}  // namespace domain
 
 #endif  // QUERYSTRINGBUILDEREXCEPTION_HPP
