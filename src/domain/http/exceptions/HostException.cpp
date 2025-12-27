@@ -6,15 +6,16 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/24 14:46:04 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/24 14:46:09 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 03:33:14 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "shared/exceptions/HostException.hpp"
+#include "domain/http/exceptions/HostException.hpp"
 
 #include <sstream>
 
-namespace shared {
+namespace domain {
+namespace http {
 namespace exceptions {
 
 const std::pair<HostException::ErrorCode, std::string>
@@ -57,4 +58,5 @@ std::string HostException::getErrorMsg(HostException::ErrorCode code) {
 }
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace http
+}  // namespace domain
