@@ -72,6 +72,11 @@ TEST_F(PathTest, GetDirectory) {
   EXPECT_EQ("/home/user", path.getDirectory());
 }
 
+TEST_F(PathTest, GetDirectoryForRootFile) {
+  Path path("/file.txt");
+  EXPECT_EQ("/", path.getDirectory());  // Root directory, not empty string
+}
+
 TEST_F(PathTest, GetFilename) {
   Path path("/home/user/file.txt");
   EXPECT_EQ("file.txt", path.getFilename());
@@ -166,4 +171,26 @@ TEST_F(PathTest, IsDirectory) {
   
   Path filePath("/home/user/file.txt");
   EXPECT_FALSE(filePath.isDirectory());
+}
+
+// Normalize tests
+TEST_F(PathTest, NormalizeRootDirectory) {
+  Path root("/");
+  Path normalized = root.normalize();
+  EXPECT_EQ("/", normalized.toString());
+  EXPECT_TRUE(normalized.isAbsolute());
+}
+
+TEST_F(PathTest, NormalizePathToRoot) {
+  Path path("/a/../");
+  Path normalized = path.normalize();
+  EXPECT_EQ("/", normalized.toString());
+  EXPECT_TRUE(normalized.isAbsolute());
+}
+
+TEST_F(PathTest, NormalizeMultipleLevelsToRoot) {
+  Path path("/home/user/../../");
+  Path normalized = path.normalize();
+  EXPECT_EQ("/", normalized.toString());
+  EXPECT_TRUE(normalized.isAbsolute());
 }
