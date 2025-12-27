@@ -6,18 +6,19 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/21 00:12:32 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/21 01:42:59 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 03:55:26 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "domain/value_objects/Permission.hpp"
-#include "shared/exceptions/PermissionException.hpp"
+#include "domain/filesystem/value_objects/Permission.hpp"
+#include "domain/filesystem/exceptions/PermissionException.hpp"
 
 #include <cctype>
 #include <cstdlib>
 #include <sstream>
 
 namespace domain {
+namespace filesystem {
 namespace value_objects {
 
 Permission::Permission()
@@ -92,7 +93,7 @@ bool Permission::isValidPermissionString(const std::string& permissionString) {
   try {
     parsePermissionString(permissionString);
     return true;
-  } catch (const shared::exceptions::PermissionException&) {
+  } catch (const exceptions::PermissionException&) {
     return false;
   }
 }
@@ -101,7 +102,7 @@ bool Permission::isValidSymbolicString(const std::string& symbolicString) {
   try {
     parseSymbolicString(symbolicString);
     return true;
-  } catch (const shared::exceptions::PermissionException&) {
+  } catch (const exceptions::PermissionException&) {
     return false;
   }
 }
@@ -111,8 +112,8 @@ void Permission::validate() const {
     std::ostringstream oss;
     oss << "Permission value out of range: 0" << std::oct << m_permission
         << " (valid range: 0-07777)";
-    throw shared::exceptions::PermissionException(
-        oss.str(), shared::exceptions::PermissionException::OUT_OF_RANGE);
+    throw exceptions::PermissionException(
+        oss.str(), exceptions::PermissionException::OUT_OF_RANGE);
   }
 }
 
@@ -264,9 +265,9 @@ Permission Permission::ownerAllGroupReadExecuteOtherReadExecute() {
 unsigned int Permission::parsePermissionString(
     const std::string& permissionString) {
   if (permissionString.empty()) {
-    throw shared::exceptions::PermissionException(
+    throw exceptions::PermissionException(
         "Permission string cannot be empty",
-        shared::exceptions::PermissionException::EMPTY_STRING);
+        exceptions::PermissionException::EMPTY_STRING);
   }
 
   if (std::isalpha(static_cast<unsigned char>(permissionString[0])) != 0) {
@@ -274,9 +275,9 @@ unsigned int Permission::parsePermissionString(
   }
 
   if (!isValidOctalString(permissionString)) {
-    throw shared::exceptions::PermissionException(
+    throw exceptions::PermissionException(
         "Invalid permission format: '" + permissionString + "'",
-        shared::exceptions::PermissionException::INVALID_FORMAT);
+        exceptions::PermissionException::INVALID_FORMAT);
   }
 
   char* endPointer = NULL;
@@ -284,17 +285,17 @@ unsigned int Permission::parsePermissionString(
       std::strtoul(permissionString.c_str(), &endPointer, BASE_OCTAL);
 
   if (endPointer == permissionString.c_str() || *endPointer != '\0') {
-    throw shared::exceptions::PermissionException(
+    throw exceptions::PermissionException(
         "Failed to convert permission string: '" + permissionString + "'",
-        shared::exceptions::PermissionException::CONVERSION_FAILED);
+        exceptions::PermissionException::CONVERSION_FAILED);
   }
 
   if (result > static_cast<unsigned long>(MAX_PERMISSION)) {
     std::ostringstream oss;
     oss << "Permission value out of range: '" << permissionString
         << "' (max: 07777)";
-    throw shared::exceptions::PermissionException(
-        oss.str(), shared::exceptions::PermissionException::OUT_OF_RANGE);
+    throw exceptions::PermissionException(
+        oss.str(), exceptions::PermissionException::OUT_OF_RANGE);
   }
 
   return static_cast<unsigned int>(result);
@@ -303,9 +304,9 @@ unsigned int Permission::parsePermissionString(
 unsigned int Permission::parseSymbolicString(
     const std::string& symbolicString) {
   if (symbolicString.empty()) {
-    throw shared::exceptions::PermissionException(
+    throw exceptions::PermissionException(
         "Symbolic permission string cannot be empty",
-        shared::exceptions::PermissionException::EMPTY_STRING);
+        exceptions::PermissionException::EMPTY_STRING);
   }
 
   const bool hasSpecial = hasSpecialBitsFormat(symbolicString);
@@ -316,8 +317,8 @@ unsigned int Permission::parseSymbolicString(
     std::ostringstream oss;
     oss << "Symbolic permission must be " << expectedLength << " characters: '"
         << symbolicString << "'";
-    throw shared::exceptions::PermissionException(
-        oss.str(), shared::exceptions::PermissionException::INVALID_FORMAT);
+    throw exceptions::PermissionException(
+        oss.str(), exceptions::PermissionException::INVALID_FORMAT);
   }
 
   unsigned int permission = 0;
@@ -485,4 +486,5 @@ std::string Permission::classToString(Class permissionClass) {
 }
 
 }  // namespace value_objects
+}  // namespace domain
 }  // namespace domain

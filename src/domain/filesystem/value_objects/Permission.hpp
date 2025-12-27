@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/21 00:07:43 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/22 14:23:29 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 03:53:36 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 #include <string>
 
 namespace domain {
+namespace filesystem {
 namespace value_objects {
 
 class Permission {
@@ -140,6 +141,7 @@ class Permission {
 };
 
 }  // namespace value_objects
+}  // namespace filesystem
 }  // namespace domain
 
 #endif  // PERMISSION_HPP

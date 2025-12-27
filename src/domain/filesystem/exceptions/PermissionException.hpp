@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/21 00:05:27 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/21 00:05:57 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 03:52:35 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,10 +15,11 @@
 
 #include "shared/exceptions/BaseException.hpp"
 
-namespace shared {
+namespace domain {
+namespace filesystem {
 namespace exceptions {
 
-class PermissionException : public BaseException {
+class PermissionException : public shared::exceptions::BaseException {
  public:
   enum ErrorCode {
     EMPTY_STRING,
@@ -43,6 +44,7 @@ class PermissionException : public BaseException {
 };
 
 }  // namespace exceptions
+}  // namespace shared
 }  // namespace shared
 
 #endif  // PERMISSION_EXCEPTION_HPP
