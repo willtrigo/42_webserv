@@ -131,7 +131,7 @@ void MockRequestParser::clearHeaders() {
 void MockRequestParser::setBody(const std::string& body) {
   m_body = body;
   m_bodySize = body.length();
-  addHeader("Content-Length", "");
+  addHeader("Content-Length", std::to_string(m_bodySize));
 }
 
 std::string MockRequestParser::getBody() const {
