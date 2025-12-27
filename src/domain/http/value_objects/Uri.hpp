@@ -6,19 +6,20 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/21 12:45:08 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/22 00:50:33 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 02:26:14 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef URI_HPP
 #define URI_HPP
 
-#include "domain/value_objects/Port.hpp"
+#include "domain/http/value_objects/Port.hpp"
 
 #include <string>
 #include <vector>
 
 namespace domain {
+namespace http {
 namespace value_objects {
 
 class Uri {
@@ -195,6 +196,7 @@ class Uri {
 };
 
 }  // namespace value_objects
+}  // namespace http
 }  // namespace domain
 
 #endif  // URI_HPP
