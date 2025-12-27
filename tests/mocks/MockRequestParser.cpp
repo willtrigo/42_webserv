@@ -6,11 +6,12 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/27 13:01:59 by umeneses          #+#    #+#             */
-/*   Updated: 2025/12/27 14:03:49 by umeneses         ###   ########.fr       */
+/*   Updated: 2025/12/27 14:46:49 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "MockRequestParser.hpp"
+#include <sstream>
 
 namespace mocks {
 
@@ -131,7 +132,9 @@ void MockRequestParser::clearHeaders() {
 void MockRequestParser::setBody(const std::string& body) {
   m_body = body;
   m_bodySize = body.length();
-  addHeader("Content-Length", std::to_string(m_bodySize));
+  std::ostringstream oss;
+  oss << m_bodySize;
+  addHeader("Content-Length", oss.str());
 }
 
 std::string MockRequestParser::getBody() const {
