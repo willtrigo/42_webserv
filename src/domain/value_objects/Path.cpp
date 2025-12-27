@@ -66,6 +66,9 @@ std::string Path::getDirectory() const {
   if (lastSlash == std::string::npos) {
     return "";
   }
+  if (lastSlash == 0) {
+    return std::string(1, PATH_SEPARATOR);
+  }
 
   return m_path.substr(0, lastSlash);
 }
