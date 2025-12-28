@@ -5,11 +5,11 @@ on:
     branches: [ main, master, develop, "**feat**" ]
   pull_request:
     branches: [ main, master, develop ]
+  workflow_call:
 
 jobs:
   unit-path:
     runs-on: ubuntu-latest
-    needs: []
     
     steps:
     - name: Checkout code
@@ -20,7 +20,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential cmake
+        sudo apt-get install -y build-essential cmake valgrind
     
     - name: Cache Google Test
       id: cache-gtest
@@ -60,12 +60,19 @@ jobs:
         cd tests/
         ./bin/test_runner --gtest_filter='PathTest.*' --gtest_output=xml:test-results-path.xml
     
+    - name: Run Path tests with Valgrind
+      run: |
+        cd tests/
+        valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --error-exitcode=1 --log-file=valgrind-path.txt ./bin/test_runner --gtest_filter='PathTest.*'
+    
     - name: Upload test results
       if: always()
       uses: actions/upload-artifact@v6
       with:
         name: test-results-path
-        path: tests/test-results-path.xml
+        path: |
+          tests/test-results-path.xml
+          tests/valgrind-path.txt
     
     - name: Test Summary
       if: always()
