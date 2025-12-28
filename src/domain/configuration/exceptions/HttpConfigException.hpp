@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 16:27:35 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/26 16:32:20 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/28 15:05:36 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,10 +15,11 @@
 
 #include "shared/exceptions/BaseException.hpp"
 
-namespace shared {
+namespace domain {
+namespace configuration {
 namespace exceptions {
 
-class HttpConfigException : public BaseException {
+class HttpConfigException : public ::shared::exceptions::BaseException {
  public:
   enum ErrorCode {
     EMPTY_CONFIGURATION,
@@ -59,6 +60,7 @@ class HttpConfigException : public BaseException {
 };
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace configuration
+}  // namespace domain
 
 #endif  // HTTP_CONFIG_EXCEPTION_HPP

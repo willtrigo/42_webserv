@@ -6,22 +6,25 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 17:11:38 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/26 20:57:23 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 15:46:42 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef HTTP_CONFIG_HPP
 #define HTTP_CONFIG_HPP
 
-#include "domain/entities/ServerConfig.hpp"
-#include "domain/value_objects/Path.hpp"
-#include "domain/value_objects/Size.hpp"
+#include "domain/configuration/entities/ServerConfig.hpp"
+#include "domain/filesystem/value_objects/Path.hpp"
+#include "domain/filesystem/value_objects/Size.hpp"
+#include "domain/http/value_objects/Host.hpp"
+#include "domain/http/value_objects/Port.hpp"
 
 #include <map>
 #include <string>
 #include <vector>
 
 namespace domain {
+namespace configuration {
 namespace entities {
 
 class HttpConfig {
@@ -60,16 +63,17 @@ class HttpConfig {
   unsigned int getWorkerConnections() const;
   unsigned int getKeepaliveTimeout() const;
   unsigned int getSendTimeout() const;
-  const value_objects::Path& getErrorLogPath() const;
-  const value_objects::Path& getAccessLogPath() const;
-  const value_objects::Path& getMimeTypesPath() const;
-  const value_objects::Size& getClientMaxBodySize() const;
+  const filesystem::value_objects::Path& getErrorLogPath() const;
+  const filesystem::value_objects::Path& getAccessLogPath() const;
+  const filesystem::value_objects::Path& getMimeTypesPath() const;
+  const filesystem::value_objects::Size& getClientMaxBodySize() const;
   const ServerConfigs& getServerConfigs() const;
 
   const entities::ServerConfig* selectServer(const std::string& host,
                                              unsigned int port) const;
   const entities::ServerConfig* selectServer(
-      const value_objects::Host& host, const value_objects::Port& port) const;
+      const http::value_objects::Host& host,
+      const http::value_objects::Port& port) const;
 
   std::string getMimeType(const std::string& extension) const;
   void loadMimeTypes();
@@ -80,13 +84,13 @@ class HttpConfig {
   void setWorkerConnections(unsigned int connections);
   void setKeepaliveTimeout(unsigned int timeout);
   void setSendTimeout(unsigned int timeout);
-  void setErrorLogPath(const value_objects::Path& path);
+  void setErrorLogPath(const filesystem::value_objects::Path& path);
   void setErrorLogPath(const std::string& path);
-  void setAccessLogPath(const value_objects::Path& path);
+  void setAccessLogPath(const filesystem::value_objects::Path& path);
   void setAccessLogPath(const std::string& path);
-  void setMimeTypesPath(const value_objects::Path& path);
+  void setMimeTypesPath(const filesystem::value_objects::Path& path);
   void setMimeTypesPath(const std::string& path);
-  void setClientMaxBodySize(const value_objects::Size& size);
+  void setClientMaxBodySize(const filesystem::value_objects::Size& size);
   void setClientMaxBodySize(const std::string& sizeString);
 
   bool isValid() const;
@@ -101,10 +105,10 @@ class HttpConfig {
   unsigned int m_workerConnections;
   unsigned int m_keepaliveTimeout;
   unsigned int m_sendTimeout;
-  value_objects::Path m_errorLogPath;
-  value_objects::Path m_accessLogPath;
-  value_objects::Path m_mimeTypesPath;
-  value_objects::Size m_clientMaxBodySize;
+  filesystem::value_objects::Path m_errorLogPath;
+  filesystem::value_objects::Path m_accessLogPath;
+  filesystem::value_objects::Path m_mimeTypesPath;
+  filesystem::value_objects::Size m_clientMaxBodySize;
   ServerConfigs m_serverConfigs;
   MimeTypesMap m_mimeTypes;
   bool m_mimeTypesLoaded;
@@ -131,6 +135,7 @@ class HttpConfig {
 };
 
 }  // namespace entities
+}  // namespace configuration
 }  // namespace domain
 
 #endif  // HTTP_CONFIG_HPP

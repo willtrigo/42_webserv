@@ -6,15 +6,16 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 16:28:16 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/26 16:32:13 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 15:38:32 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "shared/exceptions/HttpConfigException.hpp"
+#include "domain/configuration/exceptions/HttpConfigException.hpp"
 
 #include <sstream>
 
-namespace shared {
+namespace domain {
+namespace configuration {
 namespace exceptions {
 
 const std::pair<HttpConfigException::ErrorCode, std::string>
@@ -83,4 +84,5 @@ std::string HttpConfigException::getErrorMsg(ErrorCode code) {
 }
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace configuration
+}  // namespace domain

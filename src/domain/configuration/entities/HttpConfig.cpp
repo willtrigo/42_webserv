@@ -6,18 +6,19 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 17:13:33 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/26 20:57:30 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/28 15:11:50 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "domain/entities/HttpConfig.hpp"
-#include "shared/exceptions/HttpConfigException.hpp"
-#include "shared/utils/StringUtils.hpp"
+#include "domain/configuration/entities/HttpConfig.hpp"
+#include "domain/configuration/exceptions/HttpConfigException.hpp"
+#include "domain/shared/utils/StringUtils.hpp"
 
 #include <fstream>
 #include <sstream>
 
 namespace domain {
+namespace configuration {
 namespace entities {
 
 const std::string HttpConfig::DEFAULT_MIME_TYPES_PATH = "/etc/mime.types";
@@ -31,20 +32,21 @@ HttpConfig::HttpConfig()
       m_workerConnections(DEFAULT_WORKER_CONNECTIONS),
       m_keepaliveTimeout(DEFAULT_KEEPALIVE_TIMEOUT),
       m_sendTimeout(DEFAULT_SEND_TIMEOUT),
-      m_errorLogPath(
-          value_objects::Path::fromString(DEFAULT_ERROR_LOG_PATH, true)),
-      m_accessLogPath(
-          value_objects::Path::fromString(DEFAULT_ACCESS_LOG_PATH, true)),
-      m_mimeTypesPath(
-          value_objects::Path::fromString(DEFAULT_MIME_TYPES_PATH, true)),
-      m_clientMaxBodySize(
-          value_objects::Size::fromMegabytes(MAX_CLIENT_BODY_SIZE_GB)),
+      m_errorLogPath(filesystem::value_objects::Path::fromString(
+          DEFAULT_ERROR_LOG_PATH, true)),
+      m_accessLogPath(filesystem::value_objects::Path::fromString(
+          DEFAULT_ACCESS_LOG_PATH, true)),
+      m_mimeTypesPath(filesystem::value_objects::Path::fromString(
+          DEFAULT_MIME_TYPES_PATH, true)),
+      m_clientMaxBodySize(filesystem::value_objects::Size::fromMegabytes(
+          MAX_CLIENT_BODY_SIZE_GB)),
       m_mimeTypesLoaded(false) {}
 
 HttpConfig::HttpConfig(const std::string& configFilePath) {
   initializeDefaults();
   // This constructor would parse a configuration file
   // For now, it just initializes with defaults
+  // TODO: implement necessary things to parse information
   (void)configFilePath;
 }
 
@@ -94,13 +96,13 @@ void HttpConfig::initializeDefaults() {
   m_keepaliveTimeout = DEFAULT_KEEPALIVE_TIMEOUT;
   m_sendTimeout = DEFAULT_SEND_TIMEOUT;
   m_errorLogPath =
-      value_objects::Path::fromString(DEFAULT_ERROR_LOG_PATH, true);
-  m_accessLogPath =
-      value_objects::Path::fromString(DEFAULT_ACCESS_LOG_PATH, true);
-  m_mimeTypesPath =
-      value_objects::Path::fromString(DEFAULT_MIME_TYPES_PATH, true);
+      filesystem::value_objects::Path::fromString(DEFAULT_ERROR_LOG_PATH, true);
+  m_accessLogPath = filesystem::value_objects::Path::fromString(
+      DEFAULT_ACCESS_LOG_PATH, true);
+  m_mimeTypesPath = filesystem::value_objects::Path::fromString(
+      DEFAULT_MIME_TYPES_PATH, true);
   m_clientMaxBodySize =
-      value_objects::Size::fromMegabytes(MAX_CLIENT_BODY_SIZE_GB);
+      filesystem::value_objects::Size::fromMegabytes(MAX_CLIENT_BODY_SIZE_GB);
   m_mimeTypesLoaded = false;
 }
 
@@ -118,19 +120,20 @@ unsigned int HttpConfig::getKeepaliveTimeout() const {
 
 unsigned int HttpConfig::getSendTimeout() const { return m_sendTimeout; }
 
-const value_objects::Path& HttpConfig::getErrorLogPath() const {
+const filesystem::value_objects::Path& HttpConfig::getErrorLogPath() const {
   return m_errorLogPath;
 }
 
-const value_objects::Path& HttpConfig::getAccessLogPath() const {
+const filesystem::value_objects::Path& HttpConfig::getAccessLogPath() const {
   return m_accessLogPath;
 }
 
-const value_objects::Path& HttpConfig::getMimeTypesPath() const {
+const filesystem::value_objects::Path& HttpConfig::getMimeTypesPath() const {
   return m_mimeTypesPath;
 }
 
-const value_objects::Size& HttpConfig::getClientMaxBodySize() const {
+const filesystem::value_objects::Size& HttpConfig::getClientMaxBodySize()
+    const {
   return m_clientMaxBodySize;
 }
 
@@ -140,13 +143,15 @@ const HttpConfig::ServerConfigs& HttpConfig::getServerConfigs() const {
 
 const entities::ServerConfig* HttpConfig::selectServer(
     const std::string& host, unsigned int port) const {
-  value_objects::Host hostObj = value_objects::Host::fromString(host);
-  value_objects::Port portObj(port);
+  http::value_objects::Host hostObj =
+      http::value_objects::Host::fromString(host);
+  http::value_objects::Port portObj(port);
   return selectServer(hostObj, portObj);
 }
 
 const entities::ServerConfig* HttpConfig::selectServer(
-    const value_objects::Host& host, const value_objects::Port& port) const {
+    const http::value_objects::Host& host,
+    const http::value_objects::Port& port) const {
   const entities::ServerConfig* selectedServer = NULL;
   const entities::ServerConfig* defaultServer = NULL;
 
@@ -177,9 +182,8 @@ const entities::ServerConfig* HttpConfig::selectServer(
   std::ostringstream oss;
   oss << "No server found for host: " << host.getValue()
       << " and port: " << port.getValue();
-  throw shared::exceptions::HttpConfigException(
-      oss.str(),
-      shared::exceptions::HttpConfigException::SERVER_SELECTION_FAILED);
+  throw exceptions::HttpConfigException(
+      oss.str(), exceptions::HttpConfigException::SERVER_SELECTION_FAILED);
 }
 
 std::string HttpConfig::getMimeType(const std::string& extension) const {
@@ -247,32 +251,32 @@ bool HttpConfig::hasMimeType(const std::string& extension) const {
 
 void HttpConfig::addServerConfig(entities::ServerConfig* serverConfig) {
   if (serverConfig == NULL) {
-    throw shared::exceptions::HttpConfigException(
+    throw exceptions::HttpConfigException(
         "Cannot add null server config",
-        shared::exceptions::HttpConfigException::INVALID_SERVER_CONFIG);
+        exceptions::HttpConfigException::INVALID_SERVER_CONFIG);
   }
 
   try {
     serverConfig->validate();
   } catch (const std::exception& e) {
-    throw shared::exceptions::HttpConfigException(
+    throw exceptions::HttpConfigException(
         "Invalid server config: " + std::string(e.what()),
-        shared::exceptions::HttpConfigException::INVALID_SERVER_CONFIG);
+        exceptions::HttpConfigException::INVALID_SERVER_CONFIG);
   }
 
   for (ServerConfigs::const_iterator it = m_serverConfigs.begin();
        it != m_serverConfigs.end(); ++it) {
     if (*it != NULL) {
       if (hasPortConflict(*it, serverConfig)) {
-        throw shared::exceptions::HttpConfigException(
+        throw exceptions::HttpConfigException(
             "Port conflict with existing server configuration",
-            shared::exceptions::HttpConfigException::DUPLICATE_SERVER);
+            exceptions::HttpConfigException::DUPLICATE_SERVER);
       }
 
       if (hasAddressConflict(*it, serverConfig)) {
-        throw shared::exceptions::HttpConfigException(
+        throw exceptions::HttpConfigException(
             "Server name conflict with existing server configuration",
-            shared::exceptions::HttpConfigException::DUPLICATE_SERVER);
+            exceptions::HttpConfigException::DUPLICATE_SERVER);
       }
     }
   }
@@ -285,9 +289,8 @@ void HttpConfig::setWorkerProcesses(unsigned int processes) {
     std::ostringstream oss;
     oss << "Invalid worker processes: " << processes << " (must be between "
         << MIN_WORKER_PROCESSES << " and " << MAX_WORKER_PROCESSES << ")";
-    throw shared::exceptions::HttpConfigException(
-        oss.str(),
-        shared::exceptions::HttpConfigException::INVALID_WORKER_PROCESSES);
+    throw exceptions::HttpConfigException(
+        oss.str(), exceptions::HttpConfigException::INVALID_WORKER_PROCESSES);
   }
   m_workerProcesses = processes;
 }
@@ -297,9 +300,8 @@ void HttpConfig::setWorkerConnections(unsigned int connections) {
     std::ostringstream oss;
     oss << "Invalid worker connections: " << connections << " (must be between "
         << MIN_WORKER_CONNECTIONS << " and " << MAX_WORKER_CONNECTIONS << ")";
-    throw shared::exceptions::HttpConfigException(
-        oss.str(),
-        shared::exceptions::HttpConfigException::INVALID_WORKER_CONNECTIONS);
+    throw exceptions::HttpConfigException(
+        oss.str(), exceptions::HttpConfigException::INVALID_WORKER_CONNECTIONS);
   }
   m_workerConnections = connections;
 }
@@ -309,9 +311,8 @@ void HttpConfig::setKeepaliveTimeout(unsigned int timeout) {
     std::ostringstream oss;
     oss << "Invalid keepalive timeout: " << timeout << " (must be between "
         << MIN_TIMEOUT << " and " << MAX_KEEPALIVE_TIMEOUT << " seconds)";
-    throw shared::exceptions::HttpConfigException(
-        oss.str(),
-        shared::exceptions::HttpConfigException::INVALID_KEEPALIVE_TIMEOUT);
+    throw exceptions::HttpConfigException(
+        oss.str(), exceptions::HttpConfigException::INVALID_KEEPALIVE_TIMEOUT);
   }
   m_keepaliveTimeout = timeout;
 }
@@ -321,74 +322,74 @@ void HttpConfig::setSendTimeout(unsigned int timeout) {
     std::ostringstream oss;
     oss << "Invalid send timeout: " << timeout << " (must be between "
         << MIN_TIMEOUT << " and " << MAX_SEND_TIMEOUT << " seconds)";
-    throw shared::exceptions::HttpConfigException(
-        oss.str(),
-        shared::exceptions::HttpConfigException::INVALID_SEND_TIMEOUT);
+    throw exceptions::HttpConfigException(
+        oss.str(), exceptions::HttpConfigException::INVALID_SEND_TIMEOUT);
   }
   m_sendTimeout = timeout;
 }
 
-void HttpConfig::setErrorLogPath(const value_objects::Path& path) {
+void HttpConfig::setErrorLogPath(const filesystem::value_objects::Path& path) {
   m_errorLogPath = path;
 }
 
 void HttpConfig::setErrorLogPath(const std::string& path) {
   try {
     std::string trimmedPath = shared::utils::StringUtils::trim(path);
-    m_errorLogPath = value_objects::Path::fromString(trimmedPath, false);
+    m_errorLogPath =
+        filesystem::value_objects::Path::fromString(trimmedPath, false);
   } catch (const std::exception& e) {
     std::ostringstream oss;
     oss << "Invalid error log path: " << e.what();
-    throw shared::exceptions::HttpConfigException(
-        oss.str(),
-        shared::exceptions::HttpConfigException::INVALID_ERROR_LOG_PATH);
+    throw exceptions::HttpConfigException(
+        oss.str(), exceptions::HttpConfigException::INVALID_ERROR_LOG_PATH);
   }
 }
 
-void HttpConfig::setAccessLogPath(const value_objects::Path& path) {
+void HttpConfig::setAccessLogPath(const filesystem::value_objects::Path& path) {
   m_accessLogPath = path;
 }
 
 void HttpConfig::setAccessLogPath(const std::string& path) {
   try {
     std::string trimmedPath = shared::utils::StringUtils::trim(path);
-    m_accessLogPath = value_objects::Path::fromString(trimmedPath, false);
+    m_accessLogPath =
+        filesystem::value_objects::Path::fromString(trimmedPath, false);
   } catch (const std::exception& e) {
     std::ostringstream oss;
     oss << "Invalid access log path: " << e.what();
-    throw shared::exceptions::HttpConfigException(
-        oss.str(),
-        shared::exceptions::HttpConfigException::INVALID_ACCESS_LOG_PATH);
+    throw exceptions::HttpConfigException(
+        oss.str(), exceptions::HttpConfigException::INVALID_ACCESS_LOG_PATH);
   }
 }
 
-void HttpConfig::setMimeTypesPath(const value_objects::Path& path) {
+void HttpConfig::setMimeTypesPath(const filesystem::value_objects::Path& path) {
   m_mimeTypesPath = path;
 }
 
 void HttpConfig::setMimeTypesPath(const std::string& path) {
   try {
     std::string trimmedPath = shared::utils::StringUtils::trim(path);
-    m_mimeTypesPath = value_objects::Path::fromString(trimmedPath, true);
+    m_mimeTypesPath =
+        filesystem::value_objects::Path::fromString(trimmedPath, true);
   } catch (const std::exception& e) {
     std::ostringstream oss;
     oss << "Invalid MIME types path: " << e.what();
-    throw shared::exceptions::HttpConfigException(
-        oss.str(),
-        shared::exceptions::HttpConfigException::INVALID_MIME_TYPES_PATH);
+    throw exceptions::HttpConfigException(
+        oss.str(), exceptions::HttpConfigException::INVALID_MIME_TYPES_PATH);
   }
 }
 
-void HttpConfig::setClientMaxBodySize(const value_objects::Size& size) {
-  const value_objects::Size MAX_SIZE =
-      value_objects::Size::fromGigabytes(MAX_CLIENT_BODY_SIZE_GB);
+void HttpConfig::setClientMaxBodySize(
+    const filesystem::value_objects::Size& size) {
+  const filesystem::value_objects::Size MAX_SIZE =
+      filesystem::value_objects::Size::fromGigabytes(MAX_CLIENT_BODY_SIZE_GB);
   if (size.getBytes() > MAX_SIZE.getBytes()) {
     std::ostringstream oss;
     oss << "Client max body size too large: " << size.toString()
         << " (maximum is " << MAX_SIZE.toString() << ")";
-    throw shared::exceptions::HttpConfigException(
+    throw exceptions::HttpConfigException(
         oss.str(),
-        shared::exceptions::HttpConfigException::INVALID_CLIENT_MAX_BODY_SIZE);
+        exceptions::HttpConfigException::INVALID_CLIENT_MAX_BODY_SIZE);
   }
   m_clientMaxBodySize = size;
 }
@@ -396,14 +397,15 @@ void HttpConfig::setClientMaxBodySize(const value_objects::Size& size) {
 void HttpConfig::setClientMaxBodySize(const std::string& sizeString) {
   try {
     std::string trimmedSize = shared::utils::StringUtils::trim(sizeString);
-    value_objects::Size size = value_objects::Size::fromString(trimmedSize);
+    filesystem::value_objects::Size size =
+        filesystem::value_objects::Size::fromString(trimmedSize);
     setClientMaxBodySize(size);
   } catch (const std::exception& e) {
     std::ostringstream oss;
     oss << "Invalid client max body size: " << e.what();
-    throw shared::exceptions::HttpConfigException(
+    throw exceptions::HttpConfigException(
         oss.str(),
-        shared::exceptions::HttpConfigException::INVALID_CLIENT_MAX_BODY_SIZE);
+        exceptions::HttpConfigException::INVALID_CLIENT_MAX_BODY_SIZE);
   }
 }
 
@@ -411,7 +413,7 @@ bool HttpConfig::isValid() const {
   try {
     validate();
     return true;
-  } catch (const shared::exceptions::HttpConfigException&) {
+  } catch (const exceptions::HttpConfigException&) {
     return false;
   }
 }
@@ -426,69 +428,69 @@ void HttpConfig::validate() const {
 
 void HttpConfig::validateGlobalConfig() const {
   if (!isValidWorkerCount(m_workerProcesses)) {
-    throw shared::exceptions::HttpConfigException(
+    throw exceptions::HttpConfigException(
         "Invalid worker processes",
-        shared::exceptions::HttpConfigException::INVALID_WORKER_PROCESSES);
+        exceptions::HttpConfigException::INVALID_WORKER_PROCESSES);
   }
 
   if (!isValidConnectionCount(m_workerConnections)) {
-    throw shared::exceptions::HttpConfigException(
+    throw exceptions::HttpConfigException(
         "Invalid worker connections",
-        shared::exceptions::HttpConfigException::INVALID_WORKER_CONNECTIONS);
+        exceptions::HttpConfigException::INVALID_WORKER_CONNECTIONS);
   }
 
   if (!isValidTimeout(m_keepaliveTimeout)) {
-    throw shared::exceptions::HttpConfigException(
+    throw exceptions::HttpConfigException(
         "Invalid keepalive timeout",
-        shared::exceptions::HttpConfigException::INVALID_KEEPALIVE_TIMEOUT);
+        exceptions::HttpConfigException::INVALID_KEEPALIVE_TIMEOUT);
   }
 
   if (!isValidTimeout(m_sendTimeout)) {
-    throw shared::exceptions::HttpConfigException(
+    throw exceptions::HttpConfigException(
         "Invalid send timeout",
-        shared::exceptions::HttpConfigException::INVALID_SEND_TIMEOUT);
+        exceptions::HttpConfigException::INVALID_SEND_TIMEOUT);
   }
 
   if (m_errorLogPath.isEmpty()) {
-    throw shared::exceptions::HttpConfigException(
+    throw exceptions::HttpConfigException(
         "Error log path cannot be empty",
-        shared::exceptions::HttpConfigException::INVALID_ERROR_LOG_PATH);
+        exceptions::HttpConfigException::INVALID_ERROR_LOG_PATH);
   }
 
   if (m_accessLogPath.isEmpty()) {
-    throw shared::exceptions::HttpConfigException(
+    throw exceptions::HttpConfigException(
         "Access log path cannot be empty",
-        shared::exceptions::HttpConfigException::INVALID_ACCESS_LOG_PATH);
+        exceptions::HttpConfigException::INVALID_ACCESS_LOG_PATH);
   }
 
   if (m_mimeTypesPath.isEmpty()) {
-    throw shared::exceptions::HttpConfigException(
+    throw exceptions::HttpConfigException(
         "MIME types path cannot be empty",
-        shared::exceptions::HttpConfigException::INVALID_MIME_TYPES_PATH);
+        exceptions::HttpConfigException::INVALID_MIME_TYPES_PATH);
   }
 }
 
 void HttpConfig::validateServerConfigs() const {
   if (m_serverConfigs.empty()) {
-    throw shared::exceptions::HttpConfigException(
+    throw exceptions::HttpConfigException(
         "HTTP configuration must contain at least one server",
-        shared::exceptions::HttpConfigException::EMPTY_CONFIGURATION);
+        exceptions::HttpConfigException::EMPTY_CONFIGURATION);
   }
 
   for (ServerConfigs::const_iterator it = m_serverConfigs.begin();
        it != m_serverConfigs.end(); ++it) {
     if (*it == NULL) {
-      throw shared::exceptions::HttpConfigException(
+      throw exceptions::HttpConfigException(
           "Null server configuration found",
-          shared::exceptions::HttpConfigException::INVALID_SERVER_CONFIG);
+          exceptions::HttpConfigException::INVALID_SERVER_CONFIG);
     }
 
     try {
       (*it)->validate();
     } catch (const std::exception& e) {
-      throw shared::exceptions::HttpConfigException(
+      throw exceptions::HttpConfigException(
           "Server configuration validation failed: " + std::string(e.what()),
-          shared::exceptions::HttpConfigException::CONFIG_VALIDATION_FAILED);
+          exceptions::HttpConfigException::CONFIG_VALIDATION_FAILED);
     }
   }
 }
@@ -497,9 +499,9 @@ void HttpConfig::validateNoPortConflicts() const {
   for (size_t i = 0; i < m_serverConfigs.size(); ++i) {
     for (size_t j = i + 1; j < m_serverConfigs.size(); ++j) {
       if (hasPortConflict(m_serverConfigs[i], m_serverConfigs[j])) {
-        throw shared::exceptions::HttpConfigException(
+        throw exceptions::HttpConfigException(
             "Port conflict detected between servers",
-            shared::exceptions::HttpConfigException::PORT_CONFLICT);
+            exceptions::HttpConfigException::PORT_CONFLICT);
       }
     }
   }
@@ -509,9 +511,9 @@ void HttpConfig::validateNoAddressConflicts() const {
   for (size_t i = 0; i < m_serverConfigs.size(); ++i) {
     for (size_t j = i + 1; j < m_serverConfigs.size(); ++j) {
       if (hasAddressConflict(m_serverConfigs[i], m_serverConfigs[j])) {
-        throw shared::exceptions::HttpConfigException(
+        throw exceptions::HttpConfigException(
             "Address conflict detected between servers",
-            shared::exceptions::HttpConfigException::ADDRESS_CONFLICT);
+            exceptions::HttpConfigException::ADDRESS_CONFLICT);
       }
     }
   }
@@ -533,9 +535,9 @@ void HttpConfig::validateDefaultServers() const {
           if (defaultServerCounts[port] > 1) {
             std::ostringstream oss;
             oss << "Multiple default servers found for port " << port;
-            throw shared::exceptions::HttpConfigException(
-                oss.str(), shared::exceptions::HttpConfigException::
-                               MULTIPLE_DEFAULT_SERVERS);
+            throw exceptions::HttpConfigException(
+                oss.str(),
+                exceptions::HttpConfigException::MULTIPLE_DEFAULT_SERVERS);
           }
         }
       }
@@ -549,13 +551,13 @@ void HttpConfig::clear() {
   m_keepaliveTimeout = DEFAULT_KEEPALIVE_TIMEOUT;
   m_sendTimeout = DEFAULT_SEND_TIMEOUT;
   m_errorLogPath =
-      value_objects::Path::fromString(DEFAULT_ERROR_LOG_PATH, true);
-  m_accessLogPath =
-      value_objects::Path::fromString(DEFAULT_ACCESS_LOG_PATH, true);
-  m_mimeTypesPath =
-      value_objects::Path::fromString(DEFAULT_MIME_TYPES_PATH, true);
+      filesystem::value_objects::Path::fromString(DEFAULT_ERROR_LOG_PATH, true);
+  m_accessLogPath = filesystem::value_objects::Path::fromString(
+      DEFAULT_ACCESS_LOG_PATH, true);
+  m_mimeTypesPath = filesystem::value_objects::Path::fromString(
+      DEFAULT_MIME_TYPES_PATH, true);
   m_clientMaxBodySize =
-      value_objects::Size::fromMegabytes(MAX_CLIENT_BODY_SIZE_GB);
+      filesystem::value_objects::Size::fromMegabytes(MAX_CLIENT_BODY_SIZE_GB);
   m_mimeTypes.clear();
   m_mimeTypesLoaded = false;
   clearServerConfigs();
@@ -695,4 +697,5 @@ bool HttpConfig::hasAddressConflict(const entities::ServerConfig* config1,
 }
 
 }  // namespace entities
+}  // namespace configuration
 }  // namespace domain
