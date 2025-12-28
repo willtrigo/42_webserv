@@ -6,15 +6,16 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 11:47:30 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/26 16:48:16 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 04:15:58 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "shared/exceptions/ServerConfigException.hpp"
+#include "domain/configuration/exceptions/ServerConfigException.hpp"
 
 #include <sstream>
 
-namespace shared {
+namespace domain {
+namespace configuration {
 namespace exceptions {
 
 const std::pair<ServerConfigException::ErrorCode, std::string>
@@ -100,4 +101,5 @@ std::string ServerConfigException::getErrorMsg(
 }
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace configuration
+}  // namespace domain

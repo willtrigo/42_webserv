@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/28 01:51:29 by dande-je         ###   ########.fr        #
+#    Updated: 2025/12/28 15:02:06 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -87,14 +87,17 @@ SLEEP                           := sleep 0.01
 NAME_OUTPUT                     = webserv
 NAME                            = $(BIN_DIR)$(NAME_OUTPUT)
 
-SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_ENTITIES_DIR),  LocationConfig.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_ENTITIES_DIR),  LocationConfig.cpp \
+																	 ServerConfig.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_EXCEPTIONS_DIR),  CgiConfigException.cpp \
 																	 ErrorPageException.cpp \
 																	 ListenDirectiveException.cpp \
 																	 LocationConfigException.cpp \
 																	 RouteException.cpp \
+																	 ServerConfigException.cpp \
 																	 UploadConfigException.cpp)
-SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_VALUE_OBJECTS_DIR), ErrorPage.cpp \
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_VALUE_OBJECTS_DIR), CgiConfig.cpp \
+																	 ErrorPage.cpp \
 																	 ListenDirective.cpp \
 																	 Route.cpp \
 																	 UploadConfig.cpp)

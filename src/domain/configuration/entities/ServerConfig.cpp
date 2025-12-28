@@ -6,37 +6,38 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 11:52:37 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/26 15:54:15 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/28 14:47:02 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "domain/entities/ServerConfig.hpp"
-#include "shared/exceptions/ServerConfigException.hpp"
-#include "shared/utils/StringUtils.hpp"
+#include "domain/configuration/entities/ServerConfig.hpp"
+#include "domain/configuration/exceptions/ServerConfigException.hpp"
+#include "domain/shared/utils/StringUtils.hpp"
 
 #include <sstream>
 
 namespace domain {
+namespace configuration {
 namespace entities {
 
 const std::string ServerConfig::DEFAULT_ROOT = "/var/www/html";
 const std::string ServerConfig::DEFAULT_INDEX = "index.html";
 
 ServerConfig::ServerConfig()
-    : m_root(value_objects::Path::fromString(DEFAULT_ROOT, true)),
-      m_clientMaxBodySize(
-          value_objects::Size::fromMegabytes(DEFAULT_CLIENT_MAX_BODY_SIZE_MB)),
-      m_returnCode(value_objects::ErrorCode::ok()) {
+    : m_root(filesystem::value_objects::Path::fromString(DEFAULT_ROOT, true)),
+      m_clientMaxBodySize(filesystem::value_objects::Size::fromMegabytes(
+          DEFAULT_CLIENT_MAX_BODY_SIZE_MB)),
+      m_returnCode(shared::value_objects::ErrorCode::ok()) {
   m_listenDirectives.push_back(ListenDirective::createDefault());
   m_indexFiles.push_back(DEFAULT_INDEX);
 }
 
 ServerConfig::ServerConfig(const ListenDirectives& listenDirectives)
     : m_listenDirectives(listenDirectives),
-      m_root(value_objects::Path::fromString(DEFAULT_ROOT, true)),
-      m_clientMaxBodySize(
-          value_objects::Size::fromMegabytes(DEFAULT_CLIENT_MAX_BODY_SIZE_MB)),
-      m_returnCode(value_objects::ErrorCode::ok()) {
+      m_root(filesystem::value_objects::Path::fromString(DEFAULT_ROOT, true)),
+      m_clientMaxBodySize(filesystem::value_objects::Size::fromMegabytes(
+          DEFAULT_CLIENT_MAX_BODY_SIZE_MB)),
+      m_returnCode(shared::value_objects::ErrorCode::ok()) {
   m_indexFiles.push_back(DEFAULT_INDEX);
 }
 
@@ -85,7 +86,9 @@ const ServerConfig::ServerNames& ServerConfig::getServerNames() const {
   return m_serverNames;
 }
 
-const value_objects::Path& ServerConfig::getRoot() const { return m_root; }
+const filesystem::value_objects::Path& ServerConfig::getRoot() const {
+  return m_root;
+}
 
 const std::vector<std::string>& ServerConfig::getIndexFiles() const {
   return m_indexFiles;
@@ -99,7 +102,8 @@ const ServerConfig::Locations& ServerConfig::getLocations() const {
   return m_locations;
 }
 
-const value_objects::Size& ServerConfig::getClientMaxBodySize() const {
+const filesystem::value_objects::Size& ServerConfig::getClientMaxBodySize()
+    const {
   return m_clientMaxBodySize;
 }
 
@@ -107,7 +111,7 @@ const std::string& ServerConfig::getReturnRedirect() const {
   return m_returnRedirect;
 }
 
-const value_objects::ErrorCode& ServerConfig::getReturnCode() const {
+const shared::value_objects::ErrorCode& ServerConfig::getReturnCode() const {
   return m_returnCode;
 }
 
@@ -125,9 +129,8 @@ void ServerConfig::addListenDirective(const ListenDirective& directive) {
     if (m_listenDirectives[i] == directive) {
       std::ostringstream oss;
       oss << directive.toString();
-      throw shared::exceptions::ServerConfigException(
-          oss.str(),
-          shared::exceptions::ServerConfigException::DUPLICATE_LISTEN);
+      throw exceptions::ServerConfigException(
+          oss.str(), exceptions::ServerConfigException::DUPLICATE_LISTEN);
     }
   }
   m_listenDirectives.push_back(directive);
@@ -141,9 +144,9 @@ void ServerConfig::addListenDirective(const std::string& directiveString) {
     std::ostringstream oss;
     oss << "Invalid listen directive format: " << directiveString << " - "
         << e.what();
-    throw shared::exceptions::ServerConfigException(
-        oss.str(), shared::exceptions::ServerConfigException::
-                       INVALID_LISTEN_DIRECTIVE_FORMAT);
+    throw exceptions::ServerConfigException(
+        oss.str(),
+        exceptions::ServerConfigException::INVALID_LISTEN_DIRECTIVE_FORMAT);
   }
 }
 
@@ -151,44 +154,43 @@ void ServerConfig::addServerName(const std::string& name) {
   std::string trimmedName = shared::utils::StringUtils::trim(name);
 
   if (trimmedName.empty()) {
-    throw shared::exceptions::ServerConfigException(
+    throw exceptions::ServerConfigException(
         "Server name cannot be empty",
-        shared::exceptions::ServerConfigException::EMPTY_SERVER_NAME);
+        exceptions::ServerConfigException::EMPTY_SERVER_NAME);
   }
 
   if (!isValidServerName(trimmedName)) {
     std::ostringstream oss;
     oss << "Invalid server name: '" << trimmedName << "'";
-    throw shared::exceptions::ServerConfigException(
-        oss.str(),
-        shared::exceptions::ServerConfigException::INVALID_SERVER_NAME);
+    throw exceptions::ServerConfigException(
+        oss.str(), exceptions::ServerConfigException::INVALID_SERVER_NAME);
   }
 
   for (std::size_t i = 0; i < m_serverNames.size(); ++i) {
     if (m_serverNames[i] == trimmedName) {
       std::ostringstream oss;
       oss << "Duplicate server name: '" << trimmedName << "'";
-      throw shared::exceptions::ServerConfigException(
-          oss.str(),
-          shared::exceptions::ServerConfigException::DUPLICATE_SERVER_NAME);
+      throw exceptions::ServerConfigException(
+          oss.str(), exceptions::ServerConfigException::DUPLICATE_SERVER_NAME);
     }
   }
 
   m_serverNames.push_back(trimmedName);
 }
 
-void ServerConfig::setRoot(const value_objects::Path& root) { m_root = root; }
+void ServerConfig::setRoot(const filesystem::value_objects::Path& root) {
+  m_root = root;
+}
 
 void ServerConfig::setRoot(const std::string& root) {
   try {
     std::string trimmedRoot = shared::utils::StringUtils::trim(root);
-    m_root = value_objects::Path::fromString(trimmedRoot, true);
+    m_root = filesystem::value_objects::Path::fromString(trimmedRoot, true);
   } catch (const std::exception& e) {
     std::ostringstream oss;
     oss << "Invalid root path: " << e.what();
-    throw shared::exceptions::ServerConfigException(
-        oss.str(),
-        shared::exceptions::ServerConfigException::INVALID_ROOT_PATH);
+    throw exceptions::ServerConfigException(
+        oss.str(), exceptions::ServerConfigException::INVALID_ROOT_PATH);
   }
 }
 
@@ -196,33 +198,31 @@ void ServerConfig::addIndexFile(const std::string& index) {
   std::string trimmedIndex = shared::utils::StringUtils::trim(index);
 
   if (trimmedIndex.empty()) {
-    throw shared::exceptions::ServerConfigException(
+    throw exceptions::ServerConfigException(
         "Index file cannot be empty",
-        shared::exceptions::ServerConfigException::EMPTY_INDEX_FILE);
+        exceptions::ServerConfigException::EMPTY_INDEX_FILE);
   }
 
   for (std::size_t i = 0; i < m_indexFiles.size(); ++i) {
     if (m_indexFiles[i] == trimmedIndex) {
       std::ostringstream oss;
       oss << "Duplicate index file: '" << trimmedIndex << "'";
-      throw shared::exceptions::ServerConfigException(
-          oss.str(),
-          shared::exceptions::ServerConfigException::DUPLICATE_INDEX_FILE);
+      throw exceptions::ServerConfigException(
+          oss.str(), exceptions::ServerConfigException::DUPLICATE_INDEX_FILE);
     }
   }
 
   m_indexFiles.push_back(trimmedIndex);
 }
 
-void ServerConfig::addErrorPage(const value_objects::ErrorCode& code,
+void ServerConfig::addErrorPage(const shared::value_objects::ErrorCode& code,
                                 const std::string& uri) {
   if (!code.isError()) {
     std::ostringstream oss;
     oss << "Invalid error code for error page: " << code.getValue()
         << " (must be an error code between 400 and 599)";
-    throw shared::exceptions::ServerConfigException(
-        oss.str(),
-        shared::exceptions::ServerConfigException::INVALID_ERROR_CODE);
+    throw exceptions::ServerConfigException(
+        oss.str(), exceptions::ServerConfigException::INVALID_ERROR_CODE);
   }
 
   std::string trimmedUri = shared::utils::StringUtils::trim(uri);
@@ -230,18 +230,16 @@ void ServerConfig::addErrorPage(const value_objects::ErrorCode& code,
   if (trimmedUri.empty()) {
     std::ostringstream oss;
     oss << "Error page URI cannot be empty for error code " << code.getValue();
-    throw shared::exceptions::ServerConfigException(
-        oss.str(),
-        shared::exceptions::ServerConfigException::EMPTY_ERROR_PAGE_URI);
+    throw exceptions::ServerConfigException(
+        oss.str(), exceptions::ServerConfigException::EMPTY_ERROR_PAGE_URI);
   }
 
   if (trimmedUri[0] != '/') {
     std::ostringstream oss;
     oss << "Error page URI must start with '/': " << trimmedUri
         << " for error code " << code.getValue();
-    throw shared::exceptions::ServerConfigException(
-        oss.str(),
-        shared::exceptions::ServerConfigException::INVALID_ERROR_PAGE_URI);
+    throw exceptions::ServerConfigException(
+        oss.str(), exceptions::ServerConfigException::INVALID_ERROR_PAGE_URI);
   }
 
   m_errorPages[code] = trimmedUri;
@@ -249,9 +247,9 @@ void ServerConfig::addErrorPage(const value_objects::ErrorCode& code,
 
 void ServerConfig::addLocation(LocationConfig* location) {
   if (location == NULL) {
-    throw shared::exceptions::ServerConfigException(
+    throw exceptions::ServerConfigException(
         "Cannot add null location",
-        shared::exceptions::ServerConfigException::NULL_LOCATION);
+        exceptions::ServerConfigException::NULL_LOCATION);
   }
 
   try {
@@ -259,9 +257,9 @@ void ServerConfig::addLocation(LocationConfig* location) {
   } catch (const std::exception& e) {
     std::ostringstream oss;
     oss << "Location validation failed: " << e.what();
-    throw shared::exceptions::ServerConfigException(
+    throw exceptions::ServerConfigException(
         oss.str(),
-        shared::exceptions::ServerConfigException::LOCATION_VALIDATION_FAILED);
+        exceptions::ServerConfigException::LOCATION_VALIDATION_FAILED);
   }
 
   for (std::size_t i = 0; i < m_locations.size(); ++i) {
@@ -269,26 +267,27 @@ void ServerConfig::addLocation(LocationConfig* location) {
         m_locations[i]->getPath() == location->getPath()) {
       std::ostringstream oss;
       oss << "Duplicate location path: '" << location->getPath() << "'";
-      throw shared::exceptions::ServerConfigException(
+      throw exceptions::ServerConfigException(
           oss.str(),
-          shared::exceptions::ServerConfigException::DUPLICATE_LOCATION_PATH);
+          exceptions::ServerConfigException::DUPLICATE_LOCATION_PATH);
     }
   }
 
   m_locations.push_back(location);
 }
 
-void ServerConfig::setClientMaxBodySize(const value_objects::Size& size) {
-  const value_objects::Size MAX_BODY_SIZE =
-      value_objects::Size::fromMegabytes(MAX_CLIENT_MAX_BODY_SIZE_MB);
+void ServerConfig::setClientMaxBodySize(
+    const filesystem::value_objects::Size& size) {
+  const filesystem::value_objects::Size MAX_BODY_SIZE =
+      filesystem::value_objects::Size::fromMegabytes(
+          MAX_CLIENT_MAX_BODY_SIZE_MB);
 
   if (size.getBytes() > MAX_BODY_SIZE.getBytes()) {
     std::ostringstream oss;
     oss << "Client max body size too large: " << size.toString()
         << " (maximum is " << MAX_BODY_SIZE.toString() << ")";
-    throw shared::exceptions::ServerConfigException(
-        oss.str(),
-        shared::exceptions::ServerConfigException::BODY_SIZE_TOO_LARGE);
+    throw exceptions::ServerConfigException(
+        oss.str(), exceptions::ServerConfigException::BODY_SIZE_TOO_LARGE);
   }
 
   m_clientMaxBodySize = size;
@@ -297,34 +296,33 @@ void ServerConfig::setClientMaxBodySize(const value_objects::Size& size) {
 void ServerConfig::setClientMaxBodySize(const std::string& sizeString) {
   try {
     std::string trimmedSize = shared::utils::StringUtils::trim(sizeString);
-    value_objects::Size size = value_objects::Size::fromString(trimmedSize);
+    filesystem::value_objects::Size size =
+        filesystem::value_objects::Size::fromString(trimmedSize);
     setClientMaxBodySize(size);
   } catch (const std::exception& e) {
     std::ostringstream oss;
     oss << "Invalid client max body size: " << e.what();
-    throw shared::exceptions::ServerConfigException(
-        oss.str(),
-        shared::exceptions::ServerConfigException::BODY_SIZE_TOO_LARGE);
+    throw exceptions::ServerConfigException(
+        oss.str(), exceptions::ServerConfigException::BODY_SIZE_TOO_LARGE);
   }
 }
 
-void ServerConfig::setReturnRedirect(const std::string& redirect,
-                                     const value_objects::ErrorCode& code) {
+void ServerConfig::setReturnRedirect(
+    const std::string& redirect, const shared::value_objects::ErrorCode& code) {
   std::string trimmedRedirect = shared::utils::StringUtils::trim(redirect);
 
   if (trimmedRedirect.empty()) {
-    throw shared::exceptions::ServerConfigException(
+    throw exceptions::ServerConfigException(
         "Return redirect URL cannot be empty",
-        shared::exceptions::ServerConfigException::EMPTY_REDIRECT_URL);
+        exceptions::ServerConfigException::EMPTY_REDIRECT_URL);
   }
 
   if (!code.isRedirection()) {
     std::ostringstream oss;
     oss << "Invalid redirect code: " << code.getValue()
         << " (must be a redirection code between 300 and 399)";
-    throw shared::exceptions::ServerConfigException(
-        oss.str(),
-        shared::exceptions::ServerConfigException::INVALID_REDIRECT_CODE);
+    throw exceptions::ServerConfigException(
+        oss.str(), exceptions::ServerConfigException::INVALID_REDIRECT_CODE);
   }
 
   m_returnRedirect = trimmedRedirect;
@@ -335,14 +333,13 @@ void ServerConfig::setReturnRedirect(const std::string& redirect,
                                      unsigned int code) {
   try {
     std::string trimmedRedirect = shared::utils::StringUtils::trim(redirect);
-    value_objects::ErrorCode errorCode(code);
+    shared::value_objects::ErrorCode errorCode(code);
     setReturnRedirect(trimmedRedirect, errorCode);
   } catch (const std::exception& e) {
     std::ostringstream oss;
     oss << "Invalid redirect code: " << e.what();
-    throw shared::exceptions::ServerConfigException(
-        oss.str(),
-        shared::exceptions::ServerConfigException::INVALID_REDIRECT_CODE);
+    throw exceptions::ServerConfigException(
+        oss.str(), exceptions::ServerConfigException::INVALID_REDIRECT_CODE);
   }
 }
 
@@ -350,7 +347,7 @@ bool ServerConfig::isValid() const {
   try {
     validate();
     return true;
-  } catch (const shared::exceptions::ServerConfigException&) {
+  } catch (const exceptions::ServerConfigException&) {
     return false;
   }
 }
@@ -364,17 +361,17 @@ void ServerConfig::validate() const {
   validateClientMaxBodySize();
 
   if (m_locations.empty() && m_root.isEmpty() && m_returnRedirect.empty()) {
-    throw shared::exceptions::ServerConfigException(
+    throw exceptions::ServerConfigException(
         "Server must have at least one location, a root, or a return directive",
-        shared::exceptions::ServerConfigException::MISSING_CONFIGURATION);
+        exceptions::ServerConfigException::MISSING_CONFIGURATION);
   }
 }
 
 void ServerConfig::validateListenDirectives() const {
   if (m_listenDirectives.empty()) {
-    throw shared::exceptions::ServerConfigException(
+    throw exceptions::ServerConfigException(
         "Server must have at least one listen directive",
-        shared::exceptions::ServerConfigException::MISSING_LISTEN_DIRECTIVE);
+        exceptions::ServerConfigException::MISSING_LISTEN_DIRECTIVE);
   }
 }
 
@@ -384,9 +381,8 @@ void ServerConfig::validateServerNames() const {
     if (!isValidServerName(name)) {
       std::ostringstream oss;
       oss << "Invalid server name format: '" << name << "'";
-      throw shared::exceptions::ServerConfigException(
-          oss.str(),
-          shared::exceptions::ServerConfigException::INVALID_SERVER_NAME);
+      throw exceptions::ServerConfigException(
+          oss.str(), exceptions::ServerConfigException::INVALID_SERVER_NAME);
     }
   }
 }
@@ -402,9 +398,9 @@ void ServerConfig::validateRoot() const {
     }
 
     if (!allLocationsHaveRoot) {
-      throw shared::exceptions::ServerConfigException(
+      throw exceptions::ServerConfigException(
           "Server root must be set if any location doesn't have its own root",
-          shared::exceptions::ServerConfigException::MISSING_ROOT);
+          exceptions::ServerConfigException::MISSING_ROOT);
     }
   }
 }
@@ -418,9 +414,8 @@ void ServerConfig::validateErrorPages() const {
       std::ostringstream oss;
       oss << "Invalid error page URI for error " << it->first.getValue()
           << ": '" << uri << "' (must start with '/')";
-      throw shared::exceptions::ServerConfigException(
-          oss.str(),
-          shared::exceptions::ServerConfigException::INVALID_ERROR_PAGE_URI);
+      throw exceptions::ServerConfigException(
+          oss.str(), exceptions::ServerConfigException::INVALID_ERROR_PAGE_URI);
     }
   }
 }
@@ -428,37 +423,38 @@ void ServerConfig::validateErrorPages() const {
 void ServerConfig::validateLocations() const {
   for (std::size_t i = 0; i < m_locations.size(); ++i) {
     if (m_locations[i] == NULL) {
-      throw shared::exceptions::ServerConfigException(
+      throw exceptions::ServerConfigException(
           "Server contains null location",
-          shared::exceptions::ServerConfigException::NULL_LOCATION);
+          exceptions::ServerConfigException::NULL_LOCATION);
     }
   }
 }
 
 void ServerConfig::validateClientMaxBodySize() const {
-  const value_objects::Size MAX_BODY_SIZE =
-      value_objects::Size::fromMegabytes(MAX_CLIENT_MAX_BODY_SIZE_MB);
+  const filesystem::value_objects::Size MAX_BODY_SIZE =
+      filesystem::value_objects::Size::fromMegabytes(
+          MAX_CLIENT_MAX_BODY_SIZE_MB);
 
   if (m_clientMaxBodySize.getBytes() > MAX_BODY_SIZE.getBytes()) {
     std::ostringstream oss;
     oss << "Client max body size exceeds limit: "
         << m_clientMaxBodySize.toString() << " (maximum is "
         << MAX_BODY_SIZE.toString() << ")";
-    throw shared::exceptions::ServerConfigException(
-        oss.str(),
-        shared::exceptions::ServerConfigException::BODY_SIZE_TOO_LARGE);
+    throw exceptions::ServerConfigException(
+        oss.str(), exceptions::ServerConfigException::BODY_SIZE_TOO_LARGE);
   }
 }
 
 bool ServerConfig::matchesRequest(const std::string& host,
                                   unsigned int port) const {
-  value_objects::Port portObj(port);
-  value_objects::Host hostObj = value_objects::Host::fromString(host);
+  http::value_objects::Port portObj(port);
+  http::value_objects::Host hostObj =
+      http::value_objects::Host::fromString(host);
   return matchesRequest(hostObj, portObj);
 }
 
-bool ServerConfig::matchesRequest(const value_objects::Host& host,
-                                  const value_objects::Port& port) const {
+bool ServerConfig::matchesRequest(const http::value_objects::Host& host,
+                                  const http::value_objects::Port& port) const {
   bool portMatches = false;
   for (std::size_t i = 0; i < m_listenDirectives.size(); ++i) {
     if (m_listenDirectives[i].getPort() == port) {
@@ -513,13 +509,15 @@ const LocationConfig* ServerConfig::findLocation(
 
 bool ServerConfig::hasListenDirective(const std::string& address,
                                       unsigned int port) const {
-  value_objects::Port portObj(port);
-  value_objects::Host hostObj = value_objects::Host::fromString(address);
+  http::value_objects::Port portObj(port);
+  http::value_objects::Host hostObj =
+      http::value_objects::Host::fromString(address);
   return hasListenDirective(hostObj, portObj);
 }
 
-bool ServerConfig::hasListenDirective(const value_objects::Host& host,
-                                      const value_objects::Port& port) const {
+bool ServerConfig::hasListenDirective(
+    const http::value_objects::Host& host,
+    const http::value_objects::Port& port) const {
   ListenDirective directive(host, port);
   for (std::size_t i = 0; i < m_listenDirectives.size(); ++i) {
     if (m_listenDirectives[i] == directive) {
@@ -532,14 +530,14 @@ bool ServerConfig::hasListenDirective(const value_objects::Host& host,
 void ServerConfig::clear() {
   m_listenDirectives.clear();
   m_serverNames.clear();
-  m_root = value_objects::Path::fromString(DEFAULT_ROOT, true);
+  m_root = filesystem::value_objects::Path::fromString(DEFAULT_ROOT, true);
   m_indexFiles.clear();
   m_errorPages.clear();
   clearLocations();
-  m_clientMaxBodySize =
-      value_objects::Size::fromMegabytes(DEFAULT_CLIENT_MAX_BODY_SIZE_MB);
+  m_clientMaxBodySize = filesystem::value_objects::Size::fromMegabytes(
+      DEFAULT_CLIENT_MAX_BODY_SIZE_MB);
   m_returnRedirect.clear();
-  m_returnCode = value_objects::ErrorCode::ok();
+  m_returnCode = shared::value_objects::ErrorCode::ok();
 
   m_listenDirectives.push_back(ListenDirective::createDefault());
   m_indexFiles.push_back(DEFAULT_INDEX);
@@ -635,4 +633,5 @@ bool ServerConfig::matchesServerName(const std::string& configName,
 }
 
 }  // namespace entities
+}  // namespace configuration
 }  // namespace domain
