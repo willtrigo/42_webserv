@@ -6,15 +6,16 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/23 12:50:46 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/23 12:51:31 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 23:08:57 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "shared/exceptions/FileHandlerException.hpp"
+#include "infrastructure/filesystem/exceptions/FileHandlerException.hpp"
 
 #include <sstream>
 
-namespace shared {
+namespace infrastructure {
+namespace filesystem {
 namespace exceptions {
 
 const std::pair<FileHandlerException::ErrorCode, std::string>
@@ -96,4 +97,5 @@ std::string FileHandlerException::getErrorMsg(
 }
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace filesystem
+}  // namespace infrastructure

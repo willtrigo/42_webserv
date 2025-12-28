@@ -6,14 +6,15 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 23:01:07 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/22 23:12:08 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 23:55:30 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "infrastructure/filesystem/DirectoryEntryComparators.hpp"
+#include "infrastructure/filesystem/adapters/DirectoryEntryComparators.hpp"
 
 namespace infrastructure {
 namespace filesystem {
+namespace adapters {
 
 CompareByName::CompareByName(bool ascending) : m_ascending(ascending) {}
 
@@ -110,5 +111,6 @@ bool CompareByType::operator()(const DirectoryEntry& compareA,
   return aExt > bExt;
 }
 
+}  // namespace adapters
 }  // namespace filesystem
 }  // namespace infrastructure

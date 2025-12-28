@@ -6,14 +6,14 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 14:13:01 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/22 18:56:45 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 23:21:37 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "domain/value_objects/Path.hpp"
-#include "domain/value_objects/Permission.hpp"
-#include "infrastructure/filesystem/FileSystemHelper.hpp"
-#include "shared/exceptions/FileSystemHelperException.hpp"
+#include "domain/filesystem/value_objects/Path.hpp"
+#include "domain/filesystem/value_objects/Permission.hpp"
+#include "infrastructure/filesystem/adapters/FileSystemHelper.hpp"
+#include "infrastructure/filesystem/exceptions/FileSystemHelperException.hpp"
 
 #include <cerrno>
 #include <cstdio>
@@ -29,6 +29,7 @@
 
 namespace infrastructure {
 namespace filesystem {
+namespace adapters {
 
 FileSystemHelper::FileSystemHelper(const FileSystemHelper& /*unused*/) {}
 
@@ -66,18 +67,18 @@ bool FileSystemHelper::isRootDirectory(const std::string& path) {
 
 bool FileSystemHelper::exists(const std::string& path) {
   if (isPathEmpty(path)) {
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         "Path cannot be empty",
-        shared::exceptions::FileSystemHelperException::PATH_EMPTY);
+        exceptions::FileSystemHelperException::PATH_EMPTY);
   }
 
   struct stat pathStat;
   if (stat(path.c_str(), &pathStat) != 0) {
     std::ostringstream oss;
     oss << "Path not found: '" << path << "'";
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::PATH_NOT_FOUND);
+        exceptions::FileSystemHelperException::PATH_NOT_FOUND);
   }
 
   return true;
@@ -85,26 +86,26 @@ bool FileSystemHelper::exists(const std::string& path) {
 
 bool FileSystemHelper::isDirectory(const std::string& path) {
   if (isPathEmpty(path)) {
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         "Path cannot be empty",
-        shared::exceptions::FileSystemHelperException::PATH_EMPTY);
+        exceptions::FileSystemHelperException::PATH_EMPTY);
   }
 
   struct stat pathStat;
   if (stat(path.c_str(), &pathStat) != 0) {
     std::ostringstream oss;
     oss << "Path not found: '" << path << "'";
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::PATH_NOT_FOUND);
+        exceptions::FileSystemHelperException::PATH_NOT_FOUND);
   }
 
   if (S_ISDIR(pathStat.st_mode) == 0) {
     std::ostringstream oss;
     oss << "Path is not a directory: '" << path << "'";
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::PATH_NOT_DIRECTORY);
+        exceptions::FileSystemHelperException::PATH_NOT_DIRECTORY);
   }
 
   return true;
@@ -112,26 +113,26 @@ bool FileSystemHelper::isDirectory(const std::string& path) {
 
 bool FileSystemHelper::isFile(const std::string& path) {
   if (isPathEmpty(path)) {
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         "Path cannot be empty",
-        shared::exceptions::FileSystemHelperException::PATH_EMPTY);
+        exceptions::FileSystemHelperException::PATH_EMPTY);
   }
 
   struct stat pathStat;
   if (stat(path.c_str(), &pathStat) != 0) {
     std::ostringstream oss;
     oss << "Path not found: '" << path << "'";
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::PATH_NOT_FOUND);
+        exceptions::FileSystemHelperException::PATH_NOT_FOUND);
   }
 
   if (S_ISREG(pathStat.st_mode) == 0) {
     std::ostringstream oss;
     oss << "Path is not a file: '" << path << "'";
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::PATH_NOT_FILE);
+        exceptions::FileSystemHelperException::PATH_NOT_FILE);
   }
 
   return true;
@@ -139,26 +140,26 @@ bool FileSystemHelper::isFile(const std::string& path) {
 
 bool FileSystemHelper::isSymbolicLink(const std::string& path) {
   if (isPathEmpty(path)) {
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         "Path cannot be empty",
-        shared::exceptions::FileSystemHelperException::PATH_EMPTY);
+        exceptions::FileSystemHelperException::PATH_EMPTY);
   }
 
   struct stat pathStat;
   if (lstat(path.c_str(), &pathStat) != 0) {
     std::ostringstream oss;
     oss << "Path not found: '" << path << "'";
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::PATH_NOT_FOUND);
+        exceptions::FileSystemHelperException::PATH_NOT_FOUND);
   }
 
   if (S_ISLNK(pathStat.st_mode) == 0) {
     std::ostringstream oss;
     oss << "Path is not a symbolic link: '" << path << "'";
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::PATH_NOT_SYMBOLIC_LINK);
+        exceptions::FileSystemHelperException::PATH_NOT_SYMBOLIC_LINK);
   }
 
   return true;
@@ -166,17 +167,17 @@ bool FileSystemHelper::isSymbolicLink(const std::string& path) {
 
 bool FileSystemHelper::isReadable(const std::string& path) {
   if (isPathEmpty(path)) {
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         "Path cannot be empty",
-        shared::exceptions::FileSystemHelperException::PATH_EMPTY);
+        exceptions::FileSystemHelperException::PATH_EMPTY);
   }
 
   if (access(path.c_str(), R_OK) != 0) {
     std::ostringstream oss;
     oss << "Path is not readable: '" << path << "' - " << strerror(errno);
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::PATH_NOT_READABLE);
+        exceptions::FileSystemHelperException::PATH_NOT_READABLE);
   }
 
   return true;
@@ -184,17 +185,17 @@ bool FileSystemHelper::isReadable(const std::string& path) {
 
 bool FileSystemHelper::isWritable(const std::string& path) {
   if (isPathEmpty(path)) {
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         "Path cannot be empty",
-        shared::exceptions::FileSystemHelperException::PATH_EMPTY);
+        exceptions::FileSystemHelperException::PATH_EMPTY);
   }
 
   if (access(path.c_str(), W_OK) != 0) {
     std::ostringstream oss;
     oss << "Path is not writable: '" << path << "' - " << strerror(errno);
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::PATH_NOT_WRITABLE);
+        exceptions::FileSystemHelperException::PATH_NOT_WRITABLE);
   }
 
   return true;
@@ -202,17 +203,17 @@ bool FileSystemHelper::isWritable(const std::string& path) {
 
 bool FileSystemHelper::isExecutable(const std::string& path) {
   if (isPathEmpty(path)) {
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         "Path cannot be empty",
-        shared::exceptions::FileSystemHelperException::PATH_EMPTY);
+        exceptions::FileSystemHelperException::PATH_EMPTY);
   }
 
   if (access(path.c_str(), X_OK) != 0) {
     std::ostringstream oss;
     oss << "Path is not executable: '" << path << "' - " << strerror(errno);
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::PATH_NOT_EXECUTABLE);
+        exceptions::FileSystemHelperException::PATH_NOT_EXECUTABLE);
   }
 
   return true;
@@ -220,26 +221,26 @@ bool FileSystemHelper::isExecutable(const std::string& path) {
 
 std::size_t FileSystemHelper::getFileSize(const std::string& path) {
   if (isPathEmpty(path)) {
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         "Path cannot be empty",
-        shared::exceptions::FileSystemHelperException::PATH_EMPTY);
+        exceptions::FileSystemHelperException::PATH_EMPTY);
   }
 
   struct stat pathStat;
   if (stat(path.c_str(), &pathStat) != 0) {
     std::ostringstream oss;
     oss << "Cannot get file size: path not found: '" << path << "'";
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::PATH_NOT_FOUND);
+        exceptions::FileSystemHelperException::PATH_NOT_FOUND);
   }
 
   if (S_ISREG(pathStat.st_mode) == 0) {
     std::ostringstream oss;
     oss << "Cannot get file size: path is not a file: '" << path << "'";
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::PATH_NOT_FILE);
+        exceptions::FileSystemHelperException::PATH_NOT_FILE);
   }
 
   return static_cast<std::size_t>(pathStat.st_size);
@@ -247,9 +248,9 @@ std::size_t FileSystemHelper::getFileSize(const std::string& path) {
 
 bool FileSystemHelper::createDirectory(const std::string& path) {
   if (isPathEmpty(path)) {
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         "Path cannot be empty",
-        shared::exceptions::FileSystemHelperException::PATH_EMPTY);
+        exceptions::FileSystemHelperException::PATH_EMPTY);
   }
 
   if (isDirectory(path)) {
@@ -260,9 +261,9 @@ bool FileSystemHelper::createDirectory(const std::string& path) {
   if (mkdir(path.c_str(), mode) != 0) {
     std::ostringstream oss;
     oss << "Failed to create directory: '" << path << "' - " << strerror(errno);
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::CREATE_DIRECTORY_FAILED);
+        exceptions::FileSystemHelperException::CREATE_DIRECTORY_FAILED);
   }
 
   return true;
@@ -270,9 +271,9 @@ bool FileSystemHelper::createDirectory(const std::string& path) {
 
 bool FileSystemHelper::createDirectoryRecursive(const std::string& path) {
   if (isPathEmpty(path)) {
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         "Path cannot be empty",
-        shared::exceptions::FileSystemHelperException::PATH_EMPTY);
+        exceptions::FileSystemHelperException::PATH_EMPTY);
   }
 
   if (isDirectory(path)) {
@@ -283,12 +284,12 @@ bool FileSystemHelper::createDirectoryRecursive(const std::string& path) {
   if (!parent.empty() && parent != "." && parent != path) {
     try {
       createDirectoryRecursive(parent);
-    } catch (const shared::exceptions::FileSystemHelperException& e) {
+    } catch (const exceptions::FileSystemHelperException& e) {
       std::ostringstream oss;
       oss << "Failed to create parent directory for '" << path
           << "': " << e.what();
-      throw shared::exceptions::FileSystemHelperException(
-          oss.str(), shared::exceptions::FileSystemHelperException::
+      throw exceptions::FileSystemHelperException(
+          oss.str(), exceptions::FileSystemHelperException::
                          CREATE_DIRECTORY_FAILED);
     }
   }
@@ -298,25 +299,25 @@ bool FileSystemHelper::createDirectoryRecursive(const std::string& path) {
 
 bool FileSystemHelper::removeDirectory(const std::string& path) {
   if (isPathEmpty(path)) {
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         "Path cannot be empty",
-        shared::exceptions::FileSystemHelperException::PATH_EMPTY);
+        exceptions::FileSystemHelperException::PATH_EMPTY);
   }
 
   if (!isDirectory(path)) {
     std::ostringstream oss;
     oss << "Cannot remove directory: path is not a directory: '" << path << "'";
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::PATH_NOT_DIRECTORY);
+        exceptions::FileSystemHelperException::PATH_NOT_DIRECTORY);
   }
 
   if (rmdir(path.c_str()) != 0) {
     std::ostringstream oss;
     oss << "Failed to remove directory: '" << path << "' - " << strerror(errno);
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::REMOVE_DIRECTORY_FAILED);
+        exceptions::FileSystemHelperException::REMOVE_DIRECTORY_FAILED);
   }
 
   return true;
@@ -324,27 +325,27 @@ bool FileSystemHelper::removeDirectory(const std::string& path) {
 
 bool FileSystemHelper::removeDirectoryRecursive(const std::string& path) {
   if (isPathEmpty(path)) {
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         "Path cannot be empty",
-        shared::exceptions::FileSystemHelperException::PATH_EMPTY);
+        exceptions::FileSystemHelperException::PATH_EMPTY);
   }
 
   if (!isDirectory(path)) {
     std::ostringstream oss;
     oss << "Cannot remove directory recursively: path is not a directory: '"
         << path << "'";
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::PATH_NOT_DIRECTORY);
+        exceptions::FileSystemHelperException::PATH_NOT_DIRECTORY);
   }
 
   std::string command = "rm -rf \"" + path + "\"";
   if (system(command.c_str()) != 0) {
     std::ostringstream oss;
     oss << "Failed to remove directory recursively: '" << path << "'";
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::REMOVE_DIRECTORY_FAILED);
+        exceptions::FileSystemHelperException::REMOVE_DIRECTORY_FAILED);
   }
 
   return true;
@@ -352,25 +353,25 @@ bool FileSystemHelper::removeDirectoryRecursive(const std::string& path) {
 
 bool FileSystemHelper::removeFile(const std::string& path) {
   if (isPathEmpty(path)) {
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         "Path cannot be empty",
-        shared::exceptions::FileSystemHelperException::PATH_EMPTY);
+        exceptions::FileSystemHelperException::PATH_EMPTY);
   }
 
   if (!isFile(path)) {
     std::ostringstream oss;
     oss << "Cannot remove file: path is not a file: '" << path << "'";
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::PATH_NOT_FILE);
+        exceptions::FileSystemHelperException::PATH_NOT_FILE);
   }
 
   if (unlink(path.c_str()) != 0) {
     std::ostringstream oss;
     oss << "Failed to remove file: '" << path << "' - " << strerror(errno);
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::REMOVE_FILE_FAILED);
+        exceptions::FileSystemHelperException::REMOVE_FILE_FAILED);
   }
 
   return true;
@@ -379,26 +380,26 @@ bool FileSystemHelper::removeFile(const std::string& path) {
 bool FileSystemHelper::renameFile(const std::string& oldPath,
                                   const std::string& newPath) {
   if (isPathEmpty(oldPath) || isPathEmpty(newPath)) {
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         "Path cannot be empty",
-        shared::exceptions::FileSystemHelperException::PATH_EMPTY);
+        exceptions::FileSystemHelperException::PATH_EMPTY);
   }
 
   if (!isFile(oldPath)) {
     std::ostringstream oss;
     oss << "Cannot rename: source path is not a file: '" << oldPath << "'";
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::PATH_NOT_FILE);
+        exceptions::FileSystemHelperException::PATH_NOT_FILE);
   }
 
   if (rename(oldPath.c_str(), newPath.c_str()) != 0) {
     std::ostringstream oss;
     oss << "Failed to rename file from '" << oldPath << "' to '" << newPath
         << "': " << strerror(errno);
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::RENAME_FILE_FAILED);
+        exceptions::FileSystemHelperException::RENAME_FILE_FAILED);
   }
 
   return true;
@@ -412,7 +413,7 @@ bool FileSystemHelper::copyFile(const std::string& source,
   FILE* src = openSourceFileForCopying(source);
   FILE* dst = openDestinationFileForCopying(destination, src);
 
-  char buffer[domain::value_objects::Path::MAX_PATH_LENGTH];
+  char buffer[domain::filesystem::value_objects::Path::MAX_PATH_LENGTH];
   std::size_t bytesRead;
   bool success = true;
 
@@ -429,16 +430,16 @@ bool FileSystemHelper::copyFile(const std::string& source,
   if (!success) {
     try {
       removeFile(destination);
-    } catch (const shared::exceptions::FileSystemHelperException&) {
+    } catch (const exceptions::FileSystemHelperException&) {
       throw;
     }
 
     std::ostringstream oss;
     oss << "Failed to copy file from '" << source << "' to '" << destination
         << "'";
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::COPY_FILE_FAILED);
+        exceptions::FileSystemHelperException::COPY_FILE_FAILED);
   }
 
   return true;
@@ -447,9 +448,9 @@ bool FileSystemHelper::copyFile(const std::string& source,
 void FileSystemHelper::validateCopyFilePaths(const std::string& source,
                                              const std::string& destination) {
   if (isPathEmpty(source) || isPathEmpty(destination)) {
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         "Path cannot be empty",
-        shared::exceptions::FileSystemHelperException::PATH_EMPTY);
+        exceptions::FileSystemHelperException::PATH_EMPTY);
   }
 }
 
@@ -457,9 +458,9 @@ void FileSystemHelper::validateSourceIsFile(const std::string& source) {
   if (!isFile(source)) {
     std::ostringstream oss;
     oss << "Cannot copy: source path is not a file: '" << source << "'";
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::PATH_NOT_FILE);
+        exceptions::FileSystemHelperException::PATH_NOT_FILE);
   }
 }
 
@@ -469,9 +470,9 @@ FILE* FileSystemHelper::openSourceFileForCopying(const std::string& source) {
     std::ostringstream oss;
     oss << "Failed to open source file for copying: '" << source << "' - "
         << strerror(errno);
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::COPY_FILE_FAILED);
+        exceptions::FileSystemHelperException::COPY_FILE_FAILED);
   }
   return src;
 }
@@ -484,35 +485,35 @@ FILE* FileSystemHelper::openDestinationFileForCopying(
     std::ostringstream oss;
     oss << "Failed to open destination file for copying: '" << destination
         << "' - " << strerror(errno);
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::COPY_FILE_FAILED);
+        exceptions::FileSystemHelperException::COPY_FILE_FAILED);
   }
   return dst;
 }
 
 bool FileSystemHelper::setPermissions(const std::string& path, mode_t mode) {
   if (isPathEmpty(path)) {
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         "Path cannot be empty",
-        shared::exceptions::FileSystemHelperException::PATH_EMPTY);
+        exceptions::FileSystemHelperException::PATH_EMPTY);
   }
 
   if (!exists(path)) {
     std::ostringstream oss;
     oss << "Cannot set permissions: path not found: '" << path << "'";
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::PATH_NOT_FOUND);
+        exceptions::FileSystemHelperException::PATH_NOT_FOUND);
   }
 
   if (chmod(path.c_str(), mode) != 0) {
     std::ostringstream oss;
     oss << "Failed to set permissions for path: '" << path << "' - "
         << strerror(errno);
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::SET_PERMISSIONS_FAILED);
+        exceptions::FileSystemHelperException::SET_PERMISSIONS_FAILED);
   }
 
   return true;
@@ -520,17 +521,17 @@ bool FileSystemHelper::setPermissions(const std::string& path, mode_t mode) {
 
 mode_t FileSystemHelper::getPermissions(const std::string& path) {
   if (isPathEmpty(path)) {
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         "Path cannot be empty",
-        shared::exceptions::FileSystemHelperException::PATH_EMPTY);
+        exceptions::FileSystemHelperException::PATH_EMPTY);
   }
 
   if (!exists(path)) {
     std::ostringstream oss;
     oss << "Cannot get permissions: path not found: '" << path << "'";
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::PATH_NOT_FOUND);
+        exceptions::FileSystemHelperException::PATH_NOT_FOUND);
   }
 
   struct stat pathStat;
@@ -538,37 +539,37 @@ mode_t FileSystemHelper::getPermissions(const std::string& path) {
     std::ostringstream oss;
     oss << "Failed to get permissions for path: '" << path << "' - "
         << strerror(errno);
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::GET_PERMISSIONS_FAILED);
+        exceptions::FileSystemHelperException::GET_PERMISSIONS_FAILED);
   }
 
-  return pathStat.st_mode & domain::value_objects::Permission::MAX_PERMISSION;
+  return pathStat.st_mode & domain::filesystem::value_objects::Permission::MAX_PERMISSION;
 }
 
 bool FileSystemHelper::changeOwner(const std::string& path, uid_t owner,
                                    gid_t group) {
   if (isPathEmpty(path)) {
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         "Path cannot be empty",
-        shared::exceptions::FileSystemHelperException::PATH_EMPTY);
+        exceptions::FileSystemHelperException::PATH_EMPTY);
   }
 
   if (!exists(path)) {
     std::ostringstream oss;
     oss << "Cannot change owner: path not found: '" << path << "'";
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::PATH_NOT_FOUND);
+        exceptions::FileSystemHelperException::PATH_NOT_FOUND);
   }
 
   if (chown(path.c_str(), owner, group) != 0) {
     std::ostringstream oss;
     oss << "Failed to change owner for path: '" << path << "' - "
         << strerror(errno);
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::CHANGE_OWNER_FAILED);
+        exceptions::FileSystemHelperException::CHANGE_OWNER_FAILED);
   }
 
   return true;
@@ -576,17 +577,17 @@ bool FileSystemHelper::changeOwner(const std::string& path, uid_t owner,
 
 time_t FileSystemHelper::getLastModifiedTime(const std::string& path) {
   if (isPathEmpty(path)) {
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         "Path cannot be empty",
-        shared::exceptions::FileSystemHelperException::PATH_EMPTY);
+        exceptions::FileSystemHelperException::PATH_EMPTY);
   }
 
   if (!exists(path)) {
     std::ostringstream oss;
     oss << "Cannot get last modified time: path not found: '" << path << "'";
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::PATH_NOT_FOUND);
+        exceptions::FileSystemHelperException::PATH_NOT_FOUND);
   }
 
   struct stat pathStat;
@@ -594,8 +595,8 @@ time_t FileSystemHelper::getLastModifiedTime(const std::string& path) {
     std::ostringstream oss;
     oss << "Failed to get last modified time for path: '" << path << "' - "
         << strerror(errno);
-    throw shared::exceptions::FileSystemHelperException(
-        oss.str(), shared::exceptions::FileSystemHelperException::IO_ERROR);
+    throw exceptions::FileSystemHelperException(
+        oss.str(), exceptions::FileSystemHelperException::IO_ERROR);
   }
 
   return pathStat.st_mtime;
@@ -604,17 +605,17 @@ time_t FileSystemHelper::getLastModifiedTime(const std::string& path) {
 bool FileSystemHelper::setLastModifiedTime(const std::string& path,
                                            time_t time) {
   if (isPathEmpty(path)) {
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         "Path cannot be empty",
-        shared::exceptions::FileSystemHelperException::PATH_EMPTY);
+        exceptions::FileSystemHelperException::PATH_EMPTY);
   }
 
   if (!exists(path)) {
     std::ostringstream oss;
     oss << "Cannot set last modified time: path not found: '" << path << "'";
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::PATH_NOT_FOUND);
+        exceptions::FileSystemHelperException::PATH_NOT_FOUND);
   }
 
   struct utimbuf times;
@@ -625,8 +626,8 @@ bool FileSystemHelper::setLastModifiedTime(const std::string& path,
     std::ostringstream oss;
     oss << "Failed to set last modified time for path: '" << path << "' - "
         << strerror(errno);
-    throw shared::exceptions::FileSystemHelperException(
-        oss.str(), shared::exceptions::FileSystemHelperException::IO_ERROR);
+    throw exceptions::FileSystemHelperException(
+        oss.str(), exceptions::FileSystemHelperException::IO_ERROR);
   }
 
   return true;
@@ -637,9 +638,9 @@ std::string FileSystemHelper::getCurrentWorkingDirectory() {
   if (cwd == 0) {
     std::ostringstream oss;
     oss << "Failed to get current working directory: " << strerror(errno);
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::GET_CURRENT_DIR_FAILED);
+        exceptions::FileSystemHelperException::GET_CURRENT_DIR_FAILED);
   }
 
   std::string result(cwd);
@@ -649,27 +650,27 @@ std::string FileSystemHelper::getCurrentWorkingDirectory() {
 
 bool FileSystemHelper::changeWorkingDirectory(const std::string& path) {
   if (isPathEmpty(path)) {
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         "Path cannot be empty",
-        shared::exceptions::FileSystemHelperException::PATH_EMPTY);
+        exceptions::FileSystemHelperException::PATH_EMPTY);
   }
 
   if (!isDirectory(path)) {
     std::ostringstream oss;
     oss << "Cannot change working directory: path is not a directory: '" << path
         << "'";
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::PATH_NOT_DIRECTORY);
+        exceptions::FileSystemHelperException::PATH_NOT_DIRECTORY);
   }
 
   if (chdir(path.c_str()) != 0) {
     std::ostringstream oss;
     oss << "Failed to change working directory to: '" << path << "' - "
         << strerror(errno);
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::CHANGE_DIRECTORY_FAILED);
+        exceptions::FileSystemHelperException::CHANGE_DIRECTORY_FAILED);
   }
 
   return true;
@@ -677,9 +678,9 @@ bool FileSystemHelper::changeWorkingDirectory(const std::string& path) {
 
 std::string FileSystemHelper::getAbsolutePath(const std::string& path) {
   if (isPathEmpty(path)) {
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         "Path cannot be empty",
-        shared::exceptions::FileSystemHelperException::PATH_EMPTY);
+        exceptions::FileSystemHelperException::PATH_EMPTY);
   }
 
   if (path[0] == '/') {
@@ -689,9 +690,9 @@ std::string FileSystemHelper::getAbsolutePath(const std::string& path) {
   try {
     std::string cwd = getCurrentWorkingDirectory();
     if (cwd.empty()) {
-      throw shared::exceptions::FileSystemHelperException(
+      throw exceptions::FileSystemHelperException(
           "Failed to get absolute path: current working directory is empty",
-          shared::exceptions::FileSystemHelperException::
+          exceptions::FileSystemHelperException::
               GET_ABSOLUTE_PATH_FAILED);
     }
 
@@ -699,45 +700,46 @@ std::string FileSystemHelper::getAbsolutePath(const std::string& path) {
       return cwd + path;
     }
     return cwd + "/" + path;
-  } catch (const shared::exceptions::FileSystemHelperException& e) {
+  } catch (const exceptions::FileSystemHelperException& e) {
     std::ostringstream oss;
     oss << "Failed to get absolute path for '" << path << "': " << e.what();
-    throw shared::exceptions::FileSystemHelperException(
-        oss.str(), shared::exceptions::FileSystemHelperException::
+    throw exceptions::FileSystemHelperException(
+        oss.str(), exceptions::FileSystemHelperException::
                        GET_ABSOLUTE_PATH_FAILED);
   }
 }
 
 std::string FileSystemHelper::resolveSymbolicLink(const std::string& path) {
   if (isPathEmpty(path)) {
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         "Path cannot be empty",
-        shared::exceptions::FileSystemHelperException::PATH_EMPTY);
+        exceptions::FileSystemHelperException::PATH_EMPTY);
   }
 
   if (!isSymbolicLink(path)) {
     std::ostringstream oss;
     oss << "Cannot resolve symbolic link: path is not a symbolic link: '"
         << path << "'";
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::PATH_NOT_SYMBOLIC_LINK);
+        exceptions::FileSystemHelperException::PATH_NOT_SYMBOLIC_LINK);
   }
 
-  char buffer[domain::value_objects::Path::MAX_PATH_LENGTH];
+  char buffer[domain::filesystem::value_objects::Path::MAX_PATH_LENGTH];
   ssize_t len = readlink(path.c_str(), buffer, sizeof(buffer) - 1);
   if (len == -1) {
     std::ostringstream oss;
     oss << "Failed to resolve symbolic link: '" << path << "' - "
         << strerror(errno);
-    throw shared::exceptions::FileSystemHelperException(
+    throw exceptions::FileSystemHelperException(
         oss.str(),
-        shared::exceptions::FileSystemHelperException::RESOLVE_SYMLINK_FAILED);
+        exceptions::FileSystemHelperException::RESOLVE_SYMLINK_FAILED);
   }
 
   buffer[len] = '\0';
   return std::string(buffer);
 }
 
+}  // namespace adapters
 }  // namespace filesystem
 }  // namespace infrastructure

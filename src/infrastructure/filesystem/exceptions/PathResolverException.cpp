@@ -6,15 +6,16 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 19:26:46 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/22 19:34:11 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 23:16:31 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "shared/exceptions/PathResolverException.hpp"
+#include "infrastructure/filesystem/exceptions/PathResolverException.hpp"
 
 #include <sstream>
 
-namespace shared {
+namespace infrastructure {
+namespace filesystem {
 namespace exceptions {
 
 const std::pair<PathResolverException::ErrorCode, std::string>
@@ -72,4 +73,5 @@ std::string PathResolverException::getErrorMsg(
 }
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace filesystem
+}  // namespace infrastructure

@@ -6,15 +6,15 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/23 13:02:00 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/23 14:21:56 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 23:50:13 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "domain/value_objects/Path.hpp"
-#include "domain/value_objects/Permission.hpp"
-#include "domain/value_objects/Size.hpp"
-#include "infrastructure/filesystem/FileHandler.hpp"
-#include "shared/exceptions/FileHandlerException.hpp"
+#include "domain/filesystem/value_objects/Path.hpp"
+#include "domain/filesystem/value_objects/Permission.hpp"
+#include "domain/filesystem/value_objects/Size.hpp"
+#include "infrastructure/filesystem/adapters/FileHandler.hpp"
+#include "infrastructure/filesystem/exceptions/FileHandlerException.hpp"
 
 #include <cstdio>
 #include <cstdlib>
@@ -33,19 +33,20 @@
 
 namespace infrastructure {
 namespace filesystem {
+namespace adapters {
 
 FileHandler::FileHandler(FileSystemHelper* fileSystemHelper,
                          PathResolver* pathResolver)
     : m_fileSystemHelper(fileSystemHelper), m_pathResolver(pathResolver) {
   if (fileSystemHelper == NULL) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "FileSystemHelper cannot be NULL",
-        shared::exceptions::FileHandlerException::IO_ERROR);
+        exceptions::FileHandlerException::IO_ERROR);
   }
   if (pathResolver == NULL) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "PathResolver cannot be NULL",
-        shared::exceptions::FileHandlerException::IO_ERROR);
+        exceptions::FileHandlerException::IO_ERROR);
   }
 }
 
@@ -74,29 +75,29 @@ FileHandler& FileHandler::operator=(const FileHandler& other) {
 }
 
 FileMetadata FileHandler::getMetadata(
-    const domain::value_objects::Path& filePath) const {
+    const domain::filesystem::value_objects::Path& filePath) const {
   FileMetadata metadata;
   metadata.path = filePath;
 
   std::string pathStr = filePath.toString();
 
-  if (!infrastructure::filesystem::FileSystemHelper::exists(pathStr)) {
-    throw shared::exceptions::FileHandlerException(
+  if (!FileSystemHelper::exists(pathStr)) {
+    throw exceptions::FileHandlerException(
         "File not found: " + pathStr,
-        shared::exceptions::FileHandlerException::FILE_NOT_FOUND);
+        exceptions::FileHandlerException::FILE_NOT_FOUND);
   }
 
   struct stat fileStat;
   if (stat(pathStr.c_str(), &fileStat) != 0) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Cannot get file stats: " + pathStr,
-        shared::exceptions::FileHandlerException::IO_ERROR);
+        exceptions::FileHandlerException::IO_ERROR);
   }
 
   metadata.size =
-      domain::value_objects::Size(static_cast<std::size_t>(fileStat.st_size));
+      domain::filesystem::value_objects::Size(static_cast<std::size_t>(fileStat.st_size));
   metadata.permissions =
-      domain::value_objects::Permission(fileStat.st_mode & 07777);
+      domain::filesystem::value_objects::Permission(fileStat.st_mode & 07777);
   metadata.isDirectory = S_ISDIR(fileStat.st_mode);
   metadata.isSymbolicLink = S_ISLNK(fileStat.st_mode);
 
@@ -116,16 +117,16 @@ FileMetadata FileHandler::getMetadata(
 }
 
 std::vector<char> FileHandler::readFile(
-    const domain::value_objects::Path& filePath) const {
+    const domain::filesystem::value_objects::Path& filePath) const {
   validateFileForReading(filePath);
 
   std::string pathStr = filePath.toString();
   std::ifstream file(pathStr.c_str(), std::ios::binary | std::ios::ate);
 
   if (!file.is_open()) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Cannot open file for reading: " + pathStr,
-        shared::exceptions::FileHandlerException::FILE_NOT_READABLE);
+        exceptions::FileHandlerException::FILE_NOT_READABLE);
   }
 
   std::streamsize size = file.tellg();
@@ -134,47 +135,47 @@ std::vector<char> FileHandler::readFile(
   std::vector<char> buffer(static_cast<std::size_t>(size));
 
   if (!file.read(buffer.data(), size)) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Failed to read file: " + pathStr,
-        shared::exceptions::FileHandlerException::IO_ERROR);
+        exceptions::FileHandlerException::IO_ERROR);
   }
 
   return buffer;
 }
 
 std::vector<char> FileHandler::readFileChunk(
-    const domain::value_objects::Path& filePath, std::size_t offset,
+    const domain::filesystem::value_objects::Path& filePath, std::size_t offset,
     std::size_t chunkSize) const {
   validateFileForReading(filePath);
 
   if (chunkSize < MIN_CHUNK_SIZE || chunkSize > MAX_CHUNK_SIZE) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Invalid chunk size",
-        shared::exceptions::FileHandlerException::INVALID_CHUNK_SIZE);
+        exceptions::FileHandlerException::INVALID_CHUNK_SIZE);
   }
 
   std::string pathStr = filePath.toString();
   struct stat fileStat;
   if (stat(pathStr.c_str(), &fileStat) != 0) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Cannot get file stats: " + pathStr,
-        shared::exceptions::FileHandlerException::IO_ERROR);
+        exceptions::FileHandlerException::IO_ERROR);
   }
 
-  domain::value_objects::Size fileSize(
+  domain::filesystem::value_objects::Size fileSize(
       static_cast<std::size_t>(fileStat.st_size));
 
   if (!validateChunkParameters(offset, chunkSize, fileSize)) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Invalid chunk parameters",
-        shared::exceptions::FileHandlerException::INVALID_OFFSET);
+        exceptions::FileHandlerException::INVALID_OFFSET);
   }
 
   std::ifstream file(pathStr.c_str(), std::ios::binary);
   if (!file.is_open()) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Cannot open file for reading: " + pathStr,
-        shared::exceptions::FileHandlerException::FILE_NOT_READABLE);
+        exceptions::FileHandlerException::FILE_NOT_READABLE);
   }
 
   file.seekg(static_cast<std::streamoff>(offset), std::ios::beg);
@@ -186,121 +187,121 @@ std::vector<char> FileHandler::readFileChunk(
 
   if (!file.read(buffer.data(),
                  static_cast<std::streamsize>(actualChunkSize))) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Failed to read file chunk: " + pathStr,
-        shared::exceptions::FileHandlerException::IO_ERROR);
+        exceptions::FileHandlerException::IO_ERROR);
   }
 
   return buffer;
 }
 
-bool FileHandler::writeFile(const domain::value_objects::Path& filePath,
+bool FileHandler::writeFile(const domain::filesystem::value_objects::Path& filePath,
                             const std::vector<char>& data,
                             bool overwrite) const {
   validateFileForWriting(filePath, overwrite);
 
   std::string pathStr = filePath.toString();
 
-  domain::value_objects::Size requiredSpace(data.size());
-  domain::value_objects::Size availableSpace = getAvailableDiskSpace(filePath);
+  domain::filesystem::value_objects::Size requiredSpace(data.size());
+  domain::filesystem::value_objects::Size availableSpace = getAvailableDiskSpace(filePath);
 
   if (availableSpace < requiredSpace) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Insufficient disk space",
-        shared::exceptions::FileHandlerException::DISK_SPACE_INSUFFICIENT);
+        exceptions::FileHandlerException::DISK_SPACE_INSUFFICIENT);
   }
 
   std::ofstream file(pathStr.c_str(), std::ios::binary);
   if (!file.is_open()) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Cannot open file for writing: " + pathStr,
-        shared::exceptions::FileHandlerException::FILE_NOT_WRITABLE);
+        exceptions::FileHandlerException::FILE_NOT_WRITABLE);
   }
 
   if (!file.write(data.data(), static_cast<std::streamsize>(data.size()))) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Failed to write file: " + pathStr,
-        shared::exceptions::FileHandlerException::IO_ERROR);
+        exceptions::FileHandlerException::IO_ERROR);
   }
 
   return true;
 }
 
-bool FileHandler::writeFile(const domain::value_objects::Path& filePath,
+bool FileHandler::writeFile(const domain::filesystem::value_objects::Path& filePath,
                             const std::string& data, bool overwrite) const {
   std::vector<char> charData(data.begin(), data.end());
   return writeFile(filePath, charData, overwrite);
 }
 
-bool FileHandler::appendToFile(const domain::value_objects::Path& filePath,
+bool FileHandler::appendToFile(const domain::filesystem::value_objects::Path& filePath,
                                const std::vector<char>& data) const {
   std::string pathStr = filePath.toString();
 
-  if (!infrastructure::filesystem::FileSystemHelper::exists(pathStr)) {
+  if (!FileSystemHelper::exists(pathStr)) {
     return writeFile(filePath, data, true);
   }
 
-  if (!infrastructure::filesystem::FileSystemHelper::isWritable(pathStr)) {
-    throw shared::exceptions::FileHandlerException(
+  if (!FileSystemHelper::isWritable(pathStr)) {
+    throw exceptions::FileHandlerException(
         "File is not writable: " + pathStr,
-        shared::exceptions::FileHandlerException::FILE_NOT_WRITABLE);
+        exceptions::FileHandlerException::FILE_NOT_WRITABLE);
   }
 
-  domain::value_objects::Size requiredSpace(data.size());
-  domain::value_objects::Size availableSpace = getAvailableDiskSpace(filePath);
+  domain::filesystem::value_objects::Size requiredSpace(data.size());
+  domain::filesystem::value_objects::Size availableSpace = getAvailableDiskSpace(filePath);
 
   if (availableSpace < requiredSpace) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Insufficient disk space",
-        shared::exceptions::FileHandlerException::DISK_SPACE_INSUFFICIENT);
+        exceptions::FileHandlerException::DISK_SPACE_INSUFFICIENT);
   }
 
   std::ofstream file(pathStr.c_str(), std::ios::binary | std::ios::app);
   if (!file.is_open()) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Cannot open file for appending: " + pathStr,
-        shared::exceptions::FileHandlerException::FILE_NOT_WRITABLE);
+        exceptions::FileHandlerException::FILE_NOT_WRITABLE);
   }
 
   if (!file.write(data.data(), static_cast<std::streamsize>(data.size()))) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Failed to append to file: " + pathStr,
-        shared::exceptions::FileHandlerException::IO_ERROR);
+        exceptions::FileHandlerException::IO_ERROR);
   }
 
   return true;
 }
 
-bool FileHandler::appendToFile(const domain::value_objects::Path& filePath,
+bool FileHandler::appendToFile(const domain::filesystem::value_objects::Path& filePath,
                                const std::string& data) const {
   std::vector<char> charData(data.begin(), data.end());
   return appendToFile(filePath, charData);
 }
 
 bool FileHandler::createFile(
-    const domain::value_objects::Path& filePath,
-    const domain::value_objects::Permission& permissions) const {
+    const domain::filesystem::value_objects::Path& filePath,
+    const domain::filesystem::value_objects::Permission& permissions) const {
   std::string pathStr = filePath.toString();
 
-  if (infrastructure::filesystem::FileSystemHelper::exists(pathStr)) {
-    throw shared::exceptions::FileHandlerException(
+  if (FileSystemHelper::exists(pathStr)) {
+    throw exceptions::FileHandlerException(
         "File already exists: " + pathStr,
-        shared::exceptions::FileHandlerException::FILE_ALREADY_EXISTS);
+        exceptions::FileHandlerException::FILE_ALREADY_EXISTS);
   }
 
-  domain::value_objects::Path parentDir = filePath;
+  domain::filesystem::value_objects::Path parentDir = filePath;
   std::string parentStr = parentDir.getDirectory();
   if (!parentStr.empty() &&
-      !infrastructure::filesystem::FileSystemHelper::exists(parentStr)) {
-    domain::value_objects::Path parentPath(parentStr, true);
+      !FileSystemHelper::exists(parentStr)) {
+    domain::filesystem::value_objects::Path parentPath(parentStr, true);
     createDirectory(parentPath);
   }
 
   std::ofstream file(pathStr.c_str(), std::ios::binary);
   if (!file.is_open()) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Cannot create file: " + pathStr,
-        shared::exceptions::FileHandlerException::IO_ERROR);
+        exceptions::FileHandlerException::IO_ERROR);
   }
   file.close();
 
@@ -308,87 +309,87 @@ bool FileHandler::createFile(
 }
 
 bool FileHandler::deleteFile(
-    const domain::value_objects::Path& filePath) const {
+    const domain::filesystem::value_objects::Path& filePath) const {
   std::string pathStr = filePath.toString();
 
-  if (!infrastructure::filesystem::FileSystemHelper::exists(pathStr)) {
-    throw shared::exceptions::FileHandlerException(
+  if (!FileSystemHelper::exists(pathStr)) {
+    throw exceptions::FileHandlerException(
         "File not found: " + pathStr,
-        shared::exceptions::FileHandlerException::FILE_NOT_FOUND);
+        exceptions::FileHandlerException::FILE_NOT_FOUND);
   }
 
-  if (infrastructure::filesystem::FileSystemHelper::isDirectory(pathStr)) {
-    throw shared::exceptions::FileHandlerException(
+  if (FileSystemHelper::isDirectory(pathStr)) {
+    throw exceptions::FileHandlerException(
         "Path is a directory, use deleteDirectory instead: " + pathStr,
-        shared::exceptions::FileHandlerException::INVALID_FILE_TYPE);
+        exceptions::FileHandlerException::INVALID_FILE_TYPE);
   }
 
   if (std::remove(pathStr.c_str()) != 0) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Failed to delete file: " + pathStr,
-        shared::exceptions::FileHandlerException::IO_ERROR);
+        exceptions::FileHandlerException::IO_ERROR);
   }
 
   return true;
 }
 
-bool FileHandler::renameFile(const domain::value_objects::Path& oldPath,
-                             const domain::value_objects::Path& newPath) const {
+bool FileHandler::renameFile(const domain::filesystem::value_objects::Path& oldPath,
+                             const domain::filesystem::value_objects::Path& newPath) const {
   std::string oldStr = oldPath.toString();
   std::string newStr = newPath.toString();
 
-  if (!infrastructure::filesystem::FileSystemHelper::exists(oldStr)) {
-    throw shared::exceptions::FileHandlerException(
+  if (!FileSystemHelper::exists(oldStr)) {
+    throw exceptions::FileHandlerException(
         "Source file not found: " + oldStr,
-        shared::exceptions::FileHandlerException::FILE_NOT_FOUND);
+        exceptions::FileHandlerException::FILE_NOT_FOUND);
   }
 
-  if (infrastructure::filesystem::FileSystemHelper::exists(newStr)) {
-    throw shared::exceptions::FileHandlerException(
+  if (FileSystemHelper::exists(newStr)) {
+    throw exceptions::FileHandlerException(
         "Destination file already exists: " + newStr,
-        shared::exceptions::FileHandlerException::FILE_ALREADY_EXISTS);
+        exceptions::FileHandlerException::FILE_ALREADY_EXISTS);
   }
 
-  domain::value_objects::Path newParent = newPath;
+  domain::filesystem::value_objects::Path newParent = newPath;
   std::string newParentStr = newParent.getDirectory();
   if (!newParentStr.empty() &&
-      !infrastructure::filesystem::FileSystemHelper::exists(newParentStr)) {
-    domain::value_objects::Path parentPath(newParentStr, true);
+      !FileSystemHelper::exists(newParentStr)) {
+    domain::filesystem::value_objects::Path parentPath(newParentStr, true);
     createDirectory(parentPath);
   }
 
   if (std::rename(oldStr.c_str(), newStr.c_str()) != 0) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Failed to rename file: " + oldStr + " to " + newStr,
-        shared::exceptions::FileHandlerException::IO_ERROR);
+        exceptions::FileHandlerException::IO_ERROR);
   }
 
   return true;
 }
 
-bool FileHandler::copyFile(const domain::value_objects::Path& sourcePath,
-                           const domain::value_objects::Path& destinationPath,
+bool FileHandler::copyFile(const domain::filesystem::value_objects::Path& sourcePath,
+                           const domain::filesystem::value_objects::Path& destinationPath,
                            bool overwrite) const {
   return copyFileInternal(sourcePath, destinationPath, overwrite);
 }
 
 bool FileHandler::createDirectory(
-    const domain::value_objects::Path& dirPath,
-    const domain::value_objects::Permission& permissions) const {
+    const domain::filesystem::value_objects::Path& dirPath,
+    const domain::filesystem::value_objects::Permission& permissions) const {
   validateDirectoryForCreation(dirPath);
 
   std::string pathStr = dirPath.toString();
 
   if (mkdir(pathStr.c_str(), 0777) != 0) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Failed to create directory: " + pathStr,
-        shared::exceptions::FileHandlerException::IO_ERROR);
+        exceptions::FileHandlerException::IO_ERROR);
   }
 
   return setPermissions(dirPath, permissions);
 }
 
-bool FileHandler::deleteDirectory(const domain::value_objects::Path& dirPath,
+bool FileHandler::deleteDirectory(const domain::filesystem::value_objects::Path& dirPath,
                                   bool recursive) const {
   validateDirectoryForDeletion(dirPath, recursive);
 
@@ -399,53 +400,53 @@ bool FileHandler::deleteDirectory(const domain::value_objects::Path& dirPath,
   }
 
   if (rmdir(pathStr.c_str()) != 0) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Failed to delete directory: " + pathStr,
-        shared::exceptions::FileHandlerException::IO_ERROR);
+        exceptions::FileHandlerException::IO_ERROR);
   }
 
   return true;
 }
 
-domain::value_objects::Path FileHandler::createTemporaryFile(
+domain::filesystem::value_objects::Path FileHandler::createTemporaryFile(
     const std::string& prefix, const std::string& suffix,
-    const domain::value_objects::Path& directory) const {
+    const domain::filesystem::value_objects::Path& directory) const {
   std::string tempFilename =
       generateTemporaryFilename(prefix, suffix, directory);
-  domain::value_objects::Path tempPath(tempFilename, true);
+  domain::filesystem::value_objects::Path tempPath(tempFilename, true);
 
   if (!createFile(tempPath)) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Failed to create temporary file: " + tempFilename,
-        shared::exceptions::FileHandlerException::
+        exceptions::FileHandlerException::
             TEMPORARY_FILE_CREATION_FAILED);
   }
 
   return tempPath;
 }
 
-domain::value_objects::Path FileHandler::createTemporaryDirectory(
+domain::filesystem::value_objects::Path FileHandler::createTemporaryDirectory(
     const std::string& prefix,
-    const domain::value_objects::Path& directory) const {
+    const domain::filesystem::value_objects::Path& directory) const {
   std::string tempDirname = generateTemporaryFilename(prefix, "", directory);
-  domain::value_objects::Path tempPath(tempDirname, true);
+  domain::filesystem::value_objects::Path tempPath(tempDirname, true);
 
   if (!createDirectory(tempPath)) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Failed to create temporary directory: " + tempDirname,
-        shared::exceptions::FileHandlerException::IO_ERROR);
+        exceptions::FileHandlerException::IO_ERROR);
   }
 
   return tempPath;
 }
 
-bool FileHandler::lockFile(const domain::value_objects::Path& filePath) const {
+bool FileHandler::lockFile(const domain::filesystem::value_objects::Path& filePath) const {
   std::string pathStr = filePath.toString();
 
-  if (!infrastructure::filesystem::FileSystemHelper::exists(pathStr)) {
-    throw shared::exceptions::FileHandlerException(
+  if (!FileSystemHelper::exists(pathStr)) {
+    throw exceptions::FileHandlerException(
         "File not found: " + pathStr,
-        shared::exceptions::FileHandlerException::FILE_NOT_FOUND);
+        exceptions::FileHandlerException::FILE_NOT_FOUND);
   }
 
   // Check if already locked
@@ -455,16 +456,16 @@ bool FileHandler::lockFile(const domain::value_objects::Path& filePath) const {
 
   int fd = open(pathStr.c_str(), O_RDWR);
   if (fd < 0) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Cannot open file for locking: " + pathStr,
-        shared::exceptions::FileHandlerException::IO_ERROR);
+        exceptions::FileHandlerException::IO_ERROR);
   }
 
   if (flock(fd, LOCK_EX | LOCK_NB) != 0) {
     close(fd);
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "File is already locked: " + pathStr,
-        shared::exceptions::FileHandlerException::LOCK_FAILED);
+        exceptions::FileHandlerException::LOCK_FAILED);
   }
 
   LockInfo lockInfo;
@@ -476,20 +477,20 @@ bool FileHandler::lockFile(const domain::value_objects::Path& filePath) const {
 }
 
 bool FileHandler::unlockFile(
-    const domain::value_objects::Path& filePath) const {
+    const domain::filesystem::value_objects::Path& filePath) const {
   std::string pathStr = filePath.toString();
 
   std::map<std::string, LockInfo>::iterator it = m_fileLocks.find(pathStr);
   if (it == m_fileLocks.end()) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "File is not locked: " + pathStr,
-        shared::exceptions::FileHandlerException::UNLOCK_FAILED);
+        exceptions::FileHandlerException::UNLOCK_FAILED);
   }
 
   if (flock(it->second.fd, LOCK_UN) != 0) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Failed to unlock file: " + pathStr,
-        shared::exceptions::FileHandlerException::UNLOCK_FAILED);
+        exceptions::FileHandlerException::UNLOCK_FAILED);
   }
 
   close(it->second.fd);
@@ -499,7 +500,7 @@ bool FileHandler::unlockFile(
 }
 
 bool FileHandler::isFileLocked(
-    const domain::value_objects::Path& filePath) const {
+    const domain::filesystem::value_objects::Path& filePath) const {
   std::string pathStr = filePath.toString();
 
   if (m_fileLocks.find(pathStr) != m_fileLocks.end()) {
@@ -523,12 +524,12 @@ bool FileHandler::isFileLocked(
 }
 
 std::string FileHandler::calculateChecksum(
-    const domain::value_objects::Path& filePath,
+    const domain::filesystem::value_objects::Path& filePath,
     const std::string& algorithm) const {
   if (!isSupportedChecksumAlgorithm(algorithm)) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Unsupported checksum algorithm: " + algorithm,
-        shared::exceptions::FileHandlerException::IO_ERROR);
+        exceptions::FileHandlerException::IO_ERROR);
   }
 
   std::vector<char> data = readFile(filePath);
@@ -546,51 +547,51 @@ std::string FileHandler::calculateChecksum(
   return "";
 }
 
-bool FileHandler::verifyChecksum(const domain::value_objects::Path& filePath,
+bool FileHandler::verifyChecksum(const domain::filesystem::value_objects::Path& filePath,
                                  const std::string& expectedChecksum,
                                  const std::string& algorithm) const {
   std::string actualChecksum = calculateChecksum(filePath, algorithm);
   return actualChecksum == expectedChecksum;
 }
 
-domain::value_objects::Size FileHandler::getAvailableDiskSpace(
-    const domain::value_objects::Path& path) const {
+domain::filesystem::value_objects::Size FileHandler::getAvailableDiskSpace(
+    const domain::filesystem::value_objects::Path& path) const {
   std::string pathStr = path.toString();
 
   // This is a simplified implementation
   // In a real implementation, you would use statvfs or similar
-  return domain::value_objects::Size(1024 * 1024 * 1024);  // 1GB default
+  return domain::filesystem::value_objects::Size(1024 * 1024 * 1024);  // 1GB default
 }
 
 bool FileHandler::validateFileSize(
-    const domain::value_objects::Path& filePath,
-    const domain::value_objects::Size& maxSize) const {
+    const domain::filesystem::value_objects::Path& filePath,
+    const domain::filesystem::value_objects::Size& maxSize) const {
   FileMetadata metadata = getMetadata(filePath);
   return metadata.size <= maxSize;
 }
 
 std::string FileHandler::detectMimeType(
-    const domain::value_objects::Path& filePath) const {
+    const domain::filesystem::value_objects::Path& filePath) const {
   std::string filename = filePath.getFilename();
   std::string extension = getFileExtension(filename);
   return extensionToMimeType(extension);
 }
 
 bool FileHandler::setPermissions(
-    const domain::value_objects::Path& filePath,
-    const domain::value_objects::Permission& permissions) const {
+    const domain::filesystem::value_objects::Path& filePath,
+    const domain::filesystem::value_objects::Permission& permissions) const {
   std::string pathStr = filePath.toString();
 
-  if (!infrastructure::filesystem::FileSystemHelper::exists(pathStr)) {
-    throw shared::exceptions::FileHandlerException(
+  if (!FileSystemHelper::exists(pathStr)) {
+    throw exceptions::FileHandlerException(
         "File not found: " + pathStr,
-        shared::exceptions::FileHandlerException::FILE_NOT_FOUND);
+        exceptions::FileHandlerException::FILE_NOT_FOUND);
   }
 
   if (chmod(pathStr.c_str(), permissions.getOctalValue()) != 0) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Failed to set permissions: " + pathStr,
-        shared::exceptions::FileHandlerException::PERMISSION_DENIED);
+        exceptions::FileHandlerException::PERMISSION_DENIED);
   }
 
   return true;
@@ -647,92 +648,92 @@ std::string FileHandler::sanitizeFilename(const std::string& filename) const {
 }
 
 void FileHandler::validateFileForReading(
-    const domain::value_objects::Path& filePath) const {
+    const domain::filesystem::value_objects::Path& filePath) const {
   std::string pathStr = filePath.toString();
 
-  if (!infrastructure::filesystem::FileSystemHelper::exists(pathStr)) {
-    throw shared::exceptions::FileHandlerException(
+  if (!FileSystemHelper::exists(pathStr)) {
+    throw exceptions::FileHandlerException(
         "File not found: " + pathStr,
-        shared::exceptions::FileHandlerException::FILE_NOT_FOUND);
+        exceptions::FileHandlerException::FILE_NOT_FOUND);
   }
 
-  if (!infrastructure::filesystem::FileSystemHelper::isReadable(pathStr)) {
-    throw shared::exceptions::FileHandlerException(
+  if (!FileSystemHelper::isReadable(pathStr)) {
+    throw exceptions::FileHandlerException(
         "File is not readable: " + pathStr,
-        shared::exceptions::FileHandlerException::FILE_NOT_READABLE);
+        exceptions::FileHandlerException::FILE_NOT_READABLE);
   }
 
-  if (infrastructure::filesystem::FileSystemHelper::isDirectory(pathStr)) {
-    throw shared::exceptions::FileHandlerException(
+  if (FileSystemHelper::isDirectory(pathStr)) {
+    throw exceptions::FileHandlerException(
         "Path is a directory: " + pathStr,
-        shared::exceptions::FileHandlerException::INVALID_FILE_TYPE);
+        exceptions::FileHandlerException::INVALID_FILE_TYPE);
   }
 }
 
 void FileHandler::validateFileForWriting(
-    const domain::value_objects::Path& filePath, bool overwrite) const {
+    const domain::filesystem::value_objects::Path& filePath, bool overwrite) const {
   std::string pathStr = filePath.toString();
 
-  if (infrastructure::filesystem::FileSystemHelper::exists(pathStr)) {
+  if (FileSystemHelper::exists(pathStr)) {
     if (!overwrite) {
-      throw shared::exceptions::FileHandlerException(
+      throw exceptions::FileHandlerException(
           "File already exists: " + pathStr,
-          shared::exceptions::FileHandlerException::FILE_ALREADY_EXISTS);
+          exceptions::FileHandlerException::FILE_ALREADY_EXISTS);
     }
 
-    if (!infrastructure::filesystem::FileSystemHelper::isWritable(pathStr)) {
-      throw shared::exceptions::FileHandlerException(
+    if (!FileSystemHelper::isWritable(pathStr)) {
+      throw exceptions::FileHandlerException(
           "File is not writable: " + pathStr,
-          shared::exceptions::FileHandlerException::FILE_NOT_WRITABLE);
+          exceptions::FileHandlerException::FILE_NOT_WRITABLE);
     }
   } else {
-    domain::value_objects::Path parent = filePath;
+    domain::filesystem::value_objects::Path parent = filePath;
     std::string parentStr = parent.getDirectory();
     if (!parentStr.empty() &&
-        infrastructure::filesystem::FileSystemHelper::exists(parentStr)) {
-      if (!infrastructure::filesystem::FileSystemHelper::isWritable(
+        FileSystemHelper::exists(parentStr)) {
+      if (!FileSystemHelper::isWritable(
               parentStr)) {
-        throw shared::exceptions::FileHandlerException(
+        throw exceptions::FileHandlerException(
             "Parent directory is not writable: " + parentStr,
-            shared::exceptions::FileHandlerException::PERMISSION_DENIED);
+            exceptions::FileHandlerException::PERMISSION_DENIED);
       }
     }
   }
 }
 
 void FileHandler::validateDirectoryForCreation(
-    const domain::value_objects::Path& dirPath) const {
+    const domain::filesystem::value_objects::Path& dirPath) const {
   std::string pathStr = dirPath.toString();
 
-  if (infrastructure::filesystem::FileSystemHelper::exists(pathStr)) {
-    throw shared::exceptions::FileHandlerException(
+  if (FileSystemHelper::exists(pathStr)) {
+    throw exceptions::FileHandlerException(
         "Directory already exists: " + pathStr,
-        shared::exceptions::FileHandlerException::FILE_ALREADY_EXISTS);
+        exceptions::FileHandlerException::FILE_ALREADY_EXISTS);
   }
 }
 
 void FileHandler::validateDirectoryForDeletion(
-    const domain::value_objects::Path& dirPath, bool recursive) const {
+    const domain::filesystem::value_objects::Path& dirPath, bool recursive) const {
   std::string pathStr = dirPath.toString();
 
-  if (!infrastructure::filesystem::FileSystemHelper::exists(pathStr)) {
-    throw shared::exceptions::FileHandlerException(
+  if (!FileSystemHelper::exists(pathStr)) {
+    throw exceptions::FileHandlerException(
         "Directory not found: " + pathStr,
-        shared::exceptions::FileHandlerException::FILE_NOT_FOUND);
+        exceptions::FileHandlerException::FILE_NOT_FOUND);
   }
 
-  if (!infrastructure::filesystem::FileSystemHelper::isDirectory(pathStr)) {
-    throw shared::exceptions::FileHandlerException(
+  if (!FileSystemHelper::isDirectory(pathStr)) {
+    throw exceptions::FileHandlerException(
         "Path is not a directory: " + pathStr,
-        shared::exceptions::FileHandlerException::INVALID_FILE_TYPE);
+        exceptions::FileHandlerException::INVALID_FILE_TYPE);
   }
 
   if (!recursive) {
     DIR* dir = opendir(pathStr.c_str());
     if (dir == NULL) {
-      throw shared::exceptions::FileHandlerException(
+      throw exceptions::FileHandlerException(
           "Cannot open directory: " + pathStr,
-          shared::exceptions::FileHandlerException::IO_ERROR);
+          exceptions::FileHandlerException::IO_ERROR);
     }
 
     struct dirent* entry;
@@ -740,9 +741,9 @@ void FileHandler::validateDirectoryForDeletion(
     while ((entry = readdir(dir)) != NULL) {
       if (++count > 2) {  // . and ..
         closedir(dir);
-        throw shared::exceptions::FileHandlerException(
+        throw exceptions::FileHandlerException(
             "Directory is not empty: " + pathStr,
-            shared::exceptions::FileHandlerException::DIRECTORY_NOT_EMPTY);
+            exceptions::FileHandlerException::DIRECTORY_NOT_EMPTY);
       }
     }
 
@@ -751,37 +752,37 @@ void FileHandler::validateDirectoryForDeletion(
 }
 
 bool FileHandler::copyFileInternal(
-    const domain::value_objects::Path& sourcePath,
-    const domain::value_objects::Path& destinationPath, bool overwrite) const {
+    const domain::filesystem::value_objects::Path& sourcePath,
+    const domain::filesystem::value_objects::Path& destinationPath, bool overwrite) const {
   std::string sourceStr = sourcePath.toString();
   std::string destStr = destinationPath.toString();
 
-  if (!infrastructure::filesystem::FileSystemHelper::exists(sourceStr)) {
-    throw shared::exceptions::FileHandlerException(
+  if (!FileSystemHelper::exists(sourceStr)) {
+    throw exceptions::FileHandlerException(
         "Source file not found: " + sourceStr,
-        shared::exceptions::FileHandlerException::FILE_NOT_FOUND);
+        exceptions::FileHandlerException::FILE_NOT_FOUND);
   }
 
-  if (infrastructure::filesystem::FileSystemHelper::exists(destStr) &&
+  if (FileSystemHelper::exists(destStr) &&
       !overwrite) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Destination file already exists: " + destStr,
-        shared::exceptions::FileHandlerException::FILE_ALREADY_EXISTS);
+        exceptions::FileHandlerException::FILE_ALREADY_EXISTS);
   }
 
   std::ifstream source(sourceStr.c_str(), std::ios::binary);
   if (!source.is_open()) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Cannot open source file: " + sourceStr,
-        shared::exceptions::FileHandlerException::FILE_NOT_READABLE);
+        exceptions::FileHandlerException::FILE_NOT_READABLE);
   }
 
   std::ofstream dest(destStr.c_str(), std::ios::binary);
   if (!dest.is_open()) {
     source.close();
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Cannot open destination file: " + destStr,
-        shared::exceptions::FileHandlerException::FILE_NOT_WRITABLE);
+        exceptions::FileHandlerException::FILE_NOT_WRITABLE);
   }
 
   char buffer[BUFFER_SIZE];
@@ -790,9 +791,9 @@ bool FileHandler::copyFileInternal(
     if (!dest) {
       source.close();
       dest.close();
-      throw shared::exceptions::FileHandlerException(
+      throw exceptions::FileHandlerException(
           "Failed to write to destination file: " + destStr,
-          shared::exceptions::FileHandlerException::IO_ERROR);
+          exceptions::FileHandlerException::IO_ERROR);
     }
   }
 
@@ -803,14 +804,14 @@ bool FileHandler::copyFileInternal(
 }
 
 bool FileHandler::deleteDirectoryRecursive(
-    const domain::value_objects::Path& dirPath) const {
+    const domain::filesystem::value_objects::Path& dirPath) const {
   std::string pathStr = dirPath.toString();
 
   DIR* dir = opendir(pathStr.c_str());
   if (dir == NULL) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Cannot open directory: " + pathStr,
-        shared::exceptions::FileHandlerException::IO_ERROR);
+        exceptions::FileHandlerException::IO_ERROR);
   }
 
   struct dirent* entry;
@@ -822,14 +823,14 @@ bool FileHandler::deleteDirectoryRecursive(
     }
 
     std::string fullPath = pathStr + "/" + entryName;
-    domain::value_objects::Path entryPath(fullPath, true);
+    domain::filesystem::value_objects::Path entryPath(fullPath, true);
 
     struct stat statBuf;
     if (stat(fullPath.c_str(), &statBuf) != 0) {
       closedir(dir);
-      throw shared::exceptions::FileHandlerException(
+      throw exceptions::FileHandlerException(
           "Cannot stat file: " + fullPath,
-          shared::exceptions::FileHandlerException::IO_ERROR);
+          exceptions::FileHandlerException::IO_ERROR);
     }
 
     if (S_ISDIR(statBuf.st_mode)) {
@@ -848,9 +849,9 @@ bool FileHandler::deleteDirectoryRecursive(
   closedir(dir);
 
   if (rmdir(pathStr.c_str()) != 0) {
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Failed to delete directory: " + pathStr,
-        shared::exceptions::FileHandlerException::IO_ERROR);
+        exceptions::FileHandlerException::IO_ERROR);
   }
 
   return true;
@@ -920,6 +921,7 @@ void FileHandler::sha1Transform(unsigned int* state,
   state[4] += e;
 }
 
+// TODO: remove magic number
 void FileHandler::sha1PadAndProcess(const std::vector<char>& data,
                                     unsigned int* state, U64& bitLen) const {
   unsigned char padded[64];
@@ -1187,14 +1189,14 @@ std::string FileHandler::calculateMD5(const std::vector<char>& data) const {
 
 std::string FileHandler::generateTemporaryFilename(
     const std::string& prefix, const std::string& suffix,
-    const domain::value_objects::Path& directory) const {
+    const domain::filesystem::value_objects::Path& directory) const {
   std::string dirStr = directory.toString();
-  if (!infrastructure::filesystem::FileSystemHelper::exists(dirStr) ||
-      !infrastructure::filesystem::FileSystemHelper::isDirectory(dirStr) ||
-      !infrastructure::filesystem::FileSystemHelper::isWritable(dirStr)) {
-    throw shared::exceptions::FileHandlerException(
+  if (!FileSystemHelper::exists(dirStr) ||
+      !FileSystemHelper::isDirectory(dirStr) ||
+      !FileSystemHelper::isWritable(dirStr)) {
+    throw exceptions::FileHandlerException(
         "Invalid temporary directory: " + dirStr,
-        shared::exceptions::FileHandlerException::
+        exceptions::FileHandlerException::
             TEMPORARY_FILE_CREATION_FAILED);
   }
 
@@ -1212,9 +1214,9 @@ std::string FileHandler::generateTemporaryFilename(
   int fd = mkstemps(temp, static_cast<int>(suffix.length()));
   if (fd < 0) {
     delete[] temp;
-    throw shared::exceptions::FileHandlerException(
+    throw exceptions::FileHandlerException(
         "Failed to create temporary file",
-        shared::exceptions::FileHandlerException::
+        exceptions::FileHandlerException::
             TEMPORARY_FILE_CREATION_FAILED);
   }
 
@@ -1227,7 +1229,7 @@ std::string FileHandler::generateTemporaryFilename(
 
 bool FileHandler::validateChunkParameters(
     std::size_t offset, std::size_t chunkSize,
-    const domain::value_objects::Size& fileSize) const {
+    const domain::filesystem::value_objects::Size& fileSize) const {
   if (chunkSize == 0) {
     return false;
   }
@@ -1297,4 +1299,5 @@ std::string FileHandler::extensionToMimeType(
 }
 
 }  // namespace filesystem
+}  // namespace infrastructure
 }  // namespace infrastructure

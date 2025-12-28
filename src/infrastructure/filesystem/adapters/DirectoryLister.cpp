@@ -6,18 +6,18 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 21:48:36 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/23 01:17:31 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/28 00:00:45 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "domain/value_objects/Path.hpp"
-#include "domain/value_objects/Permission.hpp"
-#include "domain/value_objects/QueryStringBuilder.hpp"
-#include "domain/value_objects/RegexPattern.hpp"
-#include "domain/value_objects/Size.hpp"
-#include "infrastructure/filesystem/DirectoryEntryComparators.hpp"
-#include "infrastructure/filesystem/DirectoryLister.hpp"
-#include "shared/exceptions/DirectoryListerException.hpp"
+#include "domain/filesystem/value_objects/Path.hpp"
+#include "domain/filesystem/value_objects/Permission.hpp"
+#include "domain/filesystem/value_objects/Size.hpp"
+#include "domain/http/value_objects/QueryStringBuilder.hpp"
+#include "domain/shared/value_objects/RegexPattern.hpp"
+#include "infrastructure/filesystem/adapters/DirectoryEntryComparators.hpp"
+#include "infrastructure/filesystem/adapters/DirectoryLister.hpp"
+#include "infrastructure/filesystem/exceptions/DirectoryListerException.hpp"
 
 #include <algorithm>
 #include <cstdlib>
@@ -30,15 +30,16 @@
 
 namespace infrastructure {
 namespace filesystem {
+namespace adapters {
 
-const domain::value_objects::RegexPattern
+const domain::shared::value_objects::RegexPattern
     DirectoryLister::IMAGE_EXTENSION_PATTERN =
-        domain::value_objects::RegexPattern::imageExtensions();
-const domain::value_objects::RegexPattern
+        domain::shared::value_objects::RegexPattern::imageExtensions();
+const domain::shared::value_objects::RegexPattern
     DirectoryLister::SCRIPT_EXTENSION_PATTERN =
-        domain::value_objects::RegexPattern(
+        domain::shared::value_objects::RegexPattern(
             "\\.(php|py|pl|sh|cgi)$",
-            domain::value_objects::RegexPattern::FLAG_CASE_INSENSITIVE);
+            domain::shared::value_objects::RegexPattern::FLAG_CASE_INSENSITIVE);
 const std::string DirectoryLister::DEFAULT_INDEX_FILES[] = {
     "index.html", "index.htm", "index.php", "default.html", "default.htm"};
 
@@ -46,14 +47,14 @@ DirectoryLister::DirectoryLister(FileSystemHelper* fileSystemHelper,
                                  PathResolver* pathResolver)
     : m_fileSystemHelper(fileSystemHelper), m_pathResolver(pathResolver) {
   if (fileSystemHelper == NULL) {
-    throw shared::exceptions::DirectoryListerException(
+    throw exceptions::DirectoryListerException(
         "FileSystemHelper cannot be NULL",
-        shared::exceptions::DirectoryListerException::INVALID_DEPENDENCY);
+        exceptions::DirectoryListerException::INVALID_DEPENDENCY);
   }
   if (pathResolver == NULL) {
-    throw shared::exceptions::DirectoryListerException(
+    throw exceptions::DirectoryListerException(
         "PathResolver cannot be NULL",
-        shared::exceptions::DirectoryListerException::INVALID_DEPENDENCY);
+        exceptions::DirectoryListerException::INVALID_DEPENDENCY);
   }
 }
 
@@ -72,12 +73,12 @@ DirectoryLister& DirectoryLister::operator=(const DirectoryLister& other) {
 }
 
 std::vector<DirectoryEntry> DirectoryLister::listDirectory(
-    const domain::value_objects::Path& directoryPath, bool showHidden,
-    const std::string& sortBy, bool ascending) {
+    const domain::filesystem::value_objects::Path& directoryPath,
+    bool showHidden, const std::string& sortBy, bool ascending) {
   if (!validateDirectoryForListing(directoryPath)) {
-    throw shared::exceptions::DirectoryListerException(
+    throw exceptions::DirectoryListerException(
         "Directory not valid for listing: " + directoryPath.toString(),
-        shared::exceptions::DirectoryListerException::INVALID_DIRECTORY);
+        exceptions::DirectoryListerException::INVALID_DIRECTORY);
   }
 
   std::vector<DirectoryEntry> entries =
@@ -91,8 +92,8 @@ std::vector<DirectoryEntry> DirectoryLister::listDirectory(
 }
 
 std::string DirectoryLister::generateHtmlListing(
-    const domain::value_objects::Path& directoryPath,
-    const domain::value_objects::Path& requestPath, bool showHidden,
+    const domain::filesystem::value_objects::Path& directoryPath,
+    const domain::filesystem::value_objects::Path& requestPath, bool showHidden,
     const std::string& sortBy, bool ascending) {
   std::vector<DirectoryEntry> entries =
       listDirectory(directoryPath, showHidden, sortBy, ascending);
@@ -155,13 +156,13 @@ std::string DirectoryLister::generateHtmlListing(
 
   html << "    <tbody>\n";
 
-  domain::value_objects::Path parentPath =
+  domain::filesystem::value_objects::Path parentPath =
       getParentDirectoryPath(directoryPath);
   if (!parentPath.isEmpty() &&
       parentPath.toString() != directoryPath.toString()) {
     DirectoryEntry parentEntry(
-        "..", true, domain::value_objects::Size::zero(), "",
-        domain::value_objects::Permission::readOnly(), parentPath);
+        "..", true, domain::filesystem::value_objects::Size::zero(), "",
+        domain::filesystem::value_objects::Permission::readOnly(), parentPath);
     html << generateDirectoryEntryHtml(parentEntry, requestPath, true);
   }
 
@@ -173,7 +174,7 @@ std::string DirectoryLister::generateHtmlListing(
   html << "  </table>\n";
   html << "  <hr>\n";
 
-  domain::value_objects::Size totalSize(0);
+  domain::filesystem::value_objects::Size totalSize(0);
   int fileCount = 0;
   int dirCount = 0;
   int hiddenCount = 0;
@@ -224,7 +225,8 @@ std::string DirectoryLister::generateHtmlListing(
 }
 
 std::string DirectoryLister::generateJsonListing(
-    const domain::value_objects::Path& directoryPath, bool showHidden) const {
+    const domain::filesystem::value_objects::Path& directoryPath,
+    bool showHidden) const {
   std::vector<DirectoryEntry> entries =
       listDirectory(directoryPath, showHidden);
 
@@ -262,7 +264,8 @@ std::string DirectoryLister::generateJsonListing(
 }
 
 std::string DirectoryLister::generatePlainTextListing(
-    const domain::value_objects::Path& directoryPath, bool showHidden) const {
+    const domain::filesystem::value_objects::Path& directoryPath,
+    bool showHidden) const {
   std::vector<DirectoryEntry> entries =
       listDirectory(directoryPath, showHidden);
 
@@ -299,7 +302,7 @@ std::string DirectoryLister::generatePlainTextListing(
 
   int fileCount = 0;
   int dirCount = 0;
-  domain::value_objects::Size totalSize(0);
+  domain::filesystem::value_objects::Size totalSize(0);
 
   for (std::size_t i = 0; i < entries.size(); ++i) {
     if (entries[i].m_isDirectory) {
@@ -328,53 +331,53 @@ std::string DirectoryLister::generatePlainTextListing(
 }
 
 bool DirectoryLister::isDirectoryListingEnabled(
-    const domain::value_objects::Path& directoryPath) {
+    const domain::filesystem::value_objects::Path& directoryPath) {
   // In a real implementation, this would check configuration
   // For now, we'll assume it's enabled if directory exists and is readable
-  if (!infrastructure::filesystem::FileSystemHelper::exists(
+  if (!FileSystemHelper::exists(
           directoryPath.toString())) {
     return false;
   }
 
-  if (!infrastructure::filesystem::FileSystemHelper::isDirectory(
+  if (!FileSystemHelper::isDirectory(
           directoryPath.toString())) {
     return false;
   }
 
-  return infrastructure::filesystem::FileSystemHelper::isReadable(
+  return FileSystemHelper::isReadable(
       directoryPath.toString());
 }
 
 bool DirectoryLister::validateDirectoryForListing(
-    const domain::value_objects::Path& directoryPath) {
-  if (!infrastructure::filesystem::FileSystemHelper::exists(
+    const domain::filesystem::value_objects::Path& directoryPath) {
+  if (!FileSystemHelper::exists(
           directoryPath.toString())) {
-    throw shared::exceptions::DirectoryListerException(
+    throw exceptions::DirectoryListerException(
         "Directory does not exist: " + directoryPath.toString(),
-        shared::exceptions::DirectoryListerException::DIRECTORY_NOT_FOUND);
+        exceptions::DirectoryListerException::DIRECTORY_NOT_FOUND);
   }
 
-  if (!infrastructure::filesystem::FileSystemHelper::isDirectory(
+  if (!FileSystemHelper::isDirectory(
           directoryPath.toString())) {
-    throw shared::exceptions::DirectoryListerException(
+    throw exceptions::DirectoryListerException(
         "Path is not a directory: " + directoryPath.toString(),
-        shared::exceptions::DirectoryListerException::NOT_A_DIRECTORY);
+        exceptions::DirectoryListerException::NOT_A_DIRECTORY);
   }
 
-  if (!infrastructure::filesystem::FileSystemHelper::isReadable(
+  if (!FileSystemHelper::isReadable(
           directoryPath.toString())) {
-    throw shared::exceptions::DirectoryListerException(
+    throw exceptions::DirectoryListerException(
         "Directory not readable: " + directoryPath.toString(),
-        shared::exceptions::DirectoryListerException::PERMISSION_DENIED);
+        exceptions::DirectoryListerException::PERMISSION_DENIED);
   }
 
   return true;
 }
 
-domain::value_objects::Path DirectoryLister::getParentDirectoryPath(
-    const domain::value_objects::Path& currentPath) {
+domain::filesystem::value_objects::Path DirectoryLister::getParentDirectoryPath(
+    const domain::filesystem::value_objects::Path& currentPath) {
   if (currentPath.isEmpty() || currentPath.toString() == "/") {
-    return domain::value_objects::Path();
+    return domain::filesystem::value_objects::Path();
   }
 
   std::string currentStr = currentPath.normalize().toString();
@@ -385,20 +388,22 @@ domain::value_objects::Path DirectoryLister::getParentDirectoryPath(
 
   std::size_t lastSlash = currentStr.find_last_of('/');
   if (lastSlash == std::string::npos) {
-    return domain::value_objects::Path();
+    return domain::filesystem::value_objects::Path();
   }
 
   if (lastSlash == 0) {
-    return domain::value_objects::Path::rootDirectory();
+    return domain::filesystem::value_objects::Path::rootDirectory();
   }
 
-  return domain::value_objects::Path(currentStr.substr(0, lastSlash), true);
+  return domain::filesystem::value_objects::Path(
+      currentStr.substr(0, lastSlash), true);
 }
 
 std::string DirectoryLister::getParentDirectoryUri(
-    const domain::value_objects::Path& currentPath,
-    const domain::value_objects::Path& requestPath) {
-  domain::value_objects::Path parentPath = getParentDirectoryPath(currentPath);
+    const domain::filesystem::value_objects::Path& currentPath,
+    const domain::filesystem::value_objects::Path& requestPath) {
+  domain::filesystem::value_objects::Path parentPath =
+      getParentDirectoryPath(currentPath);
   if (parentPath.isEmpty()) {
     return "";
   }
@@ -430,10 +435,13 @@ bool DirectoryLister::isHiddenFile(const std::string& filename) {
 }
 
 bool DirectoryLister::isExecutableFile(
-    const domain::value_objects::Permission& perm) {
-  return perm.canExecute(domain::value_objects::Permission::CLASS_OWNER) ||
-         perm.canExecute(domain::value_objects::Permission::CLASS_GROUP) ||
-         perm.canExecute(domain::value_objects::Permission::CLASS_OTHER);
+    const domain::filesystem::value_objects::Permission& perm) {
+  return perm.canExecute(
+             domain::filesystem::value_objects::Permission::CLASS_OWNER) ||
+         perm.canExecute(
+             domain::filesystem::value_objects::Permission::CLASS_GROUP) ||
+         perm.canExecute(
+             domain::filesystem::value_objects::Permission::CLASS_OTHER);
 }
 
 bool DirectoryLister::isImageFile(const std::string& filename) {
@@ -446,20 +454,21 @@ bool DirectoryLister::isScriptFile(const std::string& filename) {
 
 bool DirectoryLister::hasAccess(
     const DirectoryEntry& entry,
-    domain::value_objects::Permission::Class userClass) {
+    domain::filesystem::value_objects::Permission::Class userClass) {
   return entry.m_permissions.canRead(userClass);
 }
 
 std::vector<DirectoryEntry> DirectoryLister::readDirectoryEntries(
-    const domain::value_objects::Path& directoryPath, bool showHidden) {
+    const domain::filesystem::value_objects::Path& directoryPath,
+    bool showHidden) {
   std::vector<DirectoryEntry> entries;
   std::string dirPath = directoryPath.toString();
 
   DIR* dir = opendir(dirPath.c_str());
   if (dir == NULL) {
-    throw shared::exceptions::DirectoryListerException(
+    throw exceptions::DirectoryListerException(
         "Cannot open directory: " + dirPath,
-        shared::exceptions::DirectoryListerException::CANNOT_OPEN_DIRECTORY);
+        exceptions::DirectoryListerException::CANNOT_OPEN_DIRECTORY);
   }
 
   struct dirent* entry;
@@ -470,7 +479,8 @@ std::vector<DirectoryEntry> DirectoryLister::readDirectoryEntries(
       continue;
     }
 
-    domain::value_objects::Path fullPath = directoryPath.join(entryName);
+    domain::filesystem::value_objects::Path fullPath =
+        directoryPath.join(entryName);
     DirectoryEntry dirEntry = createEntryFromStat(entryName, fullPath);
     entries.push_back(dirEntry);
   }
@@ -510,30 +520,33 @@ bool DirectoryLister::shouldSkipEntry(const std::string& entryName,
 }
 
 DirectoryEntry DirectoryLister::createEntryFromStat(
-    const std::string& entryName, const domain::value_objects::Path& fullPath) {
+    const std::string& entryName,
+    const domain::filesystem::value_objects::Path& fullPath) {
   struct stat fileStat;
   std::string fullPathStr = fullPath.toString();
 
   if (stat(fullPathStr.c_str(), &fileStat) != 0) {
     return DirectoryEntry(
-        entryName, false, domain::value_objects::Size::zero(), "Unknown",
-        domain::value_objects::Permission::readOnly(), fullPath);
+        entryName, false, domain::filesystem::value_objects::Size::zero(),
+        "Unknown", domain::filesystem::value_objects::Permission::readOnly(),
+        fullPath);
   }
 
   bool isDir = S_ISDIR(fileStat.st_mode);
-  domain::value_objects::Size size =
-      isDir ? domain::value_objects::Size::zero()
-            : domain::value_objects::Size(
+  domain::filesystem::value_objects::Size size =
+      isDir ? domain::filesystem::value_objects::Size::zero()
+            : domain::filesystem::value_objects::Size(
                   static_cast<std::size_t>(fileStat.st_size));
   std::string lastModified = getLastModifiedTime(fullPath);
-  domain::value_objects::Permission permissions = getFilePermissions(fullPath);
+  domain::filesystem::value_objects::Permission permissions =
+      getFilePermissions(fullPath);
 
   return DirectoryEntry(entryName, isDir, size, lastModified, permissions,
                         fullPath);
 }
 
 std::string DirectoryLister::getLastModifiedTime(
-    const domain::value_objects::Path& path) {
+    const domain::filesystem::value_objects::Path& path) {
   struct stat fileStat;
   std::string pathStr = path.toString();
 
@@ -551,34 +564,37 @@ std::string DirectoryLister::getLastModifiedTime(
   return std::string(buffer);
 }
 
-domain::value_objects::Permission DirectoryLister::getFilePermissions(
-    const domain::value_objects::Path& path) {
+domain::filesystem::value_objects::Permission
+DirectoryLister::getFilePermissions(
+    const domain::filesystem::value_objects::Path& path) {
   struct stat fileStat;
   std::string pathStr = path.toString();
 
   if (stat(pathStr.c_str(), &fileStat) != 0) {
-    return domain::value_objects::Permission::readOnly();
+    return domain::filesystem::value_objects::Permission::readOnly();
   }
 
-  return domain::value_objects::Permission(
-      fileStat.st_mode & domain::value_objects::Permission::MAX_PERMISSION);
+  return domain::filesystem::value_objects::Permission(
+      fileStat.st_mode &
+      domain::filesystem::value_objects::Permission::MAX_PERMISSION);
 }
 
-domain::value_objects::Size DirectoryLister::getFileSize(
-    const domain::value_objects::Path& path) {
+domain::filesystem::value_objects::Size DirectoryLister::getFileSize(
+    const domain::filesystem::value_objects::Path& path) {
   struct stat fileStat;
   std::string pathStr = path.toString();
 
   if (stat(pathStr.c_str(), &fileStat) != 0) {
-    return domain::value_objects::Size::zero();
+    return domain::filesystem::value_objects::Size::zero();
   }
 
-  return domain::value_objects::Size(
+  return domain::filesystem::value_objects::Size(
       static_cast<std::size_t>(fileStat.st_size));
 }
 
 std::string DirectoryLister::generateDirectoryEntryHtml(
-    const DirectoryEntry& entry, const domain::value_objects::Path& requestPath,
+    const DirectoryEntry& entry,
+    const domain::filesystem::value_objects::Path& requestPath,
     bool isParentLink) {
   std::ostringstream html;
   html << "      <tr>\n";
@@ -643,7 +659,7 @@ std::string DirectoryLister::generateDirectoryEntryHtml(
 
 std::string DirectoryLister::generateTableHeaderHtml(
     const std::string& sortBy, bool ascending,
-    const domain::value_objects::Path& requestPath) {
+    const domain::filesystem::value_objects::Path& requestPath) {
   std::ostringstream html;
 
   html << "    <thead>\n";
@@ -721,10 +737,10 @@ std::string DirectoryLister::generateTableHeaderHtml(
 }
 
 std::string DirectoryLister::generateSortUrl(
-    const domain::value_objects::Path& requestPath,
+    const domain::filesystem::value_objects::Path& requestPath,
     const std::string& currentSortBy, const std::string& columnToSort,
     bool isAscending) {
-  domain::value_objects::QueryStringBuilder builder(requestPath.toString());
+  domain::http::value_objects::QueryStringBuilder builder(requestPath.toString());
 
   builder.setParameter("sort", columnToSort);
 
@@ -770,5 +786,6 @@ std::string DirectoryLister::generateFileTypeClass(
   return "";
 }
 
+}  // namespace adapters
 }  // namespace filesystem
 }  // namespace infrastructure

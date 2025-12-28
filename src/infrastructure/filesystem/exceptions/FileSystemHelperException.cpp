@@ -6,15 +6,16 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 18:05:56 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/22 18:57:50 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 23:18:25 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "shared/exceptions/FileSystemHelperException.hpp"
+#include "infrastructure/filesystem/exceptions/FileSystemHelperException.hpp"
 
 #include <sstream>
 
-namespace shared {
+namespace infrastructure {
+namespace filesystem {
 namespace exceptions {
 
 const std::pair<FileSystemHelperException::ErrorCode, std::string>
@@ -98,4 +99,5 @@ std::string FileSystemHelperException::getErrorMsg(
 }
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace filesystem
+}  // namespace infrastructure
