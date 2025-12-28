@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 13:23:51 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/23 20:29:39 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/28 00:23:09 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,10 +15,11 @@
 
 #include "shared/exceptions/BaseException.hpp"
 
-namespace shared {
+namespace domain {
+namespace configuration {
 namespace exceptions {
 
-class UploadConfigException : public BaseException {
+class UploadConfigException : public ::shared::exceptions::BaseException {
  public:
   enum ErrorCode {
     INVALID_UPLOAD_DIRECTORY,
@@ -58,6 +59,7 @@ class UploadConfigException : public BaseException {
 };
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace configuration
+}  // namespace domain
 
 #endif  // UPLOADCONFIGEXCEPTION_HPP

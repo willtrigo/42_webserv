@@ -6,15 +6,16 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 13:24:13 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/24 13:42:06 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/28 00:23:01 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "shared/exceptions/UploadConfigException.hpp"
+#include "domain/configuration/exceptions/UploadConfigException.hpp"
 
 #include <sstream>
 
-namespace shared {
+namespace domain {
+namespace configuration {
 namespace exceptions {
 
 const std::pair<UploadConfigException::ErrorCode, std::string>
@@ -94,4 +95,5 @@ std::string UploadConfigException::getErrorMsg(
 }
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace configuration
+}  // namespace domain

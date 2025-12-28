@@ -6,12 +6,12 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 13:30:43 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/23 21:14:17 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/28 00:47:46 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "domain/entities/UploadConfig.hpp"
-#include "shared/exceptions/UploadConfigException.hpp"
+#include "domain/configuration/exceptions/UploadConfigException.hpp"
+#include "domain/configuration/value_objects/UploadConfig.hpp"
 
 #include <algorithm>
 #include <cstring>
@@ -19,12 +19,15 @@
 #include <sstream>
 
 namespace domain {
+namespace configuration {
 namespace entities {
 
-const domain::value_objects::Size UploadConfig::DEFAULT_MAX_FILE_SIZE =
-    domain::value_objects::Size(10485760);  // 10 MB
-const domain::value_objects::Size UploadConfig::DEFAULT_MAX_TOTAL_SIZE =
-    domain::value_objects::Size(104857600);  // 100 MB
+const domain::filesystem::value_objects::Size
+    UploadConfig::DEFAULT_MAX_FILE_SIZE =
+        domain::filesystem::value_objects::Size(10485760);  // 10 MB
+const domain::filesystem::value_objects::Size
+    UploadConfig::DEFAULT_MAX_TOTAL_SIZE =
+        domain::filesystem::value_objects::Size(104857600);  // 100 MB
 
 const std::string UploadConfig::DEFAULT_ALLOWED_EXTENSIONS[] = {
     "jpg",  "jpeg", "png",  "gif", "pdf",  "txt", "doc",
@@ -41,7 +44,8 @@ const std::string UploadConfig::WATERMARK_SUFFIX = "_watermarked";
 const std::string UploadConfig::ENCRYPTED_SUFFIX = "_encrypted";
 const std::string UploadConfig::COMPRESSED_SUFFIX = "_compressed";
 
-UploadConfig::UploadConfig(const domain::value_objects::Path& uploadDirectory)
+UploadConfig::UploadConfig(
+    const domain::filesystem::value_objects::Path& uploadDirectory)
     : m_uploadDirectory(uploadDirectory),
       m_maxFileSize(DEFAULT_MAX_FILE_SIZE),
       m_maxTotalSize(DEFAULT_MAX_TOTAL_SIZE),
@@ -65,9 +69,10 @@ UploadConfig::UploadConfig(const domain::value_objects::Path& uploadDirectory)
   }
 }
 
-UploadConfig::UploadConfig(const domain::value_objects::Path& uploadDirectory,
-                           const domain::value_objects::Size& maxFileSize,
-                           const domain::value_objects::Size& maxTotalSize)
+UploadConfig::UploadConfig(
+    const domain::filesystem::value_objects::Path& uploadDirectory,
+    const domain::filesystem::value_objects::Size& maxFileSize,
+    const domain::filesystem::value_objects::Size& maxTotalSize)
     : m_uploadDirectory(uploadDirectory),
       m_maxFileSize(maxFileSize),
       m_maxTotalSize(maxTotalSize),
@@ -142,11 +147,13 @@ UploadConfig& UploadConfig::operator=(const UploadConfig& other) {
   return *this;
 }
 
-void UploadConfig::setMaxFileSize(const domain::value_objects::Size& maxSize) {
+void UploadConfig::setMaxFileSize(
+    const domain::filesystem::value_objects::Size& maxSize) {
   m_maxFileSize = maxSize;
 }
 
-void UploadConfig::setMaxTotalSize(const domain::value_objects::Size& maxSize) {
+void UploadConfig::setMaxTotalSize(
+    const domain::filesystem::value_objects::Size& maxSize) {
   m_maxTotalSize = maxSize;
 }
 
@@ -237,15 +244,16 @@ bool UploadConfig::validateUploadDirectory() const {
   try {
     initializeDependencies();
 
-    infrastructure::filesystem::FileMetadata metadata =
+    infrastructure::filesystem::adapters::FileMetadata metadata =
         m_fileHandler->getMetadata(m_uploadDirectory);
     if (!metadata.isDirectory) {
       return false;
     }
 
-    domain::value_objects::Path testPath =
-        domain::value_objects::Path(m_uploadDirectory.toString() +
-                                    "/.upload_test_" + getCurrentTimestamp());
+    domain::filesystem::value_objects::Path testPath =
+        domain::filesystem::value_objects::Path(m_uploadDirectory.toString() +
+                                                "/.upload_test_" +
+                                                getCurrentTimestamp());
 
     std::vector<char> testData;
     testData.push_back('t');
@@ -266,12 +274,12 @@ bool UploadConfig::validateUploadDirectory() const {
 }
 
 bool UploadConfig::validateFileSize(
-    const domain::value_objects::Size& fileSize) const {
+    const domain::filesystem::value_objects::Size& fileSize) const {
   return fileSize <= m_maxFileSize;
 }
 
 bool UploadConfig::validateTotalSize(
-    const domain::value_objects::Size& totalSize) const {
+    const domain::filesystem::value_objects::Size& totalSize) const {
   return totalSize <= m_maxTotalSize;
 }
 
@@ -368,35 +376,35 @@ UploadFileInfo UploadConfig::processUpload(const std::string& originalFilename,
     initializeDependencies();
 
     if (!validateUploadConstraints(uploader)) {
-      throw shared::exceptions::UploadConfigException(
+      throw exceptions::UploadConfigException(
           "Upload limit reached for uploader: " + uploader,
-          shared::exceptions::UploadConfigException::UPLOAD_LIMIT_REACHED);
+          exceptions::UploadConfigException::UPLOAD_LIMIT_REACHED);
     }
 
     if (!validateFilename(originalFilename)) {
-      throw shared::exceptions::UploadConfigException(
+      throw exceptions::UploadConfigException(
           "Invalid filename: " + originalFilename,
-          shared::exceptions::UploadConfigException::
-              INVALID_FILENAME_CHARACTERS);
+          exceptions::UploadConfigException::INVALID_FILENAME_CHARACTERS);
     }
 
-    domain::value_objects::Size fileSize(fileData.size());
+    domain::filesystem::value_objects::Size fileSize(fileData.size());
     if (!validateFileSize(fileSize)) {
-      throw shared::exceptions::UploadConfigException(
+      throw exceptions::UploadConfigException(
           "File size exceeds maximum allowed",
-          shared::exceptions::UploadConfigException::MAX_FILE_SIZE_EXCEEDED);
+          exceptions::UploadConfigException::MAX_FILE_SIZE_EXCEEDED);
     }
 
     std::string storedFilename = generateUniqueFilename(originalFilename);
-    domain::value_objects::Path filePath = getFullPath(storedFilename);
+    domain::filesystem::value_objects::Path filePath =
+        getFullPath(storedFilename);
 
     try {
-      infrastructure::filesystem::FileMetadata existingMetadata =
+      infrastructure::filesystem::adapters::FileMetadata existingMetadata =
           m_fileHandler->getMetadata(filePath);
       if (!m_overwriteExisting) {
-        throw shared::exceptions::UploadConfigException(
+        throw exceptions::UploadConfigException(
             "File already exists: " + storedFilename,
-            shared::exceptions::UploadConfigException::DUPLICATE_FILENAME);
+            exceptions::UploadConfigException::DUPLICATE_FILENAME);
       }
     } catch (...) {
       // File doesn't exist, which is fine
@@ -408,22 +416,23 @@ UploadFileInfo UploadConfig::processUpload(const std::string& originalFilename,
     }
 
     if (!validateMimeType(mimeType)) {
-      throw shared::exceptions::UploadConfigException(
+      throw exceptions::UploadConfigException(
           "MIME type not allowed: " + mimeType,
-          shared::exceptions::UploadConfigException::INVALID_MIME_TYPE);
+          exceptions::UploadConfigException::INVALID_MIME_TYPE);
     }
 
     if (!m_fileHandler->writeFile(filePath, fileData, m_overwriteExisting)) {
-      throw shared::exceptions::UploadConfigException(
+      throw exceptions::UploadConfigException(
           "Failed to write file: " + storedFilename,
-          shared::exceptions::UploadConfigException::PERMANENT_STORAGE_ERROR);
+          exceptions::UploadConfigException::PERMANENT_STORAGE_ERROR);
     }
 
     std::string checksum = m_fileHandler->calculateChecksum(filePath, "md5");
 
     if (m_generateThumbnails && isImageFile(storedFilename)) {
-      domain::value_objects::Path thumbPath =
-          domain::value_objects::Path(filePath.toString() + THUMBNAIL_SUFFIX);
+      domain::filesystem::value_objects::Path thumbPath =
+          domain::filesystem::value_objects::Path(filePath.toString() +
+                                                  THUMBNAIL_SUFFIX);
       if (!generateThumbnail(thumbPath)) {
         // if (!generateThumbnail(filePath, thumbPath)) { remove filePath to
         // bypass the error Log warning but don't fail the upload
@@ -431,27 +440,30 @@ UploadFileInfo UploadConfig::processUpload(const std::string& originalFilename,
     }
 
     if (m_applyWatermark && isImageFile(storedFilename)) {
-      domain::value_objects::Path watermarkedPath =
-          domain::value_objects::Path(filePath.toString() + WATERMARK_SUFFIX);
+      domain::filesystem::value_objects::Path watermarkedPath =
+          domain::filesystem::value_objects::Path(filePath.toString() +
+                                                  WATERMARK_SUFFIX);
       if (!applyWatermark(filePath, watermarkedPath)) {
         // Log warning but don't fail the upload
       }
     }
 
     if (m_encryptFiles) {
-      domain::value_objects::Path encryptedPath =
-          domain::value_objects::Path(filePath.toString() + ENCRYPTED_SUFFIX);
-      if (!encryptFile(filePath, encryptedPath)) {
-        // Log warning but don't fail the upload
-      }
+      domain::filesystem::value_objects::Path encryptedPath =
+          domain::filesystem::value_objects::Path(filePath.toString() +
+                                                  ENCRYPTED_SUFFIX);
+      // if (!encryptFile(filePath, encryptedPath)) { // TODO: implement logic
+      //   // Log warning but don't fail the upload
+      // }
     }
 
     if (m_compressFiles) {
-      domain::value_objects::Path compressedPath =
-          domain::value_objects::Path(filePath.toString() + COMPRESSED_SUFFIX);
-      if (!compressFile(filePath, compressedPath)) {
-        // Log warning but don't fail the upload
-      }
+      domain::filesystem::value_objects::Path compressedPath =
+          domain::filesystem::value_objects::Path(filePath.toString() +
+                                                  COMPRESSED_SUFFIX);
+      // if (!compressFile(filePath, compressedPath)) { // TODO: implement logic
+      //   // Log warning but don't fail the upload
+      // }
     }
 
     updateUploadStatistics(uploader);
@@ -461,16 +473,16 @@ UploadFileInfo UploadConfig::processUpload(const std::string& originalFilename,
     return createFileInfo(originalFilename, storedFilename, fileSize, mimeType,
                           uploader);
 
-  } catch (const shared::exceptions::UploadConfigException&) {
+  } catch (const exceptions::UploadConfigException&) {
     throw;
   } catch (const std::exception& e) {
-    throw shared::exceptions::UploadConfigException(
+    throw exceptions::UploadConfigException(
         std::string("Upload processing failed: ") + e.what(),
-        shared::exceptions::UploadConfigException::FILE_VALIDATION_FAILED);
+        exceptions::UploadConfigException::FILE_VALIDATION_FAILED);
   } catch (...) {
-    throw shared::exceptions::UploadConfigException(
+    throw exceptions::UploadConfigException(
         "Unknown error during upload processing",
-        shared::exceptions::UploadConfigException::FILE_VALIDATION_FAILED);
+        exceptions::UploadConfigException::FILE_VALIDATION_FAILED);
   }
 }
 
@@ -480,22 +492,23 @@ std::vector<UploadFileInfo> UploadConfig::processMultiUpload(
   std::vector<UploadFileInfo> results;
 
   if (files.size() > m_maxFilesPerUpload) {
-    throw shared::exceptions::UploadConfigException(
+    throw exceptions::UploadConfigException(
         "Too many files in upload",
-        shared::exceptions::UploadConfigException::UPLOAD_LIMIT_REACHED);
+        exceptions::UploadConfigException::UPLOAD_LIMIT_REACHED);
   }
 
-  domain::value_objects::Size totalSize(0);
+  domain::filesystem::value_objects::Size totalSize(0);
   for (std::map<std::string, std::vector<char> >::const_iterator it =
            files.begin();
        it != files.end(); ++it) {
-    totalSize = totalSize + domain::value_objects::Size(it->second.size());
+    totalSize =
+        totalSize + domain::filesystem::value_objects::Size(it->second.size());
   }
 
   if (!validateTotalSize(totalSize)) {
-    throw shared::exceptions::UploadConfigException(
+    throw exceptions::UploadConfigException(
         "Total upload size exceeds maximum allowed",
-        shared::exceptions::UploadConfigException::MAX_TOTAL_SIZE_EXCEEDED);
+        exceptions::UploadConfigException::MAX_TOTAL_SIZE_EXCEEDED);
   }
 
   for (std::map<std::string, std::vector<char> >::const_iterator it =
@@ -504,7 +517,7 @@ std::vector<UploadFileInfo> UploadConfig::processMultiUpload(
     try {
       UploadFileInfo info = processUpload(it->first, it->second, uploader);
       results.push_back(info);
-    } catch (const shared::exceptions::UploadConfigException& e) {
+    } catch (const exceptions::UploadConfigException& e) {
       // Log the error but continue with other files
       // In production, you might want to collect all errors
       throw;  // Re-throw for now
@@ -518,33 +531,38 @@ bool UploadConfig::deleteUploadedFile(const std::string& storedFilename) const {
   try {
     initializeDependencies();
 
-    domain::value_objects::Path filePath = getFullPath(storedFilename);
+    domain::filesystem::value_objects::Path filePath =
+        getFullPath(storedFilename);
 
     if (!m_fileHandler->deleteFile(filePath)) {
       return false;
     }
 
     if (m_generateThumbnails && isImageFile(storedFilename)) {
-      domain::value_objects::Path thumbPath =
-          domain::value_objects::Path(filePath.toString() + THUMBNAIL_SUFFIX);
+      domain::filesystem::value_objects::Path thumbPath =
+          domain::filesystem::value_objects::Path(filePath.toString() +
+                                                  THUMBNAIL_SUFFIX);
       m_fileHandler->deleteFile(thumbPath);
     }
 
     if (m_applyWatermark && isImageFile(storedFilename)) {
-      domain::value_objects::Path watermarkedPath =
-          domain::value_objects::Path(filePath.toString() + WATERMARK_SUFFIX);
+      domain::filesystem::value_objects::Path watermarkedPath =
+          domain::filesystem::value_objects::Path(filePath.toString() +
+                                                  WATERMARK_SUFFIX);
       m_fileHandler->deleteFile(watermarkedPath);
     }
 
     if (m_encryptFiles) {
-      domain::value_objects::Path encryptedPath =
-          domain::value_objects::Path(filePath.toString() + ENCRYPTED_SUFFIX);
+      domain::filesystem::value_objects::Path encryptedPath =
+          domain::filesystem::value_objects::Path(filePath.toString() +
+                                                  ENCRYPTED_SUFFIX);
       m_fileHandler->deleteFile(encryptedPath);
     }
 
     if (m_compressFiles) {
-      domain::value_objects::Path compressedPath =
-          domain::value_objects::Path(filePath.toString() + COMPRESSED_SUFFIX);
+      domain::filesystem::value_objects::Path compressedPath =
+          domain::filesystem::value_objects::Path(filePath.toString() +
+                                                  COMPRESSED_SUFFIX);
       m_fileHandler->deleteFile(compressedPath);
     }
 
@@ -564,11 +582,11 @@ bool UploadConfig::renameUploadedFile(const std::string& oldFilename,
       return false;
     }
 
-    domain::value_objects::Path oldPath = getFullPath(oldFilename);
-    domain::value_objects::Path newPath = getFullPath(newFilename);
+    domain::filesystem::value_objects::Path oldPath = getFullPath(oldFilename);
+    domain::filesystem::value_objects::Path newPath = getFullPath(newFilename);
 
     try {
-      infrastructure::filesystem::FileMetadata existingMetadata =
+      infrastructure::filesystem::adapters::FileMetadata existingMetadata =
           m_fileHandler->getMetadata(newPath);
       if (!m_overwriteExisting) {
         return false;
@@ -582,34 +600,42 @@ bool UploadConfig::renameUploadedFile(const std::string& oldFilename,
     }
 
     if (m_generateThumbnails && isImageFile(oldFilename)) {
-      domain::value_objects::Path oldThumbPath =
-          domain::value_objects::Path(oldPath.toString() + THUMBNAIL_SUFFIX);
-      domain::value_objects::Path newThumbPath =
-          domain::value_objects::Path(newPath.toString() + THUMBNAIL_SUFFIX);
+      domain::filesystem::value_objects::Path oldThumbPath =
+          domain::filesystem::value_objects::Path(oldPath.toString() +
+                                                  THUMBNAIL_SUFFIX);
+      domain::filesystem::value_objects::Path newThumbPath =
+          domain::filesystem::value_objects::Path(newPath.toString() +
+                                                  THUMBNAIL_SUFFIX);
       m_fileHandler->renameFile(oldThumbPath, newThumbPath);
     }
 
     if (m_applyWatermark && isImageFile(oldFilename)) {
-      domain::value_objects::Path oldWatermarkedPath =
-          domain::value_objects::Path(oldPath.toString() + WATERMARK_SUFFIX);
-      domain::value_objects::Path newWatermarkedPath =
-          domain::value_objects::Path(newPath.toString() + WATERMARK_SUFFIX);
+      domain::filesystem::value_objects::Path oldWatermarkedPath =
+          domain::filesystem::value_objects::Path(oldPath.toString() +
+                                                  WATERMARK_SUFFIX);
+      domain::filesystem::value_objects::Path newWatermarkedPath =
+          domain::filesystem::value_objects::Path(newPath.toString() +
+                                                  WATERMARK_SUFFIX);
       m_fileHandler->renameFile(oldWatermarkedPath, newWatermarkedPath);
     }
 
     if (m_encryptFiles) {
-      domain::value_objects::Path oldEncryptedPath =
-          domain::value_objects::Path(oldPath.toString() + ENCRYPTED_SUFFIX);
-      domain::value_objects::Path newEncryptedPath =
-          domain::value_objects::Path(newPath.toString() + ENCRYPTED_SUFFIX);
+      domain::filesystem::value_objects::Path oldEncryptedPath =
+          domain::filesystem::value_objects::Path(oldPath.toString() +
+                                                  ENCRYPTED_SUFFIX);
+      domain::filesystem::value_objects::Path newEncryptedPath =
+          domain::filesystem::value_objects::Path(newPath.toString() +
+                                                  ENCRYPTED_SUFFIX);
       m_fileHandler->renameFile(oldEncryptedPath, newEncryptedPath);
     }
 
     if (m_compressFiles) {
-      domain::value_objects::Path oldCompressedPath =
-          domain::value_objects::Path(oldPath.toString() + COMPRESSED_SUFFIX);
-      domain::value_objects::Path newCompressedPath =
-          domain::value_objects::Path(newPath.toString() + COMPRESSED_SUFFIX);
+      domain::filesystem::value_objects::Path oldCompressedPath =
+          domain::filesystem::value_objects::Path(oldPath.toString() +
+                                                  COMPRESSED_SUFFIX);
+      domain::filesystem::value_objects::Path newCompressedPath =
+          domain::filesystem::value_objects::Path(newPath.toString() +
+                                                  COMPRESSED_SUFFIX);
       m_fileHandler->renameFile(oldCompressedPath, newCompressedPath);
     }
 
@@ -627,12 +653,13 @@ std::vector<UploadFileInfo> UploadConfig::listUploadedFiles(
 
     std::vector<UploadFileInfo> fileList;
 
-    std::vector<infrastructure::filesystem::DirectoryEntry> entries =
-        infrastructure::filesystem::DirectoryLister::listDirectory(
+    std::vector<infrastructure::filesystem::adapters::DirectoryEntry> entries =
+        infrastructure::filesystem::adapters::DirectoryLister::listDirectory(
             m_uploadDirectory, showHidden, "name", true);
 
     for (std::size_t i = 0; i < entries.size(); ++i) {
-      const infrastructure::filesystem::DirectoryEntry& entry = entries[i];
+      const infrastructure::filesystem::adapters::DirectoryEntry& entry =
+          entries[i];
 
       if (entry.m_isDirectory || entry.m_name == "." || entry.m_name == ".." ||
           (!showHidden && entry.m_name[0] == '.')) {
@@ -672,9 +699,10 @@ UploadFileInfo UploadConfig::getFileInfo(
   try {
     initializeDependencies();
 
-    domain::value_objects::Path filePath = getFullPath(storedFilename);
+    domain::filesystem::value_objects::Path filePath =
+        getFullPath(storedFilename);
 
-    infrastructure::filesystem::FileMetadata metadata =
+    infrastructure::filesystem::adapters::FileMetadata metadata =
         m_fileHandler->getMetadata(filePath);
 
     UploadFileInfo info;
@@ -699,9 +727,9 @@ UploadFileInfo UploadConfig::getFileInfo(
     return info;
 
   } catch (...) {
-    throw shared::exceptions::UploadConfigException(
+    throw exceptions::UploadConfigException(
         "File not found: " + storedFilename,
-        shared::exceptions::UploadConfigException::FILE_VALIDATION_FAILED);
+        exceptions::UploadConfigException::FILE_VALIDATION_FAILED);
   }
 }
 
@@ -710,14 +738,15 @@ std::vector<char> UploadConfig::getFileContent(
   try {
     initializeDependencies();
 
-    domain::value_objects::Path filePath = getFullPath(storedFilename);
+    domain::filesystem::value_objects::Path filePath =
+        getFullPath(storedFilename);
 
     return m_fileHandler->readFile(filePath);
 
   } catch (...) {
-    throw shared::exceptions::UploadConfigException(
+    throw exceptions::UploadConfigException(
         "Failed to read file: " + storedFilename,
-        shared::exceptions::UploadConfigException::FILE_VALIDATION_FAILED);
+        exceptions::UploadConfigException::FILE_VALIDATION_FAILED);
   }
 }
 
@@ -843,8 +872,8 @@ bool UploadConfig::cleanupOrphanedFiles() const {
 
     bool success = true;
 
-    std::vector<infrastructure::filesystem::DirectoryEntry> entries =
-        infrastructure::filesystem::DirectoryLister::listDirectory(
+    std::vector<infrastructure::filesystem::adapters::DirectoryEntry> entries =
+        infrastructure::filesystem::adapters::DirectoryLister::listDirectory(
             m_uploadDirectory, true, "name", true);
 
     // In a real system, you would check which files are orphaned
@@ -852,7 +881,8 @@ bool UploadConfig::cleanupOrphanedFiles() const {
     // For now, just clean up temporary files
 
     for (std::size_t i = 0; i < entries.size(); ++i) {
-      const infrastructure::filesystem::DirectoryEntry& entry = entries[i];
+      const infrastructure::filesystem::adapters::DirectoryEntry& entry =
+          entries[i];
 
       if (entry.m_isDirectory) {
         continue;
@@ -882,7 +912,7 @@ bool UploadConfig::cleanupTemporaryFiles() const {
 }
 
 bool UploadConfig::scanForViruses(
-    const domain::value_objects::Path& filePath) const {
+    const domain::filesystem::value_objects::Path& filePath) const {
   // In a real implementation, you would integrate with an antivirus library
   // For now, just check file extensions and basic heuristics
 
@@ -905,10 +935,10 @@ bool UploadConfig::scanForViruses(
       }
     }
 
-    infrastructure::filesystem::FileMetadata metadata =
+    infrastructure::filesystem::adapters::FileMetadata metadata =
         m_fileHandler->getMetadata(filePath);
 
-    if (metadata.size < domain::value_objects::Size(100) &&
+    if (metadata.size < domain::filesystem::value_objects::Size(100) &&
         (ext == "" || ext == "bin")) {
       return false;
     }
@@ -939,7 +969,8 @@ bool UploadConfig::verifyFileIntegrity(
   try {
     initializeDependencies();
 
-    domain::value_objects::Path filePath = getFullPath(storedFilename);
+    domain::filesystem::value_objects::Path filePath =
+        getFullPath(storedFilename);
 
     std::string actualChecksum =
         m_fileHandler->calculateChecksum(filePath, "md5");
@@ -1028,7 +1059,7 @@ std::string UploadConfig::sanitizeFilename(const std::string& filename) const {
   return result;
 }
 
-domain::value_objects::Path UploadConfig::getFullPath(
+domain::filesystem::value_objects::Path UploadConfig::getFullPath(
     const std::string& filename) const {
   std::string fullPath = m_uploadDirectory.toString();
   if (!fullPath.empty() && fullPath[fullPath.length() - 1] != '/') {
@@ -1036,18 +1067,19 @@ domain::value_objects::Path UploadConfig::getFullPath(
   }
   fullPath += filename;
 
-  return domain::value_objects::Path(fullPath, true);
+  return domain::filesystem::value_objects::Path(fullPath, true);
 }
 
-domain::value_objects::Path UploadConfig::getUploadDirectory() const {
+domain::filesystem::value_objects::Path UploadConfig::getUploadDirectory()
+    const {
   return m_uploadDirectory;
 }
 
-domain::value_objects::Size UploadConfig::getMaxFileSize() const {
+domain::filesystem::value_objects::Size UploadConfig::getMaxFileSize() const {
   return m_maxFileSize;
 }
 
-domain::value_objects::Size UploadConfig::getMaxTotalSize() const {
+domain::filesystem::value_objects::Size UploadConfig::getMaxTotalSize() const {
   return m_maxTotalSize;
 }
 
@@ -1080,10 +1112,12 @@ void UploadConfig::initializeDependencies() const {
     // Note: In a real DDD implementation, these would be injected
     // For now, create them with NULL helpers (which would need to be
     // implemented)
-    m_fileHandler = new infrastructure::filesystem::FileHandler(NULL, NULL);
+    m_fileHandler =
+        new infrastructure::filesystem::adapters::FileHandler(NULL, NULL);
     m_directoryLister =
-        new infrastructure::filesystem::DirectoryLister(NULL, NULL);
-    m_pathResolver = new infrastructure::filesystem::PathResolver(NULL);
+        new infrastructure::filesystem::adapters::DirectoryLister(NULL, NULL);
+    m_pathResolver =
+        new infrastructure::filesystem::adapters::PathResolver(NULL);
   }
 }
 
@@ -1143,8 +1177,8 @@ void UploadConfig::updateUploadStatistics(const std::string& uploader) const {
 
 UploadFileInfo UploadConfig::createFileInfo(
     const std::string& originalFilename, const std::string& storedFilename,
-    const domain::value_objects::Size& fileSize, const std::string& mimeType,
-    const std::string& uploader) const {
+    const domain::filesystem::value_objects::Size& fileSize,
+    const std::string& mimeType, const std::string& uploader) const {
   UploadFileInfo info;
   info.originalFilename = originalFilename;
   info.storedFilename = storedFilename;
@@ -1187,7 +1221,7 @@ std::string UploadConfig::getCurrentTimestamp() const {
 }
 
 bool UploadConfig::generateThumbnail(
-    const domain::value_objects::Path& thumbPath) const {
+    const domain::filesystem::value_objects::Path& thumbPath) const {
   // In a real implementation, you would use an image processing library
   // For now, just create a placeholder
   // put sourcePath, remove to bypass the error
@@ -1203,8 +1237,8 @@ bool UploadConfig::generateThumbnail(
 }
 
 bool UploadConfig::applyWatermark(
-    const domain::value_objects::Path& sourcePath,
-    const domain::value_objects::Path& watermarkedPath) const {
+    const domain::filesystem::value_objects::Path& sourcePath,
+    const domain::filesystem::value_objects::Path& watermarkedPath) const {
   // In a real implementation, you would apply a watermark to the image
   // For now, just copy the file
   try {
@@ -1216,27 +1250,35 @@ bool UploadConfig::applyWatermark(
 }
 
 bool UploadConfig::encryptFile(
-    const domain::value_objects::Path& sourcePath,
-    const domain::value_objects::Path& encryptedPath) const {
+    const domain::filesystem::value_objects::Path& sourcePath,
+    const domain::filesystem::value_objects::Path& encryptedPath) const {
   // In a real implementation, you would encrypt the file
   // For now, just compress it as a simple example
+  (void)sourcePath;
+  (void)encryptedPath;
   try {
-    std::vector<char> data = m_fileHandler->readFile(sourcePath);
-    std::vector<char> compressed = m_fileHandler->compressData(data, "gzip");
-    return m_fileHandler->writeFile(encryptedPath, compressed, true);
+    // std::vector<char> data = m_fileHandler->readFile(sourcePath);
+    // std::vector<char> compressed = m_fileHandler->compressData(data, "gzip");
+    // // TODO: implement compressData
+    // return m_fileHandler->writeFile(encryptedPath, compressed, true);
   } catch (...) {
     return false;
   }
+  return true;
 }
 
 bool UploadConfig::compressFile(
-    const domain::value_objects::Path& sourcePath,
-    const domain::value_objects::Path& compressedPath) const {
+    const domain::filesystem::value_objects::Path& sourcePath,
+    const domain::filesystem::value_objects::Path& compressedPath) const {
+  (void)sourcePath;
+  (void)compressedPath;
   try {
-    return m_fileHandler->compressFile(sourcePath, compressedPath, "gzip");
+    // return m_fileHandler->compressFile(sourcePath, compressedPath, "gzip");
+    // // TODO: implement compressFile
   } catch (...) {
     return false;
   }
+  return true;
 }
 
 bool UploadConfig::isImageFile(const std::string& filename) {
@@ -1288,4 +1330,5 @@ bool UploadConfig::isArchiveFile(const std::string& filename) {
 }
 
 }  // namespace entities
+}  // namespace configuration
 }  // namespace domain

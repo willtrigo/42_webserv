@@ -6,25 +6,25 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/24 21:46:04 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 20:07:31 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 22:52:28 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef ROUTE_HPP
 #define ROUTE_HPP
 
-#include "domain/shared/value_objects/ErrorCode.hpp"
-#include "domain/http/value_objects/HttpMethod.hpp"
 #include "domain/filesystem/value_objects/Path.hpp"
 #include "domain/filesystem/value_objects/Permission.hpp"
 #include "domain/filesystem/value_objects/Size.hpp"
+#include "domain/http/value_objects/HttpMethod.hpp"
+#include "domain/shared/value_objects/ErrorCode.hpp"
 
 #include <map>
 #include <set>
 
 namespace domain {
 namespace configuration {
-namespace entities {
+namespace value_objects {
 
 class Route {
  public:
@@ -64,7 +64,8 @@ class Route {
                     const std::string& extension);
   void setRedirect(const std::string& target,
                    const shared::value_objects::ErrorCode& code);
-  void setFilePermissions(const filesystem::value_objects::Permission& permissions);
+  void setFilePermissions(
+      const filesystem::value_objects::Permission& permissions);
 
   std::string getRootDirectory() const;
   std::string getIndexFile() const;
@@ -117,13 +118,15 @@ class Route {
   std::string m_redirectTarget;
   shared::value_objects::ErrorCode m_redirectCode;
 
-  filesystem::value_objects::Path buildFullPath(const std::string& requestPath) const;
+  filesystem::value_objects::Path buildFullPath(
+      const std::string& requestPath) const;
   bool isPathMatch(const std::string& requestPath) const;
-  std::string findFileToServe(const filesystem::value_objects::Path& fullPath) const;
+  std::string findFileToServe(
+      const filesystem::value_objects::Path& fullPath) const;
   void validate() const;
 };
 
-}  // namespace entities
+}  // namespace value_objects
 }  // namespace configuration
 }  // namespace domain
 
