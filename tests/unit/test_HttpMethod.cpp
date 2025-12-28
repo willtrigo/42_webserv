@@ -11,14 +11,14 @@
 /* ************************************************************************** */
 
 // Include the class we want to test
-#include "domain/value_objects/HttpMethod.hpp"
-#include "shared/exceptions/HttpMethodException.hpp"
+#include "domain/http/value_objects/HttpMethod.hpp"
+#include "domain/http/exceptions/HttpMethodException.hpp"
 
 // Include Google Test
 #include <gtest/gtest.h>
 
 // Short form - easier to type
-using namespace domain::value_objects;
+using namespace domain::http::value_objects;
 
 // Simple test class for HTTP methods
 // (This one is simple, so SetUp/TearDown don't do anything)
@@ -52,13 +52,13 @@ TEST_F(HttpMethodTest, InvalidMethod) {
   // "INVALID" is not a real HTTP method - this should throw an exception
   EXPECT_THROW(
     HttpMethod("INVALID"),                       // This is wrong
-    shared::exceptions::HttpMethodException      // So it should throw this
+    domain::http::exceptions::HttpMethodException      // So it should throw this
   );
   
   // Empty string is also invalid
   EXPECT_THROW(
     HttpMethod(""),                              // Empty is wrong too
-    shared::exceptions::HttpMethodException
+    domain::http::exceptions::HttpMethodException
   );
 }
 

@@ -10,11 +10,11 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "domain/value_objects/Path.hpp"
-#include "shared/exceptions/PathException.hpp"
+#include "domain/filesystem/value_objects/Path.hpp"
+#include "domain/filesystem/exceptions/PathException.hpp"
 #include <gtest/gtest.h>
 
-using namespace domain::value_objects;
+using namespace domain::filesystem::value_objects;
 
 // Test fixture for Path tests
 class PathTest : public ::testing::Test {
@@ -38,7 +38,7 @@ TEST_F(PathTest, ConstructWithAbsolutePath) {
 }
 
 TEST_F(PathTest, ConstructWithRelativePath) {
-  EXPECT_THROW(Path("relative/path"), shared::exceptions::PathException);
+  EXPECT_THROW(Path("relative/path"), domain::filesystem::exceptions::PathException);
 }
 
 TEST_F(PathTest, ConstructRelativePathWithFlag) {
@@ -160,7 +160,7 @@ TEST_F(PathTest, PathTooLong) {
   longPath[0] = '/';
   
   Path* pathObj = NULL;
-  EXPECT_THROW(pathObj = new Path(longPath), shared::exceptions::PathException);
+  EXPECT_THROW(pathObj = new Path(longPath), domain::filesystem::exceptions::PathException);
   if (pathObj) delete pathObj;
 }
 

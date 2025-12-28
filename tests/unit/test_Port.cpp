@@ -10,11 +10,11 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "domain/value_objects/Port.hpp"
-#include "shared/exceptions/PortException.hpp"
+#include "domain/http/value_objects/Port.hpp"
+#include "domain/http/exceptions/PortException.hpp"
 #include <gtest/gtest.h>
 
-using namespace domain::value_objects;
+using namespace domain::http::value_objects;
 
 class PortTest : public ::testing::Test {
  protected:
@@ -40,11 +40,11 @@ TEST_F(PortTest, WellKnownPorts) {
 }
 
 TEST_F(PortTest, InvalidPortZero) {
-  EXPECT_THROW(Port(0), shared::exceptions::PortException);
+  EXPECT_THROW(Port(0), domain::http::exceptions::PortException);
 }
 
 TEST_F(PortTest, InvalidPortTooHigh) {
-  EXPECT_THROW(Port(65536), shared::exceptions::PortException);
+  EXPECT_THROW(Port(65536), domain::http::exceptions::PortException);
 }
 
 TEST_F(PortTest, ValidPortRangeLimits) {
