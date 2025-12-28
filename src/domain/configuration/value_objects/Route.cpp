@@ -6,18 +6,18 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/24 21:56:57 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 20:12:32 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 22:53:47 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "domain/configuration/entities/Route.hpp"
 #include "domain/configuration/exceptions/RouteException.hpp"
+#include "domain/configuration/value_objects/Route.hpp"
 
 #include <sstream>
 
 namespace domain {
 namespace configuration {
-namespace entities {
+namespace value_objects {
 
 Route::MatchInfo::MatchInfo() : isDirectory(false) {}
 
@@ -59,9 +59,12 @@ Route::Route(const filesystem::value_objects::Path& path,
   }
 }
 
-const filesystem::value_objects::Path& Route::getPath() const { return m_pathPattern; }
+const filesystem::value_objects::Path& Route::getPath() const {
+  return m_pathPattern;
+}
 
-const std::set<http::value_objects::HttpMethod>& Route::getAllowedMethods() const {
+const std::set<http::value_objects::HttpMethod>& Route::getAllowedMethods()
+    const {
   return m_allowedMethods;
 }
 
@@ -99,8 +102,8 @@ bool Route::matches(const std::string& requestPath) const {
   if (requestPath.empty()) {
     std::ostringstream oss;
     oss << "Empty request path";
-    throw exceptions::RouteException(
-        oss.str(), exceptions::RouteException::INVALID_PATH);
+    throw exceptions::RouteException(oss.str(),
+                                     exceptions::RouteException::INVALID_PATH);
   }
 
   try {
@@ -108,8 +111,8 @@ bool Route::matches(const std::string& requestPath) const {
   } catch (const std::exception& e) {
     std::ostringstream oss;
     oss << "Failed to match path '" << requestPath << "': " << e.what();
-    throw exceptions::RouteException(
-        oss.str(), exceptions::RouteException::INVALID_PATH);
+    throw exceptions::RouteException(oss.str(),
+                                     exceptions::RouteException::INVALID_PATH);
   }
 }
 
@@ -233,7 +236,8 @@ void Route::setRedirect(const std::string& target,
   m_redirectCode = code;
 }
 
-void Route::setFilePermissions(const filesystem::value_objects::Permission& permissions) {
+void Route::setFilePermissions(
+    const filesystem::value_objects::Permission& permissions) {
   if (!domain::filesystem::value_objects::Permission::isValidPermission(
           permissions.getOctalValue())) {
     std::ostringstream oss;
@@ -251,7 +255,9 @@ std::string Route::getIndexFile() const { return m_indexFile; }
 
 std::string Route::getUploadDirectory() const { return m_uploadDirectory; }
 
-filesystem::value_objects::Size Route::getMaxBodySize() const { return m_maxBodySize; }
+filesystem::value_objects::Size Route::getMaxBodySize() const {
+  return m_maxBodySize;
+}
 
 filesystem::value_objects::Permission Route::getFilePermissions() const {
   return m_filePermissions;
@@ -273,8 +279,8 @@ Route::MatchInfo Route::resolveRequest(
   if (requestPath.empty()) {
     std::ostringstream oss;
     oss << "Cannot resolve empty request path";
-    throw exceptions::RouteException(
-        oss.str(), exceptions::RouteException::INVALID_PATH);
+    throw exceptions::RouteException(oss.str(),
+                                     exceptions::RouteException::INVALID_PATH);
   }
 
   MatchInfo info;
@@ -301,7 +307,8 @@ Route::MatchInfo Route::resolveRequest(
   return info;
 }
 
-filesystem::value_objects::Path Route::buildFullPath(const std::string& requestPath) const {
+filesystem::value_objects::Path Route::buildFullPath(
+    const std::string& requestPath) const {
   if (m_rootDirectory.empty()) {
     try {
       return filesystem::value_objects::Path::fromString(requestPath, true);
@@ -332,8 +339,8 @@ filesystem::value_objects::Path Route::buildFullPath(const std::string& requestP
   } catch (const std::exception& e) {
     std::ostringstream oss;
     oss << "Invalid full path '" << fullPath << "': " << e.what();
-    throw exceptions::RouteException(
-        oss.str(), exceptions::RouteException::INVALID_PATH);
+    throw exceptions::RouteException(oss.str(),
+                                     exceptions::RouteException::INVALID_PATH);
   }
 }
 
@@ -343,15 +350,15 @@ bool Route::isPathMatch(const std::string& requestPath) const {
   if (pattern.empty()) {
     std::ostringstream oss;
     oss << "Route pattern is empty";
-    throw exceptions::RouteException(
-        oss.str(), exceptions::RouteException::INVALID_PATH);
+    throw exceptions::RouteException(oss.str(),
+                                     exceptions::RouteException::INVALID_PATH);
   }
 
   if (requestPath.empty()) {
     std::ostringstream oss;
     oss << "Request path is empty";
-    throw exceptions::RouteException(
-        oss.str(), exceptions::RouteException::INVALID_PATH);
+    throw exceptions::RouteException(oss.str(),
+                                     exceptions::RouteException::INVALID_PATH);
   }
 
   if (pattern == requestPath) {
@@ -386,7 +393,8 @@ bool Route::isPathMatch(const std::string& requestPath) const {
 
 // TODO:Check if index file exists (in a real implementation, you'd check
 // filesystem) For now, we'll just return it
-std::string Route::findFileToServe(const filesystem::value_objects::Path& fullPath) const {
+std::string Route::findFileToServe(
+    const filesystem::value_objects::Path& fullPath) const {
   std::string pathStr = fullPath.toString();
 
   if (pathStr.empty()) {
@@ -425,9 +433,8 @@ std::string Route::findFileToServe(const filesystem::value_objects::Path& fullPa
 
 void Route::validate() const {
   if (m_pathPattern.isEmpty()) {
-    throw exceptions::RouteException(
-        "Route path pattern cannot be empty",
-        exceptions::RouteException::INVALID_PATH);
+    throw exceptions::RouteException("Route path pattern cannot be empty",
+                                     exceptions::RouteException::INVALID_PATH);
   }
 
   if (m_allowedMethods.empty()) {
@@ -492,6 +499,6 @@ bool Route::hasRedirectConfig() const { return !m_redirectTarget.empty(); }
 
 bool Route::hasUploadConfig() const { return !m_uploadDirectory.empty(); }
 
-}  // namespace entities
+}  // namespace value_objects
 }  // namespace configuration
 }  // namespace domain
