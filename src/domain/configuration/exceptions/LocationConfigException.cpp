@@ -6,15 +6,16 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 12:19:31 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/22 12:21:59 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/28 01:24:53 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "shared/exceptions/LocationConfigException.hpp"
+#include "domain/configuration/exceptions/LocationConfigException.hpp"
 
 #include <sstream>
 
-namespace shared {
+namespace domain {
+namespace configuration {
 namespace exceptions {
 
 const std::pair<LocationConfigException::ErrorCode, std::string>
@@ -95,4 +96,5 @@ std::string LocationConfigException::getErrorMsg(
 }
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace configuration
+}  // namespace domain
