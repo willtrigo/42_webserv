@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ListenDirectiveException.hpp                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 03:18:52 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 17:43:27 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 20:11:18 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 

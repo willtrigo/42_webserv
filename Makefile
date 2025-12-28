@@ -83,13 +83,10 @@ SLEEP                           := sleep 0.01
 NAME_OUTPUT                     = webserv
 NAME                            = $(BIN_DIR)$(NAME_OUTPUT)
 
-SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_ENTITIES_DIR), Route.cpp)
-SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_EXCEPTIONS_DIR), CgiConfigException.cpp \
-																	 ErrorPageException.cpp \
-																	 ListenDirectiveException.cpp \
-																	 RouteException.cpp)
-SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_VALUE_OBJECTS_DIR), CgiConfig.cpp \
-																	 ErrorPage.cpp \
+# SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_ENTITIES_DIR), PathException.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_EXCEPTIONS_DIR), ErrorPageException.cpp \
+																	 ListenDirectiveException.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_VALUE_OBJECTS_DIR), ErrorPage.cpp \
 																	 ListenDirective.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_FILESYSTEM_EXCEPTIONS_DIR), PathException.cpp \
 																	 PermissionException.cpp \
@@ -114,7 +111,37 @@ SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_UTILS_DIR), 
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_VALUE_OBJECTS_DIR), ErrorCode.cpp \
 																	 RegexPattern.cpp)
 
-# SRCS_FILES                      += $(addprefix $(SRCS_ENTITIES_DIR), ErrorPage.cpp \
+# SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_ENTITIES_DIR), PathException.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_EXCEPTIONS_DIR), ErrorPageException.cpp \
+																	 ListenDirectiveException.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_VALUE_OBJECTS_DIR), ErrorPage.cpp \
+																	 ListenDirective.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_FILESYSTEM_EXCEPTIONS_DIR), PathException.cpp \
+																	 PermissionException.cpp \
+																	 SizeException.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_FILESYSTEM_VALUE_OBJECTS_DIR), Path.cpp \
+																	 Permission.cpp \
+																	 Size.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_HTTP_EXCEPTIONS_DIR), HostException.cpp \
+																	 HttpMethodException.cpp \
+																	 PortException.cpp \
+																	 QueryStringBuilderException.cpp \
+																	 UriException.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_HTTP_VALUE_OBJECTS_DIR), Host.cpp \
+																	 HttpMethod.cpp \
+																	 Port.cpp \
+																	 QueryStringBuilder.cpp \
+																	 Size.cpp \
+																	 Uri.cpp)
+
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_EXCEPTION_DIR), ErrorCodeException.cpp \
+																	 RegexPatternException.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_UTILS_DIR), StringUtils.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_VALUE_OBJECTS_DIR), ErrorCode.cpp \
+																	 RegexPattern.cpp)
+
+# SRCS_FILES                      += $(addprefix $(SRCS_ENTITIES_DIR), CgiConfig.cpp \
+# 																	 ErrorPage.cpp \
 # 																	 HttpConfig.cpp \
 # 																	 ListenDirective.cpp \
 # 																	 LocationConfig.cpp \
@@ -140,6 +167,7 @@ SRCS_FILES                      += $(addprefix $(SRCS_CLI_DIR), CliController.cp
 																	 CliView.cpp)
 
 SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseException.cpp)
+# 																	 CgiConfigException.cpp \
 # 																	 ConfigException.cpp \
 # 																	 DirectoryListerException.cpp \
 # 																	 ErrorPageException.cpp \

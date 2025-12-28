@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Size.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 10:04:57 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 03:50:20 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 20:12:13 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,7 @@ namespace value_objects {
 
 const char* Size::UNIT_STRINGS[] = {"B", "K", "M", "G", "UNKNOWN"};
 
-Size::Size() {}
+Size::Size() : m_bytes(0) {}
 
 Size::Size(std::size_t bytes) : m_bytes(bytes) { validate(); }
 
