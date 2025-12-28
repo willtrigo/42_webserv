@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/27 20:32:54 by dande-je         ###   ########.fr        #
+#    Updated: 2025/12/27 22:11:46 by umeneses         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -103,35 +103,6 @@ SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_HTTP_VALUE_OBJECTS_
 																	 HttpMethod.cpp \
 																	 Port.cpp \
 																	 QueryStringBuilder.cpp \
-																	 Uri.cpp)
-
-SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_EXCEPTION_DIR), ErrorCodeException.cpp \
-																	 RegexPatternException.cpp)
-SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_UTILS_DIR), StringUtils.cpp)
-SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_VALUE_OBJECTS_DIR), ErrorCode.cpp \
-																	 RegexPattern.cpp)
-
-# SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_ENTITIES_DIR), PathException.cpp)
-SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_EXCEPTIONS_DIR), ErrorPageException.cpp \
-																	 ListenDirectiveException.cpp)
-SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_VALUE_OBJECTS_DIR), ErrorPage.cpp \
-																	 ListenDirective.cpp)
-SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_FILESYSTEM_EXCEPTIONS_DIR), PathException.cpp \
-																	 PermissionException.cpp \
-																	 SizeException.cpp)
-SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_FILESYSTEM_VALUE_OBJECTS_DIR), Path.cpp \
-																	 Permission.cpp \
-																	 Size.cpp)
-SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_HTTP_EXCEPTIONS_DIR), HostException.cpp \
-																	 HttpMethodException.cpp \
-																	 PortException.cpp \
-																	 QueryStringBuilderException.cpp \
-																	 UriException.cpp)
-SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_HTTP_VALUE_OBJECTS_DIR), Host.cpp \
-																	 HttpMethod.cpp \
-																	 Port.cpp \
-																	 QueryStringBuilder.cpp \
-																	 Size.cpp \
 																	 Uri.cpp)
 
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_EXCEPTION_DIR), ErrorCodeException.cpp \
