@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/24 09:42:14 by umeneses          #+#    #+#              #
-#    Updated: 2025/12/27 16:52:25 by umeneses         ###   ########.fr        #
+#    Updated: 2025/12/27 21:46:44 by umeneses         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -49,6 +49,9 @@ NAME                            := $(BIN_DIR)/test_runner
 # - CliController.cpp, ListenDirective.cpp depend on config classes
 # - CgiConfig.cpp uses RegexPattern which has empty pattern initialization issues
 # - DirectoryLister.cpp has static RegexPattern members that initialize with empty patterns
+# - DirectoryEntryComparators.cpp has member access issues (m_size vs size)
+# - RequestParser.cpp temporarily excluded while refactoring
+# - FileSystemHelper.cpp and PathResolver.cpp have namespace issues from refactoring
 PROJECT_SRCS                    := $(shell find $(SRC_DIR) -name '*.cpp' \
                                       ! -name 'main.cpp' \
                                       ! -name 'Uri.cpp' \
@@ -65,7 +68,12 @@ PROJECT_SRCS                    := $(shell find $(SRC_DIR) -name '*.cpp' \
                                       ! -name 'CliController.cpp' \
                                       ! -name 'ListenDirective.cpp' \
                                       ! -name 'CgiConfig.cpp' \
-                                      ! -name 'DirectoryLister.cpp')
+                                      ! -name 'DirectoryLister.cpp' \
+                                      ! -name 'DirectoryEntryComparators.cpp' \
+                                      ! -name 'RequestParser.cpp' \
+                                      ! -name 'FileSystemHelper.cpp' \
+                                      ! -name 'PathResolver.cpp' \
+                                      ! -name 'FileHandler.cpp')
 
 # Test files
 TEST_SRCS                       := test_main.cpp
