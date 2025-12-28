@@ -1,0 +1,39 @@
+# Label PRs based on file patterns
+# See: https://github.com/actions/labeler
+
+documentation:
+  - changed-files:
+    - any-glob-to-any-file: 
+      - '**/*.md'
+      - 'docs/**/*'
+      - 'tests/docs/**/*'
+
+testing:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'tests/**/*'
+      - '**/*test*.cpp'
+      - '**/*Test*.cpp'
+
+enhancement:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/**/*.cpp'
+      - 'src/**/*.hpp'
+
+configuration:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/Makefile'
+      - '**/CMakeLists.txt'
+      - '**/*.yml'
+      - '**/*.yaml'
+      - '**/*.conf'
+      - 'Dockerfile'
+      - 'docker-compose.yaml'
+
+infrastructure:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '.github/**/*'
+      - 'cmake/**/*'
