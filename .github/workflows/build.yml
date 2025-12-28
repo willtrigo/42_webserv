@@ -39,3 +39,12 @@ jobs:
       run: |
         ls -lh bin/webserv
         echo "✅ Build successful!"
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v6
+      with:
+        name: build-artifacts
+        path: |
+          build/
+          bin/
+        retention-days: 1

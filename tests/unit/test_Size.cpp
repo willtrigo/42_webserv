@@ -6,15 +6,15 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/27 00:00:00 by bira              #+#    #+#             */
-/*   Updated: 2025/12/27 13:22:56 by umeneses         ###   ########.fr       */
+/*   Updated: 2025/12/27 22:26:20 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <gtest/gtest.h>
-#include "domain/value_objects/Size.hpp"
-#include "shared/exceptions/SizeException.hpp"
+#include "domain/filesystem/value_objects/Size.hpp"
+#include "domain/filesystem/exceptions/SizeException.hpp"
 
-using domain::value_objects::Size;
+using domain::filesystem::value_objects::Size;
 
 class SizeTest : public ::testing::Test {
  protected:
@@ -89,27 +89,27 @@ TEST_F(SizeTest, ValidSizeGigabytes) {
 }
 
 TEST_F(SizeTest, InvalidFormat) {
-  EXPECT_THROW(Size("abc"), shared::exceptions::SizeException);
+  EXPECT_THROW(Size("abc"), domain::filesystem::exceptions::SizeException);
 }
 
 TEST_F(SizeTest, InvalidFormatWithInvalidUnit) {
-  EXPECT_THROW(Size("123X"), shared::exceptions::SizeException);
+  EXPECT_THROW(Size("123X"), domain::filesystem::exceptions::SizeException);
 }
 
 TEST_F(SizeTest, NegativeSize) {
-  EXPECT_THROW(Size("-100"), shared::exceptions::SizeException);
+  EXPECT_THROW(Size("-100"), domain::filesystem::exceptions::SizeException);
 }
 
 TEST_F(SizeTest, EmptyString) {
-  EXPECT_THROW(Size(""), shared::exceptions::SizeException);
+  EXPECT_THROW(Size(""), domain::filesystem::exceptions::SizeException);
 }
 
 TEST_F(SizeTest, OnlyUnit) {
-  EXPECT_THROW(Size("K"), shared::exceptions::SizeException);
+  EXPECT_THROW(Size("K"), domain::filesystem::exceptions::SizeException);
 }
 
 TEST_F(SizeTest, FloatingPoint) {
-  EXPECT_THROW(Size("1.5M"), shared::exceptions::SizeException);
+  EXPECT_THROW(Size("1.5M"), domain::filesystem::exceptions::SizeException);
 }
 
 // ============================================================================
@@ -289,7 +289,7 @@ TEST_F(SizeTest, SubtractionUnderflow) {
   Size size1(1024);
   Size size2(2048);
   
-  EXPECT_THROW(size1 - size2, shared::exceptions::SizeException);
+  EXPECT_THROW(size1 - size2, domain::filesystem::exceptions::SizeException);
 }
 
 // ============================================================================

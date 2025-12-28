@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/24 09:42:14 by umeneses          #+#    #+#              #
-#    Updated: 2025/12/27 21:46:44 by umeneses         ###   ########.fr        #
+#    Updated: 2025/12/27 22:43:53 by umeneses         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -129,6 +129,15 @@ integration: $(NAME)
 	@printf "$(CYAN)Running integration tests...$(RESET)\n"
 	@./$(NAME) --gtest_filter="*IntegrationTest.*"
 
+valgrind: $(NAME)
+	@printf "$(CYAN)Running tests with valgrind...$(RESET)\n"
+	@valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --log-file=valgrind-output.txt ./$(NAME)
+	@printf "$(GREEN)[✓] Valgrind report saved to valgrind-output.txt$(RESET)\n"
+
+valgrind-brief: $(NAME)
+	@printf "$(CYAN)Running tests with valgrind (brief)...$(RESET)\n"
+	@valgrind --leak-check=full --show-leak-kinds=all ./$(NAME)
+
 clean:
 	@rm -rf $(BUILD_DIR)
 	@printf "$(RED)[✓] Test objects cleaned$(RESET)\n"
@@ -139,6 +148,6 @@ fclean: clean
 
 re: fclean all
 
-.PHONY: all test unit integration clean fclean re
+.PHONY: all test unit integration valgrind valgrind-brief clean fclean re
 
 -include $(DEPS)
