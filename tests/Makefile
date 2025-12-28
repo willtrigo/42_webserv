@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: test                                        +#+  +:+       +#+         #
+#    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
-#    Created: 2025/12/24 00:00:00 by test              #+#    #+#              #
-#    Updated: 2025/12/24 00:00:00 by test             ###   ########.fr        #
+#    Created: 2025/12/24 09:42:14 by umeneses          #+#    #+#              #
+#    Updated: 2025/12/27 16:52:25 by umeneses         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -42,17 +42,28 @@ NAME                            := $(BIN_DIR)/test_runner
 
 # Source files from main project (exclude main.cpp and unimplemented features)
 # Exclude files with unimplemented dependencies:
-# - ErrorCode.cpp and Uri.cpp have unimplemented functions
-# - Route.cpp, RouteMatcher.cpp, RouteConfigAdapter.cpp depend on ErrorCode
+# - Uri.cpp has unimplemented functions
+# - Route.cpp, RouteMatcher.cpp, RouteConfigAdapter.cpp depend on unimplemented features
+# - ConfigParser.cpp, ConfigProvider.cpp have interface mismatches (parsePath/parseFile)
+# - ServerConfig.cpp, LocationConfig.cpp, ErrorPage.cpp, UploadConfig.cpp, HttpConfig.cpp depend on ConfigParser
+# - CliController.cpp, ListenDirective.cpp depend on config classes
 # - CgiConfig.cpp uses RegexPattern which has empty pattern initialization issues
 # - DirectoryLister.cpp has static RegexPattern members that initialize with empty patterns
 PROJECT_SRCS                    := $(shell find $(SRC_DIR) -name '*.cpp' \
                                       ! -name 'main.cpp' \
-                                      ! -name 'ErrorCode.cpp' \
                                       ! -name 'Uri.cpp' \
                                       ! -name 'Route.cpp' \
                                       ! -name 'RouteMatcher.cpp' \
                                       ! -name 'RouteConfigAdapter.cpp' \
+                                      ! -name 'ConfigParser.cpp' \
+                                      ! -name 'ConfigProvider.cpp' \
+                                      ! -name 'ServerConfig.cpp' \
+                                      ! -name 'LocationConfig.cpp' \
+                                      ! -name 'ErrorPage.cpp' \
+                                      ! -name 'UploadConfig.cpp' \
+                                      ! -name 'HttpConfig.cpp' \
+                                      ! -name 'CliController.cpp' \
+                                      ! -name 'ListenDirective.cpp' \
                                       ! -name 'CgiConfig.cpp' \
                                       ! -name 'DirectoryLister.cpp')
 
