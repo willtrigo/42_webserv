@@ -6,38 +6,39 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 12:23:41 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/25 21:29:28 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/28 01:47:45 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "domain/entities/LocationConfig.hpp"
-#include "shared/exceptions/LocationConfigException.hpp"
+#include "domain/configuration/entities/LocationConfig.hpp"
+#include "domain/configuration/exceptions/LocationConfigException.hpp"
 
 #include <cctype>
 #include <cstring>
 #include <sstream>
 
 namespace domain {
+namespace configuration {
 namespace entities {
 
 LocationConfig::LocationConfig()
     : m_path("/"),
       m_matchType(MATCH_PREFIX),
-      m_root(value_objects::Path::rootDirectory()),
+      m_root(filesystem::value_objects::Path::rootDirectory()),
       m_autoIndex(false),
-      m_returnCode(value_objects::ErrorCode::movedPermanently()),
-      m_uploadConfig(value_objects::Path("/tmp/uploads")),
+      m_returnCode(shared::value_objects::ErrorCode::movedPermanently()),
+      m_uploadConfig(filesystem::value_objects::Path("/tmp/uploads")),
       m_hasUploadConfig(false),
       m_clientMaxBodySize(
-          value_objects::Size::fromMegabytes(DEFAULT_CLIENT_MAX_BODY_SIZE)),
+          filesystem::value_objects::Size::fromMegabytes(DEFAULT_CLIENT_MAX_BODY_SIZE)),
       m_clientBodyBufferSize(
-          value_objects::Size::fromKilobytes(DEFAULT_CLIENT_BODY_BUFFER_SIZE)),
+          filesystem::value_objects::Size::fromKilobytes(DEFAULT_CLIENT_BODY_BUFFER_SIZE)),
       m_clientBodyBufferSizeSet(false),
       m_regexPatternValid(false) {
-  m_allowedMethods.insert(value_objects::HttpMethod::get());
-  m_allowedMethods.insert(value_objects::HttpMethod::post());
-  m_allowedMethods.insert(value_objects::HttpMethod::deleteMethod());
-  m_allowedMethods.insert(value_objects::HttpMethod::head());
+  m_allowedMethods.insert(http::value_objects::HttpMethod::get());
+  m_allowedMethods.insert(http::value_objects::HttpMethod::post());
+  m_allowedMethods.insert(http::value_objects::HttpMethod::deleteMethod());
+  m_allowedMethods.insert(http::value_objects::HttpMethod::head());
 
   m_indexFiles.push_back("index.html");
   m_indexFiles.push_back("index.htm");
@@ -47,23 +48,23 @@ LocationConfig::LocationConfig(const std::string& path,
                                LocationMatchType matchType)
     : m_path(path),
       m_matchType(matchType),
-      m_root(value_objects::Path::rootDirectory()),
+      m_root(filesystem::value_objects::Path::rootDirectory()),
       m_autoIndex(false),
-      m_returnCode(value_objects::ErrorCode::movedPermanently()),
-      m_uploadConfig(value_objects::Path("/tmp/uploads")),
+      m_returnCode(shared::value_objects::ErrorCode::movedPermanently()),
+      m_uploadConfig(filesystem::value_objects::Path("/tmp/uploads")),
       m_hasUploadConfig(false),
       m_clientMaxBodySize(
-          value_objects::Size::fromMegabytes(DEFAULT_CLIENT_MAX_BODY_SIZE)),
+          filesystem::value_objects::Size::fromMegabytes(DEFAULT_CLIENT_MAX_BODY_SIZE)),
       m_clientBodyBufferSize(
-          value_objects::Size::fromKilobytes(DEFAULT_CLIENT_BODY_BUFFER_SIZE)),
+          filesystem::value_objects::Size::fromKilobytes(DEFAULT_CLIENT_BODY_BUFFER_SIZE)),
       m_clientBodyBufferSizeSet(false),
       m_regexPatternValid(false) {
   validatePath();
 
-  m_allowedMethods.insert(value_objects::HttpMethod::get());
-  m_allowedMethods.insert(value_objects::HttpMethod::post());
-  m_allowedMethods.insert(value_objects::HttpMethod::deleteMethod());
-  m_allowedMethods.insert(value_objects::HttpMethod::head());
+  m_allowedMethods.insert(http::value_objects::HttpMethod::get());
+  m_allowedMethods.insert(http::value_objects::HttpMethod::post());
+  m_allowedMethods.insert(http::value_objects::HttpMethod::deleteMethod());
+  m_allowedMethods.insert(http::value_objects::HttpMethod::head());
 
   m_indexFiles.push_back("index.html");
   m_indexFiles.push_back("index.htm");
@@ -125,7 +126,7 @@ LocationConfig::LocationMatchType LocationConfig::getMatchType() const {
   return m_matchType;
 }
 
-const value_objects::Path& LocationConfig::getRoot() const { return m_root; }
+const filesystem::value_objects::Path& LocationConfig::getRoot() const { return m_root; }
 
 const std::vector<std::string>& LocationConfig::getIndexFiles() const {
   return m_indexFiles;
@@ -146,11 +147,11 @@ bool LocationConfig::hasReturnRedirect() const {
   return !m_returnRedirect.isEmpty();
 }
 
-const value_objects::Uri& LocationConfig::getReturnRedirect() const {
+const http::value_objects::Uri& LocationConfig::getReturnRedirect() const {
   return m_returnRedirect;
 }
 
-const value_objects::ErrorCode& LocationConfig::getReturnCode() const {
+const shared::value_objects::ErrorCode& LocationConfig::getReturnCode() const {
   return m_returnCode;
 }
 
@@ -164,29 +165,29 @@ UploadConfig& LocationConfig::getUploadConfigMutable() {
   return m_uploadConfig;
 }
 
-const CgiConfig& LocationConfig::getCgiConfig() const { return m_cgiConfig; }
+const value_objects::CgiConfig& LocationConfig::getCgiConfig() const { return m_cgiConfig; }
 
 const LocationConfig::ErrorPageMap& LocationConfig::getErrorPages() const {
   return m_errorPages;
 }
 
-const value_objects::Size& LocationConfig::getClientMaxBodySize() const {
+const filesystem::value_objects::Size& LocationConfig::getClientMaxBodySize() const {
   return m_clientMaxBodySize;
 }
 
 bool LocationConfig::hasProxyPass() const { return !m_proxyPass.isEmpty(); }
 
-const value_objects::Uri& LocationConfig::getProxyPass() const {
+const http::value_objects::Uri& LocationConfig::getProxyPass() const {
   return m_proxyPass;
 }
 
-const value_objects::Path& LocationConfig::getAlias() const { return m_alias; }
+const filesystem::value_objects::Path& LocationConfig::getAlias() const { return m_alias; }
 
 bool LocationConfig::getClientBodyBufferSizeSet() const {
   return m_clientBodyBufferSizeSet;
 }
 
-const value_objects::Size& LocationConfig::getClientBodyBufferSize() const {
+const filesystem::value_objects::Size& LocationConfig::getClientBodyBufferSize() const {
   return m_clientBodyBufferSize;
 }
 
@@ -198,34 +199,34 @@ void LocationConfig::setPath(const std::string& path,
   validatePath();
 }
 
-void LocationConfig::setRoot(const value_objects::Path& root) { m_root = root; }
+void LocationConfig::setRoot(const filesystem::value_objects::Path& root) { m_root = root; }
 
 void LocationConfig::setRoot(const std::string& root) {
   try {
-    m_root = value_objects::Path::fromString(root, true);
+    m_root = filesystem::value_objects::Path::fromString(root, true);
   } catch (const std::exception& e) {
     std::ostringstream oss;
     oss << "Invalid root path: " << e.what();
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         oss.str(),
-        shared::exceptions::LocationConfigException::INVALID_ROOT_PATH);
+        exceptions::LocationConfigException::INVALID_ROOT_PATH);
   }
 }
 
 void LocationConfig::addIndexFile(const std::string& index) {
   if (index.empty()) {
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         "Index file cannot be empty",
-        shared::exceptions::LocationConfigException::EMPTY_INDEX_FILE);
+        exceptions::LocationConfigException::EMPTY_INDEX_FILE);
   }
 
   for (std::size_t i = 0; i < m_indexFiles.size(); ++i) {
+    std::ostringstream oss;
     if (m_indexFiles[i] == index) {
-      std::ostringstream oss;
       oss << "Duplicate index file: '" << index << "'";
-      throw shared::exceptions::LocationConfigException(
+      throw exceptions::LocationConfigException(
           oss.str(),
-          shared::exceptions::LocationConfigException::DUPLICATE_INDEX_FILE);
+          exceptions::LocationConfigException::DUPLICATE_INDEX_FILE);
     }
   }
 
@@ -234,12 +235,12 @@ void LocationConfig::addIndexFile(const std::string& index) {
 
 void LocationConfig::clearIndexFiles() { m_indexFiles.clear(); }
 
-void LocationConfig::addAllowedMethod(const value_objects::HttpMethod& method) {
+void LocationConfig::addAllowedMethod(const http::value_objects::HttpMethod& method) {
   m_allowedMethods.insert(method);
 }
 
 void LocationConfig::removeAllowedMethod(
-    const value_objects::HttpMethod& method) {
+    const http::value_objects::HttpMethod& method) {
   m_allowedMethods.erase(method);
 }
 
@@ -252,28 +253,28 @@ void LocationConfig::setTryFiles(const TryFiles& tryFiles) {
 
 void LocationConfig::addTryFile(const std::string& tryFile) {
   if (tryFile.empty()) {
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         "Try files entry cannot be empty",
-        shared::exceptions::LocationConfigException::EMPTY_TRY_FILE);
+        exceptions::LocationConfigException::EMPTY_TRY_FILE);
   }
   m_tryFiles.push_back(tryFile);
 }
 
-void LocationConfig::setReturnRedirect(const value_objects::Uri& redirect,
-                                       const value_objects::ErrorCode& code) {
+void LocationConfig::setReturnRedirect(const http::value_objects::Uri& redirect,
+                                       const shared::value_objects::ErrorCode& code) {
   if (redirect.isEmpty()) {
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         "Return redirect URL cannot be empty",
-        shared::exceptions::LocationConfigException::EMPTY_REDIRECT_URL);
+        exceptions::LocationConfigException::EMPTY_REDIRECT_URL);
   }
 
   if (!code.isRedirection() && !code.isError()) {
     std::ostringstream oss;
     oss << "Invalid redirect/error code: " << code.getValue()
         << " (must be a redirection or error code)";
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         oss.str(),
-        shared::exceptions::LocationConfigException::INVALID_REDIRECT_CODE);
+        exceptions::LocationConfigException::INVALID_REDIRECT_CODE);
   }
 
   m_returnRedirect = redirect;
@@ -283,15 +284,15 @@ void LocationConfig::setReturnRedirect(const value_objects::Uri& redirect,
 void LocationConfig::setReturnRedirect(const std::string& redirect,
                                        unsigned int code) {
   try {
-    value_objects::ErrorCode errorCode(code);
-    value_objects::Uri redirectUri(redirect);
+    shared::value_objects::ErrorCode errorCode(code);
+    http::value_objects::Uri redirectUri(redirect);
     setReturnRedirect(redirectUri, errorCode);
   } catch (const std::exception& e) {
     std::ostringstream oss;
     oss << "Invalid redirect: " << e.what();
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         oss.str(),
-        shared::exceptions::LocationConfigException::INVALID_REDIRECT_CODE);
+        exceptions::LocationConfigException::INVALID_REDIRECT_CODE);
   }
 }
 
@@ -301,15 +302,15 @@ void LocationConfig::setUploadConfig(const UploadConfig& config) {
   validateUploadConfig();
 }
 
-void LocationConfig::enableUpload(const value_objects::Path& uploadDirectory) {
+void LocationConfig::enableUpload(const filesystem::value_objects::Path& uploadDirectory) {
   m_uploadConfig = UploadConfig(uploadDirectory);
   m_hasUploadConfig = true;
   validateUploadConfig();
 }
 
-void LocationConfig::enableUpload(const value_objects::Path& uploadDirectory,
-                                  const value_objects::Size& maxFileSize,
-                                  const value_objects::Size& maxTotalSize) {
+void LocationConfig::enableUpload(const filesystem::value_objects::Path& uploadDirectory,
+                                  const filesystem::value_objects::Size& maxFileSize,
+                                  const filesystem::value_objects::Size& maxTotalSize) {
   m_uploadConfig = UploadConfig(uploadDirectory, maxFileSize, maxTotalSize);
   m_hasUploadConfig = true;
   validateUploadConfig();
@@ -317,67 +318,67 @@ void LocationConfig::enableUpload(const value_objects::Path& uploadDirectory,
 
 void LocationConfig::disableUpload() {
   m_hasUploadConfig = false;
-  m_uploadConfig = UploadConfig(value_objects::Path("/tmp/uploads"));
+  m_uploadConfig = UploadConfig(filesystem::value_objects::Path("/tmp/uploads"));
 }
 
-void LocationConfig::setCgiConfig(const CgiConfig& config) {
+void LocationConfig::setCgiConfig(const value_objects::CgiConfig& config) {
   if (!config.isValid()) {
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         "Invalid CGI configuration",
-        shared::exceptions::LocationConfigException::INVALID_CGI_CONFIG);
+        exceptions::LocationConfigException::INVALID_CGI_CONFIG);
   }
 
   m_cgiConfig = config;
 }
 
-void LocationConfig::clearCgiConfig() { m_cgiConfig = CgiConfig(); }
+void LocationConfig::clearCgiConfig() { m_cgiConfig = value_objects::CgiConfig(); }
 
-void LocationConfig::addErrorPage(const value_objects::ErrorCode& code,
+void LocationConfig::addErrorPage(const shared::value_objects::ErrorCode& code,
                                   const std::string& uri) {
   if (!code.isError()) {
     std::ostringstream oss;
     oss << "Invalid error code for error page: " << code.getValue()
         << " (must be an error code between 400 and 599)";
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         oss.str(),
-        shared::exceptions::LocationConfigException::INVALID_ERROR_CODE);
+        exceptions::LocationConfigException::INVALID_ERROR_CODE);
   }
 
   if (uri.empty()) {
     std::ostringstream oss;
     oss << "Error page URI cannot be empty for error code " << code.getValue();
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         oss.str(),
-        shared::exceptions::LocationConfigException::EMPTY_ERROR_PAGE_URI);
+        exceptions::LocationConfigException::EMPTY_ERROR_PAGE_URI);
   }
 
   if (uri[0] != '/') {
     std::ostringstream oss;
     oss << "Error page URI must start with '/': " << uri << " for error code "
         << code.getValue();
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         oss.str(),
-        shared::exceptions::LocationConfigException::INVALID_ERROR_PAGE_URI);
+        exceptions::LocationConfigException::INVALID_ERROR_PAGE_URI);
   }
 
   m_errorPages[code] = uri;
 }
 
-void LocationConfig::removeErrorPage(const value_objects::ErrorCode& code) {
+void LocationConfig::removeErrorPage(const shared::value_objects::ErrorCode& code) {
   m_errorPages.erase(code);
 }
 
-void LocationConfig::setClientMaxBodySize(const value_objects::Size& size) {
-  const value_objects::Size MAX_BODY_SIZE =
-      value_objects::Size::fromMegabytes(MAX_ALLOWED_CLIENT_BODY_SIZE);
+void LocationConfig::setClientMaxBodySize(const filesystem::value_objects::Size& size) {
+  const filesystem::value_objects::Size MAX_BODY_SIZE =
+      filesystem::value_objects::Size::fromMegabytes(MAX_ALLOWED_CLIENT_BODY_SIZE);
 
   if (size.getBytes() > MAX_BODY_SIZE.getBytes()) {
     std::ostringstream oss;
     oss << "Client max body size too large: " << size.toString()
         << " (maximum is " << MAX_BODY_SIZE.toString() << ")";
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         oss.str(),
-        shared::exceptions::LocationConfigException::BODY_SIZE_TOO_LARGE);
+        exceptions::LocationConfigException::BODY_SIZE_TOO_LARGE);
   }
 
   m_clientMaxBodySize = size;
@@ -385,28 +386,28 @@ void LocationConfig::setClientMaxBodySize(const value_objects::Size& size) {
 
 void LocationConfig::setClientMaxBodySize(const std::string& sizeString) {
   try {
-    value_objects::Size size = value_objects::Size::fromString(sizeString);
+    filesystem::value_objects::Size size = filesystem::value_objects::Size::fromString(sizeString);
     setClientMaxBodySize(size);
   } catch (const std::exception& e) {
     std::ostringstream oss;
     oss << "Invalid client max body size: " << e.what();
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         oss.str(),
-        shared::exceptions::LocationConfigException::BODY_SIZE_TOO_LARGE);
+        exceptions::LocationConfigException::BODY_SIZE_TOO_LARGE);
   }
 }
 
-void LocationConfig::setProxyPass(const value_objects::Uri& proxyPass) {
+void LocationConfig::setProxyPass(const http::value_objects::Uri& proxyPass) {
   if (proxyPass.isEmpty()) {
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         "Proxy pass URL cannot be empty",
-        shared::exceptions::LocationConfigException::EMPTY_PROXY_PASS);
+        exceptions::LocationConfigException::EMPTY_PROXY_PASS);
   }
 
   if (!proxyPass.isHttp() && !proxyPass.isHttps()) {
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         "Proxy pass must be an HTTP or HTTPS URL: " + proxyPass.toString(),
-        shared::exceptions::LocationConfigException::INVALID_PROXY_PASS);
+        exceptions::LocationConfigException::INVALID_PROXY_PASS);
   }
 
   m_proxyPass = proxyPass;
@@ -414,56 +415,56 @@ void LocationConfig::setProxyPass(const value_objects::Uri& proxyPass) {
 
 void LocationConfig::setProxyPass(const std::string& proxyPass) {
   try {
-    value_objects::Uri uri(proxyPass);
+    http::value_objects::Uri uri(proxyPass);
     setProxyPass(uri);
   } catch (const std::exception& e) {
     std::ostringstream oss;
     oss << "Invalid proxy pass URL: " << e.what();
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         oss.str(),
-        shared::exceptions::LocationConfigException::INVALID_PROXY_PASS);
+        exceptions::LocationConfigException::INVALID_PROXY_PASS);
   }
 }
 
-void LocationConfig::clearProxyPass() { m_proxyPass = value_objects::Uri(); }
+void LocationConfig::clearProxyPass() { m_proxyPass = http::value_objects::Uri(); }
 
-void LocationConfig::setAlias(const value_objects::Path& alias) {
+void LocationConfig::setAlias(const filesystem::value_objects::Path& alias) {
   if (!alias.isEmpty() && !alias.isAbsolute()) {
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         "Alias path must be absolute",
-        shared::exceptions::LocationConfigException::INVALID_ROOT_PATH);
+        exceptions::LocationConfigException::INVALID_ROOT_PATH);
   }
   m_alias = alias;
 }
 
 void LocationConfig::setAlias(const std::string& alias) {
   try {
-    value_objects::Path path = value_objects::Path::fromString(alias, true);
+    filesystem::value_objects::Path path = filesystem::value_objects::Path::fromString(alias, true);
     setAlias(path);
   } catch (const std::exception& e) {
     std::ostringstream oss;
     oss << "Invalid alias path: " << e.what();
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         oss.str(),
-        shared::exceptions::LocationConfigException::INVALID_ROOT_PATH);
+        exceptions::LocationConfigException::INVALID_ROOT_PATH);
   }
 }
 
-void LocationConfig::setClientBodyBufferSize(const value_objects::Size& size) {
+void LocationConfig::setClientBodyBufferSize(const filesystem::value_objects::Size& size) {
   m_clientBodyBufferSize = size;
   m_clientBodyBufferSizeSet = true;
 }
 
 void LocationConfig::setClientBodyBufferSize(const std::string& sizeString) {
   try {
-    value_objects::Size size = value_objects::Size::fromString(sizeString);
+    filesystem::value_objects::Size size = filesystem::value_objects::Size::fromString(sizeString);
     setClientBodyBufferSize(size);
   } catch (const std::exception& e) {
     std::ostringstream oss;
     oss << "Invalid client body buffer size: " << e.what();
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         oss.str(),
-        shared::exceptions::LocationConfigException::BODY_SIZE_TOO_LARGE);
+        exceptions::LocationConfigException::BODY_SIZE_TOO_LARGE);
   }
 }
 
@@ -471,7 +472,7 @@ bool LocationConfig::isValid() const {
   try {
     validate();
     return true;
-  } catch (const shared::exceptions::LocationConfigException&) {
+  } catch (const exceptions::LocationConfigException&) {
     return false;
   }
 }
@@ -492,71 +493,71 @@ void LocationConfig::validate() const {
 
   if (hasProxyPass() &&
       (isUploadEnabled() || hasCgiConfig() || hasReturnRedirect())) {
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         "Proxy pass cannot be combined with upload, CGI, or return directives",
-        shared::exceptions::LocationConfigException::CONFLICTING_DIRECTIVES);
+        exceptions::LocationConfigException::CONFLICTING_DIRECTIVES);
   }
 
   if (hasReturnRedirect() &&
       (isUploadEnabled() || hasCgiConfig() || hasProxyPass())) {
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         "Return redirect cannot be combined with upload, CGI, or proxy pass "
         "directives",
-        shared::exceptions::LocationConfigException::CONFLICTING_DIRECTIVES);
+        exceptions::LocationConfigException::CONFLICTING_DIRECTIVES);
   }
 
   if (hasAlias() && !m_root.isEmpty()) {
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         "Alias and root directives cannot be used together",
-        shared::exceptions::LocationConfigException::CONFLICTING_DIRECTIVES);
+        exceptions::LocationConfigException::CONFLICTING_DIRECTIVES);
   }
 
   if (isUploadEnabled() && !allowsPost()) {
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         "Upload enabled but POST method not allowed",
-        shared::exceptions::LocationConfigException::CONFLICTING_DIRECTIVES);
+        exceptions::LocationConfigException::CONFLICTING_DIRECTIVES);
   }
 }
 
 void LocationConfig::validatePath() const {
   if (m_path.empty()) {
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         "Location path cannot be empty",
-        shared::exceptions::LocationConfigException::EMPTY_PATH);
+        exceptions::LocationConfigException::EMPTY_PATH);
   }
 
   if (m_matchType == MATCH_REGEX_CASE_SENSITIVE ||
       m_matchType == MATCH_REGEX_CASE_INSENSITIVE) {
-    if (!value_objects::RegexPattern::isValidPattern(m_path)) {
+    if (!shared::value_objects::RegexPattern::isValidPattern(m_path)) {
       std::ostringstream oss;
       oss << "Invalid regex pattern for location: '" << m_path << "'";
-      throw shared::exceptions::LocationConfigException(
+      throw exceptions::LocationConfigException(
           oss.str(),
-          shared::exceptions::LocationConfigException::INVALID_REGEX_PATTERN);
+          exceptions::LocationConfigException::INVALID_REGEX_PATTERN);
     }
   } else if (m_path[0] != '/' && m_matchType != MATCH_EXACT) {
     std::ostringstream oss;
     oss << "Location path must start with '/' for prefix matching: '" << m_path
         << "'";
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         oss.str(),
-        shared::exceptions::LocationConfigException::INVALID_PATH_FORMAT);
+        exceptions::LocationConfigException::INVALID_PATH_FORMAT);
   }
 }
 
 void LocationConfig::validateRoot() const {
   if (m_root.isEmpty()) {
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         "Root path cannot be empty",
-        shared::exceptions::LocationConfigException::EMPTY_ROOT);
+        exceptions::LocationConfigException::EMPTY_ROOT);
   }
 }
 
 void LocationConfig::validateAllowedMethods() const {
   if (m_allowedMethods.empty()) {
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         "Location must have at least one allowed HTTP method",
-        shared::exceptions::LocationConfigException::NO_ALLOWED_METHODS);
+        exceptions::LocationConfigException::NO_ALLOWED_METHODS);
   }
 }
 
@@ -564,9 +565,9 @@ void LocationConfig::validateTryFiles() const {
   if (!m_tryFiles.empty()) {
     for (std::size_t i = 0; i < m_tryFiles.size(); ++i) {
       if (m_tryFiles[i].empty()) {
-        throw shared::exceptions::LocationConfigException(
+        throw exceptions::LocationConfigException(
             "Try files entry cannot be empty",
-            shared::exceptions::LocationConfigException::EMPTY_TRY_FILE);
+            exceptions::LocationConfigException::EMPTY_TRY_FILE);
       }
     }
   }
@@ -577,25 +578,25 @@ void LocationConfig::validateReturnRedirect() const {
     std::ostringstream oss;
     oss << "Return code must be a redirection code (3xx) for return directive: "
         << m_returnCode.getValue();
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         oss.str(),
-        shared::exceptions::LocationConfigException::INVALID_REDIRECT_CODE);
+        exceptions::LocationConfigException::INVALID_REDIRECT_CODE);
   }
 }
 
 void LocationConfig::validateUploadConfig() const {
   if (m_hasUploadConfig && !m_uploadConfig.validateUploadDirectory()) {
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         "Invalid upload directory",
-        shared::exceptions::LocationConfigException::INVALID_UPLOAD_CONFIG);
+        exceptions::LocationConfigException::INVALID_UPLOAD_CONFIG);
   }
 }
 
 void LocationConfig::validateCgiConfig() const {
   if (!m_cgiConfig.isValid()) {
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         "Invalid CGI configuration",
-        shared::exceptions::LocationConfigException::INVALID_CGI_CONFIG);
+        exceptions::LocationConfigException::INVALID_CGI_CONFIG);
   }
 }
 
@@ -608,57 +609,57 @@ void LocationConfig::validateErrorPages() const {
       std::ostringstream oss;
       oss << "Invalid error page URI for error " << it->first.getValue()
           << ": '" << uri << "' (must start with '/')";
-      throw shared::exceptions::LocationConfigException(
+      throw exceptions::LocationConfigException(
           oss.str(),
-          shared::exceptions::LocationConfigException::INVALID_ERROR_PAGE_URI);
+          exceptions::LocationConfigException::INVALID_ERROR_PAGE_URI);
     }
   }
 }
 
 void LocationConfig::validateClientMaxBodySize() const {
-  const value_objects::Size MAX_BODY_SIZE =
-      value_objects::Size::fromMegabytes(MAX_ALLOWED_CLIENT_BODY_SIZE);
+  const filesystem::value_objects::Size MAX_BODY_SIZE =
+      filesystem::value_objects::Size::fromMegabytes(MAX_ALLOWED_CLIENT_BODY_SIZE);
 
   if (m_clientMaxBodySize.getBytes() > MAX_BODY_SIZE.getBytes()) {
     std::ostringstream oss;
     oss << "Client max body size exceeds limit: "
         << m_clientMaxBodySize.toString() << " (maximum is "
         << MAX_BODY_SIZE.toString() << ")";
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         oss.str(),
-        shared::exceptions::LocationConfigException::BODY_SIZE_TOO_LARGE);
+        exceptions::LocationConfigException::BODY_SIZE_TOO_LARGE);
   }
 }
 
 void LocationConfig::validateProxyPass() const {
   if (!m_proxyPass.isEmpty() && !m_proxyPass.isHttp() &&
       !m_proxyPass.isHttps()) {
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         "Proxy pass must be an HTTP or HTTPS URL",
-        shared::exceptions::LocationConfigException::INVALID_PROXY_PASS);
+        exceptions::LocationConfigException::INVALID_PROXY_PASS);
   }
 }
 
 void LocationConfig::validateAlias() const {
   if (!m_alias.isEmpty() && !m_alias.isAbsolute()) {
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         "Alias path must be absolute",
-        shared::exceptions::LocationConfigException::INVALID_ROOT_PATH);
+        exceptions::LocationConfigException::INVALID_ROOT_PATH);
   }
 }
 
 void LocationConfig::validateClientBodyBufferSize() const {
-  const value_objects::Size MAX_BUFFER_SIZE =
-      value_objects::Size::fromMegabytes(MAX_ALLOWED_BUFFER_SIZE);
+  const filesystem::value_objects::Size MAX_BUFFER_SIZE =
+      filesystem::value_objects::Size::fromMegabytes(MAX_ALLOWED_BUFFER_SIZE);
 
   if (m_clientBodyBufferSize.getBytes() > MAX_BUFFER_SIZE.getBytes()) {
     std::ostringstream oss;
     oss << "Client body buffer size too large: "
         << m_clientBodyBufferSize.toString() << " (maximum is "
         << MAX_BUFFER_SIZE.toString() << ")";
-    throw shared::exceptions::LocationConfigException(
+    throw exceptions::LocationConfigException(
         oss.str(),
-        shared::exceptions::LocationConfigException::BODY_SIZE_TOO_LARGE);
+        exceptions::LocationConfigException::BODY_SIZE_TOO_LARGE);
   }
 }
 
@@ -683,7 +684,7 @@ bool LocationConfig::matchesPath(const std::string& requestPath) const {
 }
 
 bool LocationConfig::isMethodAllowed(
-    const value_objects::HttpMethod& method) const {
+    const http::value_objects::HttpMethod& method) const {
   return m_allowedMethods.find(method) != m_allowedMethods.end();
 }
 
@@ -698,30 +699,30 @@ bool LocationConfig::hasClientBodyBufferSize() const {
 }
 
 bool LocationConfig::allowsGet() const {
-  return isMethodAllowed(value_objects::HttpMethod::get());
+  return isMethodAllowed(http::value_objects::HttpMethod::get());
 }
 
 bool LocationConfig::allowsPost() const {
-  return isMethodAllowed(value_objects::HttpMethod::post());
+  return isMethodAllowed(http::value_objects::HttpMethod::post());
 }
 
 bool LocationConfig::allowsDelete() const {
-  return isMethodAllowed(value_objects::HttpMethod::deleteMethod());
+  return isMethodAllowed(http::value_objects::HttpMethod::deleteMethod());
 }
 
 bool LocationConfig::allowsPut() const {
-  return isMethodAllowed(value_objects::HttpMethod::put());
+  return isMethodAllowed(http::value_objects::HttpMethod::put());
 }
 
 bool LocationConfig::allowsHead() const {
-  return isMethodAllowed(value_objects::HttpMethod::head());
+  return isMethodAllowed(http::value_objects::HttpMethod::head());
 }
 
 bool LocationConfig::isUploadRoute() const {
   return isUploadEnabled() && allowsPost();
 }
 
-value_objects::Path LocationConfig::resolvePath(
+filesystem::value_objects::Path LocationConfig::resolvePath(
     const std::string& requestPath) const {
   if (hasAlias()) {
     std::string relativePath = requestPath.substr(m_path.length());
@@ -731,7 +732,7 @@ value_objects::Path LocationConfig::resolvePath(
 }
 
 bool LocationConfig::validateUploadFile(const std::string& filename,
-                                        const value_objects::Size& fileSize,
+                                        const filesystem::value_objects::Size& fileSize,
                                         const std::string& mimeType) const {
   if (!isUploadEnabled()) {
     return false;
@@ -760,18 +761,18 @@ bool LocationConfig::canHandleUpload() const {
   return isUploadEnabled() && allowsPost();
 }
 
-Route LocationConfig::toRoute() const {
-  Route::HandlerType handlerType = Route::STATIC_FILE;
+value_objects::Route LocationConfig::toRoute() const {
+  value_objects::Route::HandlerType handlerType = value_objects::Route::STATIC_FILE;
 
   if (hasCgiConfig()) {
-    handlerType = Route::CGI_EXECUTION;
+    handlerType = value_objects::Route::CGI_EXECUTION;
   } else if (isUploadEnabled()) {
-    handlerType = Route::UPLOAD;
+    handlerType = value_objects::Route::UPLOAD;
   } else if (hasReturnRedirect()) {
-    handlerType = Route::REDIRECT;
+    handlerType = value_objects::Route::REDIRECT;
   }
 
-  Route route(value_objects::Path(m_path), m_allowedMethods, handlerType);
+  value_objects::Route route(filesystem::value_objects::Path(m_path), m_allowedMethods, handlerType);
 
   if (!m_root.isEmpty()) {
     route.setRootDirectory(m_root.toString());
@@ -798,51 +799,51 @@ Route LocationConfig::toRoute() const {
 void LocationConfig::clear() {
   m_path = "/";
   m_matchType = MATCH_PREFIX;
-  m_root = value_objects::Path::rootDirectory();
+  m_root = filesystem::value_objects::Path::rootDirectory();
   m_indexFiles.clear();
   m_allowedMethods.clear();
   m_autoIndex = false;
   m_tryFiles.clear();
-  m_returnRedirect = value_objects::Uri();
-  m_returnCode = value_objects::ErrorCode::movedPermanently();
-  m_uploadConfig = UploadConfig(value_objects::Path("/tmp/uploads"));
+  m_returnRedirect = http::value_objects::Uri();
+  m_returnCode = shared::value_objects::ErrorCode::movedPermanently();
+  m_uploadConfig = UploadConfig(filesystem::value_objects::Path("/tmp/uploads"));
   m_hasUploadConfig = false;
-  m_cgiConfig = CgiConfig();
+  m_cgiConfig = value_objects::CgiConfig();
   m_errorPages.clear();
   m_clientMaxBodySize =
-      value_objects::Size::fromMegabytes(DEFAULT_CLIENT_MAX_BODY_SIZE);
-  m_proxyPass = value_objects::Uri();
-  m_alias = value_objects::Path();
+      filesystem::value_objects::Size::fromMegabytes(DEFAULT_CLIENT_MAX_BODY_SIZE);
+  m_proxyPass = http::value_objects::Uri();
+  m_alias = filesystem::value_objects::Path();
   m_clientBodyBufferSize =
-      value_objects::Size::fromKilobytes(DEFAULT_CLIENT_BODY_BUFFER_SIZE);
+      filesystem::value_objects::Size::fromKilobytes(DEFAULT_CLIENT_BODY_BUFFER_SIZE);
   m_clientBodyBufferSizeSet = false;
   m_regexPatternValid = false;
 
   m_indexFiles.push_back("index.html");
   m_indexFiles.push_back("index.htm");
 
-  m_allowedMethods.insert(value_objects::HttpMethod::get());
-  m_allowedMethods.insert(value_objects::HttpMethod::post());
-  m_allowedMethods.insert(value_objects::HttpMethod::deleteMethod());
-  m_allowedMethods.insert(value_objects::HttpMethod::head());
+  m_allowedMethods.insert(http::value_objects::HttpMethod::get());
+  m_allowedMethods.insert(http::value_objects::HttpMethod::post());
+  m_allowedMethods.insert(http::value_objects::HttpMethod::deleteMethod());
+  m_allowedMethods.insert(http::value_objects::HttpMethod::head());
 }
 
 void LocationConfig::compileRegexPattern() const {
   if (m_matchType == MATCH_REGEX_CASE_SENSITIVE ||
       m_matchType == MATCH_REGEX_CASE_INSENSITIVE) {
     try {
-      int flags = value_objects::RegexPattern::FLAG_NONE;
+      int flags = shared::value_objects::RegexPattern::FLAG_NONE;
       if (m_matchType == MATCH_REGEX_CASE_INSENSITIVE) {
-        flags |= value_objects::RegexPattern::FLAG_CASE_INSENSITIVE;
+        flags |= shared::value_objects::RegexPattern::FLAG_CASE_INSENSITIVE;
       }
 
-      m_regexPattern = value_objects::RegexPattern(m_path, flags);
+      m_regexPattern = shared::value_objects::RegexPattern(m_path, flags);
       m_regexPatternValid = true;
     } catch (const std::exception& e) {
       m_regexPatternValid = false;
-      throw shared::exceptions::LocationConfigException(
+      throw exceptions::LocationConfigException(
           std::string("Failed to compile regex pattern: ") + e.what(),
-          shared::exceptions::LocationConfigException::
+          exceptions::LocationConfigException::
               REGEX_COMPILATION_FAILED);
     }
   }
@@ -900,4 +901,5 @@ std::string LocationConfig::stripMatchPrefix(const std::string& path) {
 }
 
 }  // namespace entities
+}  // namespace configuration
 }  // namespace domain

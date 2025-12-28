@@ -6,22 +6,22 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 12:21:54 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/25 21:20:21 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/28 01:32:33 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef LOCATION_CONFIG_HPP
 #define LOCATION_CONFIG_HPP
 
-#include "domain/entities/CgiConfig.hpp"
-#include "domain/entities/Route.hpp"
-#include "domain/entities/UploadConfig.hpp"
-#include "domain/value_objects/ErrorCode.hpp"
-#include "domain/value_objects/HttpMethod.hpp"
-#include "domain/value_objects/Path.hpp"
-#include "domain/value_objects/RegexPattern.hpp"
-#include "domain/value_objects/Size.hpp"
-#include "domain/value_objects/Uri.hpp"
+#include "domain/configuration/value_objects/CgiConfig.hpp"
+#include "domain/configuration/value_objects/Route.hpp"
+#include "domain/configuration/value_objects/UploadConfig.hpp"
+#include "domain/shared/value_objects/ErrorCode.hpp"
+#include "domain/http/value_objects/HttpMethod.hpp"
+#include "domain/filesystem/value_objects/Path.hpp"
+#include "domain/shared/value_objects/RegexPattern.hpp"
+#include "domain/filesystem/value_objects/Size.hpp"
+#include "domain/http/value_objects/Uri.hpp"
 
 #include <map>
 #include <set>
@@ -29,13 +29,14 @@
 #include <vector>
 
 namespace domain {
+namespace configuration {
 namespace entities {
 
 class LocationConfig {
  public:
-  typedef std::set<value_objects::HttpMethod> AllowedMethods;
+  typedef std::set<http::value_objects::HttpMethod> AllowedMethods;
   typedef std::vector<std::string> TryFiles;
-  typedef std::map<value_objects::ErrorCode, std::string> ErrorPageMap;
+  typedef std::map<shared::value_objects::ErrorCode, std::string> ErrorPageMap;
 
   enum LocationMatchType {
     MATCH_EXACT,
@@ -55,65 +56,65 @@ class LocationConfig {
 
   const std::string& getPath() const;
   LocationMatchType getMatchType() const;
-  const value_objects::Path& getRoot() const;
+  const filesystem::value_objects::Path& getRoot() const;
   const std::vector<std::string>& getIndexFiles() const;
   const AllowedMethods& getAllowedMethods() const;
   bool getAutoIndex() const;
   const TryFiles& getTryFiles() const;
   bool hasReturnRedirect() const;
-  const value_objects::Uri& getReturnRedirect() const;
-  const value_objects::ErrorCode& getReturnCode() const;
+  const http::value_objects::Uri& getReturnRedirect() const;
+  const shared::value_objects::ErrorCode& getReturnCode() const;
   bool hasUploadConfig() const;
   const UploadConfig& getUploadConfig() const;
   UploadConfig& getUploadConfigMutable();
-  const CgiConfig& getCgiConfig() const;
+  const value_objects::CgiConfig& getCgiConfig() const;
   const ErrorPageMap& getErrorPages() const;
-  const value_objects::Size& getClientMaxBodySize() const;
+  const filesystem::value_objects::Size& getClientMaxBodySize() const;
   bool hasProxyPass() const;
-  const value_objects::Uri& getProxyPass() const;
-  const value_objects::Path& getAlias() const;
+  const http::value_objects::Uri& getProxyPass() const;
+  const filesystem::value_objects::Path& getAlias() const;
   bool getClientBodyBufferSizeSet() const;
-  const value_objects::Size& getClientBodyBufferSize() const;
+  const filesystem::value_objects::Size& getClientBodyBufferSize() const;
 
   void setPath(const std::string& path, LocationMatchType matchType);
-  void setRoot(const value_objects::Path& root);
+  void setRoot(const filesystem::value_objects::Path& root);
   void setRoot(const std::string& root);
   void addIndexFile(const std::string& index);
   void clearIndexFiles();
-  void addAllowedMethod(const value_objects::HttpMethod& method);
-  void removeAllowedMethod(const value_objects::HttpMethod& method);
+  void addAllowedMethod(const http::value_objects::HttpMethod& method);
+  void removeAllowedMethod(const http::value_objects::HttpMethod& method);
   void setAutoIndex(bool autoIndex);
   void setTryFiles(const TryFiles& tryFiles);
   void addTryFile(const std::string& tryFile);
-  void setReturnRedirect(const value_objects::Uri& redirect,
-                         const value_objects::ErrorCode& code);
+  void setReturnRedirect(const http::value_objects::Uri& redirect,
+                         const shared::value_objects::ErrorCode& code);
   void setReturnRedirect(const std::string& redirect, unsigned int code);
   void setUploadConfig(const UploadConfig& config);
-  void enableUpload(const value_objects::Path& uploadDirectory);
-  void enableUpload(const value_objects::Path& uploadDirectory,
-                    const value_objects::Size& maxFileSize,
-                    const value_objects::Size& maxTotalSize);
+  void enableUpload(const filesystem::value_objects::Path& uploadDirectory);
+  void enableUpload(const filesystem::value_objects::Path& uploadDirectory,
+                    const filesystem::value_objects::Size& maxFileSize,
+                    const filesystem::value_objects::Size& maxTotalSize);
   void disableUpload();
-  void setCgiConfig(const CgiConfig& config);
+  void setCgiConfig(const value_objects::CgiConfig& config);
   void clearCgiConfig();
-  void addErrorPage(const value_objects::ErrorCode& code,
+  void addErrorPage(const shared::value_objects::ErrorCode& code,
                     const std::string& uri);
-  void removeErrorPage(const value_objects::ErrorCode& code);
-  void setClientMaxBodySize(const value_objects::Size& size);
+  void removeErrorPage(const shared::value_objects::ErrorCode& code);
+  void setClientMaxBodySize(const filesystem::value_objects::Size& size);
   void setClientMaxBodySize(const std::string& sizeString);
-  void setProxyPass(const value_objects::Uri& proxyPass);
+  void setProxyPass(const http::value_objects::Uri& proxyPass);
   void setProxyPass(const std::string& proxyPass);
   void clearProxyPass();
-  void setAlias(const value_objects::Path& alias);
+  void setAlias(const filesystem::value_objects::Path& alias);
   void setAlias(const std::string& alias);
-  void setClientBodyBufferSize(const value_objects::Size& size);
+  void setClientBodyBufferSize(const filesystem::value_objects::Size& size);
   void setClientBodyBufferSize(const std::string& sizeString);
 
   bool isValid() const;
   void validate() const;
 
   bool matchesPath(const std::string& requestPath) const;
-  bool isMethodAllowed(const value_objects::HttpMethod& method) const;
+  bool isMethodAllowed(const http::value_objects::HttpMethod& method) const;
   bool isUploadEnabled() const;
   bool hasCgiConfig() const;
   bool hasAlias() const;
@@ -126,38 +127,38 @@ class LocationConfig {
   bool allowsHead() const;
   bool isUploadRoute() const;
 
-  value_objects::Path resolvePath(const std::string& requestPath) const;
+  filesystem::value_objects::Path resolvePath(const std::string& requestPath) const;
 
   bool validateUploadFile(const std::string& filename,
-                          const value_objects::Size& fileSize,
+                          const filesystem::value_objects::Size& fileSize,
                           const std::string& mimeType = "") const;
   bool canHandleUpload() const;
 
-  Route toRoute() const;
+  value_objects::Route toRoute() const;
 
   void clear();
 
  private:
   std::string m_path;
   LocationMatchType m_matchType;
-  value_objects::Path m_root;
+  filesystem::value_objects::Path m_root;
   std::vector<std::string> m_indexFiles;
   AllowedMethods m_allowedMethods;
   bool m_autoIndex;
   TryFiles m_tryFiles;
-  value_objects::Uri m_returnRedirect;
-  value_objects::ErrorCode m_returnCode;
+  http::value_objects::Uri m_returnRedirect;
+  shared::value_objects::ErrorCode m_returnCode;
   UploadConfig m_uploadConfig;
   bool m_hasUploadConfig;
-  CgiConfig m_cgiConfig;
+  value_objects::CgiConfig m_cgiConfig;
   ErrorPageMap m_errorPages;
-  value_objects::Size m_clientMaxBodySize;
-  value_objects::Uri m_proxyPass;
-  value_objects::Path m_alias;
-  value_objects::Size m_clientBodyBufferSize;
+  filesystem::value_objects::Size m_clientMaxBodySize;
+  http::value_objects::Uri m_proxyPass;
+  filesystem::value_objects::Path m_alias;
+  filesystem::value_objects::Size m_clientBodyBufferSize;
   bool m_clientBodyBufferSizeSet;
 
-  mutable value_objects::RegexPattern m_regexPattern;
+  mutable shared::value_objects::RegexPattern m_regexPattern;
   mutable bool m_regexPatternValid;
 
   static const size_t DEFAULT_CLIENT_BODY_BUFFER_SIZE = 8;
@@ -186,6 +187,7 @@ class LocationConfig {
 };
 
 }  // namespace entities
+}  // namespace configuration
 }  // namespace domain
 
 #endif  // LOCATION_CONFIG_HPP
