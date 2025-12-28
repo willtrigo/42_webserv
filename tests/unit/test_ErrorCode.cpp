@@ -6,15 +6,15 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/27 15:28:27 by umeneses          #+#    #+#             */
-/*   Updated: 2025/12/27 15:28:31 by umeneses         ###   ########.fr       */
+/*   Updated: 2025/12/27 21:17:20 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "domain/value_objects/ErrorCode.hpp"
-#include "shared/exceptions/ErrorCodeException.hpp"
+#include "domain/shared/value_objects/ErrorCode.hpp"
+#include "domain/shared/exceptions/ErrorCodeException.hpp"
 #include <gtest/gtest.h>
 
-using namespace domain::value_objects;
+using namespace domain::shared::value_objects;
 
 class ErrorCodeTest : public ::testing::Test {
  protected:
@@ -48,13 +48,13 @@ TEST_F(ErrorCodeTest, ConstructWithStringCodeShouldParse) {
 }
 
 TEST_F(ErrorCodeTest, ConstructWithInvalidCodeShouldThrow) {
-  EXPECT_THROW(ErrorCode(999), shared::exceptions::ErrorCodeException);
-  EXPECT_THROW(ErrorCode(99), shared::exceptions::ErrorCodeException);
+  EXPECT_THROW(ErrorCode(999), domain::shared::exceptions::ErrorCodeException);
+  EXPECT_THROW(ErrorCode(99), domain::shared::exceptions::ErrorCodeException);
 }
 
 TEST_F(ErrorCodeTest, ConstructWithInvalidStringShouldThrow) {
-  EXPECT_THROW(ErrorCode("abc"), shared::exceptions::ErrorCodeException);
-  EXPECT_THROW(ErrorCode(""), shared::exceptions::ErrorCodeException);
+  EXPECT_THROW(ErrorCode("abc"), domain::shared::exceptions::ErrorCodeException);
+  EXPECT_THROW(ErrorCode(""), domain::shared::exceptions::ErrorCodeException);
 }
 
 TEST_F(ErrorCodeTest, CopyConstructorShouldCopyValue) {
@@ -252,14 +252,14 @@ TEST_F(ErrorCodeTest, FromStringShouldParseValidCode) {
 }
 
 TEST_F(ErrorCodeTest, FromStringShouldThrowOnInvalidString) {
-  EXPECT_THROW(ErrorCode::fromString("abc"), shared::exceptions::ErrorCodeException);
-  EXPECT_THROW(ErrorCode::fromString(""), shared::exceptions::ErrorCodeException);
-  EXPECT_THROW(ErrorCode::fromString("12.3"), shared::exceptions::ErrorCodeException);
+  EXPECT_THROW(ErrorCode::fromString("abc"), domain::shared::exceptions::ErrorCodeException);
+  EXPECT_THROW(ErrorCode::fromString(""), domain::shared::exceptions::ErrorCodeException);
+  EXPECT_THROW(ErrorCode::fromString("12.3"), domain::shared::exceptions::ErrorCodeException);
 }
 
 TEST_F(ErrorCodeTest, FromStringShouldThrowOnOutOfRangeCode) {
-  EXPECT_THROW(ErrorCode::fromString("999"), shared::exceptions::ErrorCodeException);
-  EXPECT_THROW(ErrorCode::fromString("99"), shared::exceptions::ErrorCodeException);
+  EXPECT_THROW(ErrorCode::fromString("999"), domain::shared::exceptions::ErrorCodeException);
+  EXPECT_THROW(ErrorCode::fromString("99"), domain::shared::exceptions::ErrorCodeException);
 }
 
 // ============================================================================
@@ -317,6 +317,26 @@ TEST_F(ErrorCodeTest, GreaterThanOperatorShouldCompareValues) {
   EXPECT_FALSE(code2 > code1);
 }
 
+TEST_F(ErrorCodeTest, LessThanOrEqualOperatorShouldCompareValues) {
+  ErrorCode code1(200);
+  ErrorCode code2(404);
+  ErrorCode code3(404);
+  
+  EXPECT_TRUE(code1 <= code2);
+  EXPECT_TRUE(code2 <= code3);
+  EXPECT_FALSE(code2 <= code1);
+}
+
+TEST_F(ErrorCodeTest, GreaterThanOrEqualOperatorShouldCompareValues) {
+  ErrorCode code1(500);
+  ErrorCode code2(404);
+  ErrorCode code3(404);
+  
+  EXPECT_TRUE(code1 >= code2);
+  EXPECT_TRUE(code2 >= code3);
+  EXPECT_FALSE(code2 >= code1);
+}
+
 // ============================================================================
 // Specific Status Code Tests
 // ============================================================================
@@ -354,6 +374,48 @@ TEST_F(ErrorCodeTest, IsServiceUnavailableShouldDetect503) {
   
   EXPECT_TRUE(code.isServiceUnavailable());
   EXPECT_FALSE(ErrorCode(500).isServiceUnavailable());
+}
+
+TEST_F(ErrorCodeTest, IsUnauthorizedShouldDetect401) {
+  ErrorCode code(401);
+  
+  EXPECT_TRUE(code.isUnauthorized());
+  EXPECT_FALSE(ErrorCode(400).isUnauthorized());
+}
+
+TEST_F(ErrorCodeTest, IsForbiddenShouldDetect403) {
+  ErrorCode code(403);
+  
+  EXPECT_TRUE(code.isForbidden());
+  EXPECT_FALSE(ErrorCode(404).isForbidden());
+}
+
+TEST_F(ErrorCodeTest, IsRequestTimeoutShouldDetect408) {
+  ErrorCode code(408);
+  
+  EXPECT_TRUE(code.isRequestTimeout());
+  EXPECT_FALSE(ErrorCode(404).isRequestTimeout());
+}
+
+TEST_F(ErrorCodeTest, IsConflictShouldDetect409) {
+  ErrorCode code(409);
+  
+  EXPECT_TRUE(code.isConflict());
+  EXPECT_FALSE(ErrorCode(404).isConflict());
+}
+
+TEST_F(ErrorCodeTest, IsPayloadTooLargeShouldDetect413) {
+  ErrorCode code(413);
+  
+  EXPECT_TRUE(code.isPayloadTooLarge());
+  EXPECT_FALSE(ErrorCode(404).isPayloadTooLarge());
+}
+
+TEST_F(ErrorCodeTest, IsFoundShouldDetect302) {
+  ErrorCode code(302);
+  
+  EXPECT_TRUE(code.isFound());
+  EXPECT_FALSE(ErrorCode(301).isFound());
 }
 
 TEST_F(ErrorCodeTest, AllCommonStatusCodesShouldHaveDescriptions) {
