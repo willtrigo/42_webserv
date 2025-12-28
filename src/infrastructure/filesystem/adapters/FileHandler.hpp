@@ -6,18 +6,18 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/23 13:00:04 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/23 14:14:56 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 23:43:32 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef FILEHANDLER_HPP
 #define FILEHANDLER_HPP
 
-#include "domain/value_objects/Path.hpp"
-#include "domain/value_objects/Permission.hpp"
-#include "domain/value_objects/Size.hpp"
-#include "infrastructure/filesystem/FileSystemHelper.hpp"
-#include "infrastructure/filesystem/PathResolver.hpp"
+#include "domain/filesystem/value_objects/Path.hpp"
+#include "domain/filesystem/value_objects/Permission.hpp"
+#include "domain/filesystem/value_objects/Size.hpp"
+#include "infrastructure/filesystem/adapters/FileSystemHelper.hpp"
+#include "infrastructure/filesystem/adapters/PathResolver.hpp"
 
 #include <map>
 #include <string>
@@ -25,11 +25,12 @@
 
 namespace infrastructure {
 namespace filesystem {
+namespace adapters {
 
 struct FileMetadata {
-  domain::value_objects::Path path;
-  domain::value_objects::Size size;
-  domain::value_objects::Permission permissions;
+  domain::filesystem::value_objects::Path path;
+  domain::filesystem::value_objects::Size size;
+  domain::filesystem::value_objects::Permission permissions;
   std::string lastModified;
   std::string mimeType;
   std::string checksum;
@@ -53,60 +54,67 @@ class FileHandler {
   FileHandler(const FileHandler& other);
   FileHandler& operator=(const FileHandler& other);
 
-  FileMetadata getMetadata(const domain::value_objects::Path& filePath) const;
+  FileMetadata getMetadata(
+      const domain::filesystem::value_objects::Path& filePath) const;
 
-  std::vector<char> readFile(const domain::value_objects::Path& filePath) const;
+  std::vector<char> readFile(
+      const domain::filesystem::value_objects::Path& filePath) const;
   std::vector<char> readFileChunk(
-      const domain::value_objects::Path& filePath, std::size_t offset = 0,
-      std::size_t chunkSize = DEFAULT_CHUNK_SIZE) const;
+      const domain::filesystem::value_objects::Path& filePath,
+      std::size_t offset = 0, std::size_t chunkSize = DEFAULT_CHUNK_SIZE) const;
 
-  bool writeFile(const domain::value_objects::Path& filePath,
+  bool writeFile(const domain::filesystem::value_objects::Path& filePath,
                  const std::vector<char>& data, bool overwrite = true) const;
-  bool writeFile(const domain::value_objects::Path& filePath,
+  bool writeFile(const domain::filesystem::value_objects::Path& filePath,
                  const std::string& data, bool overwrite = true) const;
 
-  bool appendToFile(const domain::value_objects::Path& filePath,
+  bool appendToFile(const domain::filesystem::value_objects::Path& filePath,
                     const std::vector<char>& data) const;
-  bool appendToFile(const domain::value_objects::Path& filePath,
+  bool appendToFile(const domain::filesystem::value_objects::Path& filePath,
                     const std::string& data) const;
 
-  bool createFile(const domain::value_objects::Path& filePath,
-                  const domain::value_objects::Permission& permissions =
-                      domain::value_objects::Permission::readWrite()) const;
+  bool createFile(
+      const domain::filesystem::value_objects::Path& filePath,
+      const domain::filesystem::value_objects::Permission& permissions =
+          domain::filesystem::value_objects::Permission::readWrite()) const;
 
-  bool deleteFile(const domain::value_objects::Path& filePath) const;
-  bool renameFile(const domain::value_objects::Path& oldPath,
-                  const domain::value_objects::Path& newPath) const;
-  bool copyFile(const domain::value_objects::Path& sourcePath,
-                const domain::value_objects::Path& destinationPath,
+  bool deleteFile(
+      const domain::filesystem::value_objects::Path& filePath) const;
+  bool renameFile(const domain::filesystem::value_objects::Path& oldPath,
+                  const domain::filesystem::value_objects::Path& newPath) const;
+  bool copyFile(const domain::filesystem::value_objects::Path& sourcePath,
+                const domain::filesystem::value_objects::Path& destinationPath,
                 bool overwrite = true) const;
 
   bool createDirectory(
-      const domain::value_objects::Path& dirPath,
-      const domain::value_objects::Permission& permissions =
-          domain::value_objects::Permission::
+      const domain::filesystem::value_objects::Path& dirPath,
+      const domain::filesystem::value_objects::Permission& permissions =
+          domain::filesystem::value_objects::Permission::
               ownerAllGroupReadExecuteOtherReadExecute()) const;
-  bool deleteDirectory(const domain::value_objects::Path& dirPath,
+  bool deleteDirectory(const domain::filesystem::value_objects::Path& dirPath,
                        bool recursive = false) const;
 
-  domain::value_objects::Path createTemporaryFile(
+  domain::filesystem::value_objects::Path createTemporaryFile(
       const std::string& prefix = "tmp_", const std::string& suffix = "",
-      const domain::value_objects::Path& directory =
-          domain::value_objects::Path("/tmp", true)) const;
+      const domain::filesystem::value_objects::Path& directory =
+          domain::filesystem::value_objects::Path("/tmp", true)) const;
 
-  domain::value_objects::Path createTemporaryDirectory(
+  domain::filesystem::value_objects::Path createTemporaryDirectory(
       const std::string& prefix = "tmp_",
-      const domain::value_objects::Path& directory =
-          domain::value_objects::Path("/tmp", true)) const;
+      const domain::filesystem::value_objects::Path& directory =
+          domain::filesystem::value_objects::Path("/tmp", true)) const;
 
-  bool lockFile(const domain::value_objects::Path& filePath) const;
-  bool unlockFile(const domain::value_objects::Path& filePath) const;
-  bool isFileLocked(const domain::value_objects::Path& filePath) const;
+  bool lockFile(const domain::filesystem::value_objects::Path& filePath) const;
+  bool unlockFile(
+      const domain::filesystem::value_objects::Path& filePath) const;
+  bool isFileLocked(
+      const domain::filesystem::value_objects::Path& filePath) const;
 
-  std::string calculateChecksum(const domain::value_objects::Path& filePath,
-                                const std::string& algorithm = "md5") const;
+  std::string calculateChecksum(
+      const domain::filesystem::value_objects::Path& filePath,
+      const std::string& algorithm = "md5") const;
 
-  bool verifyChecksum(const domain::value_objects::Path& filePath,
+  bool verifyChecksum(const domain::filesystem::value_objects::Path& filePath,
                       const std::string& expectedChecksum,
                       const std::string& algorithm = "md5") const;
 
@@ -115,35 +123,37 @@ class FileHandler {
   std::vector<char> decompressData(const std::vector<char>& compressedData,
                                    const std::string& algorithm = "gzip") const;
 
-  bool compressFile(const domain::value_objects::Path& sourcePath,
-                    const domain::value_objects::Path& destPath,
+  bool compressFile(const domain::filesystem::value_objects::Path& sourcePath,
+                    const domain::filesystem::value_objects::Path& destPath,
                     const std::string& algorithm = "gzip") const;
-  bool decompressFile(const domain::value_objects::Path& sourcePath,
-                      const domain::value_objects::Path& destPath,
+  bool decompressFile(const domain::filesystem::value_objects::Path& sourcePath,
+                      const domain::filesystem::value_objects::Path& destPath,
                       const std::string& algorithm = "gzip") const;
 
-  domain::value_objects::Size getAvailableDiskSpace(
-      const domain::value_objects::Path& path) const;
+  domain::filesystem::value_objects::Size getAvailableDiskSpace(
+      const domain::filesystem::value_objects::Path& path) const;
 
-  bool validateFileSize(const domain::value_objects::Path& filePath,
-                        const domain::value_objects::Size& maxSize) const;
+  bool validateFileSize(
+      const domain::filesystem::value_objects::Path& filePath,
+      const domain::filesystem::value_objects::Size& maxSize) const;
 
-  std::string detectMimeType(const domain::value_objects::Path& filePath) const;
+  std::string detectMimeType(
+      const domain::filesystem::value_objects::Path& filePath) const;
 
   bool setPermissions(
-      const domain::value_objects::Path& filePath,
-      const domain::value_objects::Permission& permissions) const;
+      const domain::filesystem::value_objects::Path& filePath,
+      const domain::filesystem::value_objects::Permission& permissions) const;
 
-  bool setOwner(const domain::value_objects::Path& filePath,
+  bool setOwner(const domain::filesystem::value_objects::Path& filePath,
                 const std::string& owner) const;
-  bool setGroup(const domain::value_objects::Path& filePath,
+  bool setGroup(const domain::filesystem::value_objects::Path& filePath,
                 const std::string& group) const;
 
   bool isSafeFilename(const std::string& filename) const;
   std::string sanitizeFilename(const std::string& filename) const;
 
-  bool backupFile(const domain::value_objects::Path& filePath,
-                  const domain::value_objects::Path& backupDir,
+  bool backupFile(const domain::filesystem::value_objects::Path& filePath,
+                  const domain::filesystem::value_objects::Path& backupDir,
                   int maxBackups = 5) const;
 
  private:
@@ -171,7 +181,7 @@ class FileHandler {
       buf[6] = static_cast<unsigned char>((m_lo >> 8) & 0xFF);
       buf[7] = static_cast<unsigned char>(m_lo & 0xFF);
     }
-  };
+  }; // TODO: remove magic numbers
 
   FileSystemHelper* m_fileSystemHelper;
   PathResolver* m_pathResolver;
@@ -181,19 +191,22 @@ class FileHandler {
   static const std::size_t MAX_FILENAME_LENGTH = 255;
 
   void validateFileForReading(
-      const domain::value_objects::Path& filePath) const;
-  void validateFileForWriting(const domain::value_objects::Path& filePath,
-                              bool overwrite) const;
+      const domain::filesystem::value_objects::Path& filePath) const;
+  void validateFileForWriting(
+      const domain::filesystem::value_objects::Path& filePath,
+      bool overwrite) const;
   void validateDirectoryForCreation(
-      const domain::value_objects::Path& dirPath) const;
-  void validateDirectoryForDeletion(const domain::value_objects::Path& dirPath,
-                                    bool recursive) const;
+      const domain::filesystem::value_objects::Path& dirPath) const;
+  void validateDirectoryForDeletion(
+      const domain::filesystem::value_objects::Path& dirPath,
+      bool recursive) const;
 
-  bool copyFileInternal(const domain::value_objects::Path& sourcePath,
-                        const domain::value_objects::Path& destinationPath,
-                        bool overwrite) const;
+  bool copyFileInternal(
+      const domain::filesystem::value_objects::Path& sourcePath,
+      const domain::filesystem::value_objects::Path& destinationPath,
+      bool overwrite) const;
   bool deleteDirectoryRecursive(
-      const domain::value_objects::Path& dirPath) const;
+      const domain::filesystem::value_objects::Path& dirPath) const;
 
   std::string calculateMD5(const std::vector<char>& data) const;
   std::string calculateSHA1(const std::vector<char>& data) const;
@@ -214,11 +227,11 @@ class FileHandler {
 
   std::string generateTemporaryFilename(
       const std::string& prefix, const std::string& suffix,
-      const domain::value_objects::Path& directory) const;
+      const domain::filesystem::value_objects::Path& directory) const;
 
   bool validateChunkParameters(
       std::size_t offset, std::size_t chunkSize,
-      const domain::value_objects::Size& fileSize) const;
+      const domain::filesystem::value_objects::Size& fileSize) const;
 
   static bool isSupportedCompressionAlgorithm(const std::string& algorithm);
   static bool isSupportedChecksumAlgorithm(const std::string& algorithm);
@@ -236,6 +249,7 @@ class FileHandler {
   mutable std::map<std::string, LockInfo> m_fileLocks;
 };
 
+}  // namespace adapters
 }  // namespace filesystem
 }  // namespace infrastructure
 

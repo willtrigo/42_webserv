@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 21:33:03 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/22 21:33:13 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 21:10:18 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,10 +15,11 @@
 
 #include "shared/exceptions/BaseException.hpp"
 
-namespace shared {
+namespace infrastructure {
+namespace filesystem {
 namespace exceptions {
 
-class DirectoryListerException : public BaseException {
+class DirectoryListerException : public ::shared::exceptions::BaseException {
  public:
   enum ErrorCode {
     INVALID_DEPENDENCY,
@@ -47,6 +48,7 @@ class DirectoryListerException : public BaseException {
 };
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace filesystem
+}  // namespace infrastructure
 
 #endif  // DIRECTORYLISTEREXCEPTION_HPP

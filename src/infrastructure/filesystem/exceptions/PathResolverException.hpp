@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 19:26:21 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/22 19:26:31 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 23:15:46 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,10 +15,11 @@
 
 #include "shared/exceptions/BaseException.hpp"
 
-namespace shared {
+namespace infrastructure {
+namespace filesystem {
 namespace exceptions {
 
-class PathResolverException : public BaseException {
+class PathResolverException : public ::shared::exceptions::BaseException {
  public:
   enum ErrorCode {
     INVALID_DEPENDENCY,
@@ -47,6 +48,7 @@ class PathResolverException : public BaseException {
 };
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace filesystem
+}  // namespace infrastructure
 
 #endif  // PATHRESOLVEREXCEPTION_HPP

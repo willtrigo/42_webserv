@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/23 12:50:22 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/23 12:52:53 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 23:08:06 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,10 +15,11 @@
 
 #include "shared/exceptions/BaseException.hpp"
 
-namespace shared {
+namespace infrastructure {
+namespace filesystem {
 namespace exceptions {
 
-class FileHandlerException : public BaseException {
+class FileHandlerException : public ::shared::exceptions::BaseException {
  public:
   enum ErrorCode {
     FILE_NOT_FOUND,
@@ -60,6 +61,7 @@ class FileHandlerException : public BaseException {
 };
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace filesystem
+}  // namespace infrastructure
 
 #endif  // FILEHANDLEREXCEPTION_HPP

@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 18:05:27 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/22 18:57:54 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 23:17:33 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,10 +15,11 @@
 
 #include "shared/exceptions/BaseException.hpp"
 
-namespace shared {
+namespace infrastructure {
+namespace filesystem {
 namespace exceptions {
 
-class FileSystemHelperException : public BaseException {
+class FileSystemHelperException : public ::shared::exceptions::BaseException {
  public:
   enum ErrorCode {
     PATH_EMPTY,
@@ -60,6 +61,7 @@ class FileSystemHelperException : public BaseException {
 };
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace filesystem
+}  // namespace infrastructure
 
 #endif  // FILE_SYSTEM_HELPER_EXCEPTION_HPP

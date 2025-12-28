@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 14:09:30 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/22 18:47:02 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/27 23:19:34 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 
 namespace infrastructure {
 namespace filesystem {
+namespace adapters {
 
 class FileSystemHelper {
  public:
@@ -72,6 +73,7 @@ class FileSystemHelper {
   static bool isRootDirectory(const std::string& path);
 };
 
+}  // namespace adapters
 }  // namespace filesystem
 }  // namespace infrastructure
 
