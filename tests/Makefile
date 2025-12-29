@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/24 09:42:14 by umeneses          #+#    #+#              #
-#    Updated: 2025/12/27 22:43:53 by umeneses         ###   ########.fr        #
+#    Updated: 2025/12/29 11:23:42 by umeneses         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -41,39 +41,18 @@ MOCKS_DIR                       := mocks
 NAME                            := $(BIN_DIR)/test_runner
 
 # Source files from main project (exclude main.cpp and unimplemented features)
-# Exclude files with unimplemented dependencies:
-# - Uri.cpp has unimplemented functions
-# - Route.cpp, RouteMatcher.cpp, RouteConfigAdapter.cpp depend on unimplemented features
-# - ConfigParser.cpp, ConfigProvider.cpp have interface mismatches (parsePath/parseFile)
-# - ServerConfig.cpp, LocationConfig.cpp, ErrorPage.cpp, UploadConfig.cpp, HttpConfig.cpp depend on ConfigParser
-# - CliController.cpp, ListenDirective.cpp depend on config classes
-# - CgiConfig.cpp uses RegexPattern which has empty pattern initialization issues
-# - DirectoryLister.cpp has static RegexPattern members that initialize with empty patterns
-# - DirectoryEntryComparators.cpp has member access issues (m_size vs size)
-# - RequestParser.cpp temporarily excluded while refactoring
-# - FileSystemHelper.cpp and PathResolver.cpp have namespace issues from refactoring
 PROJECT_SRCS                    := $(shell find $(SRC_DIR) -name '*.cpp' \
-                                      ! -name 'main.cpp' \
-                                      ! -name 'Uri.cpp' \
-                                      ! -name 'Route.cpp' \
-                                      ! -name 'RouteMatcher.cpp' \
-                                      ! -name 'RouteConfigAdapter.cpp' \
-                                      ! -name 'ConfigParser.cpp' \
-                                      ! -name 'ConfigProvider.cpp' \
-                                      ! -name 'ServerConfig.cpp' \
-                                      ! -name 'LocationConfig.cpp' \
-                                      ! -name 'ErrorPage.cpp' \
-                                      ! -name 'UploadConfig.cpp' \
-                                      ! -name 'HttpConfig.cpp' \
-                                      ! -name 'CliController.cpp' \
-                                      ! -name 'ListenDirective.cpp' \
-                                      ! -name 'CgiConfig.cpp' \
-                                      ! -name 'DirectoryLister.cpp' \
-                                      ! -name 'DirectoryEntryComparators.cpp' \
-                                      ! -name 'RequestParser.cpp' \
-                                      ! -name 'FileSystemHelper.cpp' \
-                                      ! -name 'PathResolver.cpp' \
-                                      ! -name 'FileHandler.cpp')
+											! -name 'main.cpp' \
+											! -path '*/infrastructure/network/*' \
+											! -path '*/infrastructure/http/*' \
+											! -path '*/infrastructure/config/*' \
+											! -path '*/infrastructure/filesystem/adapters/*' \
+											! -path '*/domain/configuration/*' \
+											! -path '*/presentation/cli/*' \
+											! -name 'RegexPattern.cpp' \
+											! -name 'RegexPatternException.cpp' \
+											)
+
 
 # Test files
 TEST_SRCS                       := test_main.cpp
@@ -129,14 +108,14 @@ integration: $(NAME)
 	@printf "$(CYAN)Running integration tests...$(RESET)\n"
 	@./$(NAME) --gtest_filter="*IntegrationTest.*"
 
-valgrind: $(NAME)
+val-verb: $(NAME)
 	@printf "$(CYAN)Running tests with valgrind...$(RESET)\n"
 	@valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --log-file=valgrind-output.txt ./$(NAME)
 	@printf "$(GREEN)[✓] Valgrind report saved to valgrind-output.txt$(RESET)\n"
 
-valgrind-brief: $(NAME)
+val: $(NAME)
 	@printf "$(CYAN)Running tests with valgrind (brief)...$(RESET)\n"
-	@valgrind --leak-check=full --show-leak-kinds=all ./$(NAME)
+	@valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./$(NAME)
 
 clean:
 	@rm -rf $(BUILD_DIR)
@@ -148,6 +127,6 @@ fclean: clean
 
 re: fclean all
 
-.PHONY: all test unit integration valgrind valgrind-brief clean fclean re
+.PHONY: all test unit integration val val-verb clean fclean re
 
 -include $(DEPS)
