@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 19:13:44 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 02:36:44 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/29 00:47:28 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,7 +49,7 @@ bool Port::isValidPort(unsigned int port) {
 }
 
 void Port::validate() const {
-  if (isValidPort(m_value)) {
+  if (!isValidPort(m_value)) {
     std::ostringstream oss;
     oss << "Port value out of range: " << m_value
         << " (valid range: " << MIN_PORT << "-" << MAX_PORT << ")";
