@@ -32,11 +32,11 @@ TEST_F(UriTest, DefaultConstructor) {
 }
 
 TEST_F(UriTest, ConstructWithValidUri) {
-    EXPECT_NO_THROW(Uri("http://www.example.com:80/path?query#fragment"));
-    EXPECT_NO_THROW(Uri("https://www.example.com"));
-    EXPECT_NO_THROW(Uri("ftp://ftp.example.com/resource"));
-    EXPECT_NO_THROW(Uri("file:///C:/path/to/file.txt"));
-    }
+  EXPECT_NO_THROW(Uri("http://www.example.com:80/path?query#fragment"));
+  EXPECT_NO_THROW(Uri("https://www.example.com"));
+  EXPECT_NO_THROW(Uri("ftp://ftp.example.com/resource"));
+  EXPECT_NO_THROW(Uri("file:///C:/path/to/file.txt"));
+}
 
 TEST_F(UriTest, ConstructWithInvalidUri) {
     EXPECT_THROW(Uri(""), domain::http::exceptions::UriException);
