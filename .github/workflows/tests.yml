@@ -32,13 +32,16 @@ jobs:
   unit-permission:
     uses: ./.github/workflows/unit_Permission.yml
   
+  unit-uploadaccess:
+    uses: ./.github/workflows/unit_UploadAccess.yml
+  
   unit-mocks:
     uses: ./.github/workflows/unit_Mocks.yml
   
   # Summary job that depends on all tests
   test-summary:
     runs-on: ubuntu-latest
-    needs: [unit-errorcode, unit-httpmethod, unit-path, unit-port, unit-size, unit-uri, unit-querystringbuilder, unit-permission, unit-mocks]
+    needs: [unit-errorcode, unit-httpmethod, unit-path, unit-port, unit-size, unit-uri, unit-querystringbuilder, unit-permission, unit-uploadaccess, unit-mocks]
     if: always()
     
     steps:
@@ -99,6 +102,12 @@ jobs:
           echo "- ✅ Permission tests" >> $GITHUB_STEP_SUMMARY
         else
           echo "- ❌ Permission tests" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -d "test-results/test-results-uploadaccess" ]; then
+          echo "- ✅ UploadAccess tests" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ❌ UploadAccess tests" >> $GITHUB_STEP_SUMMARY
         fi
         
         if [ -d "test-results/test-results-mocks" ]; then

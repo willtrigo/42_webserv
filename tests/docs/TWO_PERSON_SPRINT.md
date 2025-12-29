@@ -698,13 +698,13 @@ make clean && make
 - [x] **Commit checkpoint:** "test: Add Permission tests (51 tests)"
 
 **UploadAccess Testing (1.5h):**
-- [ ] Create `tests/unit/test_UploadAccess.cpp`
-- [ ] **Test Categories:**
-  - [ ] Construction (3 tests)
-  - [ ] Validation (4 tests)
-  - [ ] Access control (3 tests)
-- [ ] **Total: 10 tests**
-- [ ] **Commit checkpoint:** "test: Add UploadAccess tests (10 tests)"
+- [x] Create `tests/unit/test_UploadAccess.cpp`
+- [x] **Test Categories:**
+  - [x] Construction (3 tests)
+  - [x] Validation (4 tests)
+  - [x] Access control (3 tests)
+- [x] **Total: 52 tests**
+- [x] **Commit checkpoint:** "test: Add UploadAccess tests (52 tests)"
 
 **Final Push:**
 - [ ] Run ALL tests: `./bin/test_runner`
