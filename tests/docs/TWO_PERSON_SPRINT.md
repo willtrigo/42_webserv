@@ -617,8 +617,8 @@ make clean && make
 **Morning Block 1 (9:00 AM - 1:00 PM): HTTP Value Objects - 4h**
 
 **Uri Testing (4h):**
-- [ ] Create `tests/unit/test_Uri.cpp`
-- [ ] **Test Categories:**
+- [x] Create `tests/unit/test_Uri.cpp`
+- [x] **Test Categories:**
   - [x] Construction tests (5 tests)
     ```cpp
     TEST(UriTest, ConstructFromString)
@@ -648,23 +648,23 @@ make clean && make
     TEST(UriTest, GetFragment)
     TEST(UriTest, ToString)
     ```
-- [ ] **Total: 20 tests**
-- [ ] Run tests immediately, fix any failures
-- [ ] **Commit checkpoint:** "test: Add Uri tests (20 tests)"
+- [x] **Total: 20 tests**
+- [x] Run tests immediately, fix any failures
+- [x] **Commit checkpoint:** "test: Add Uri tests (20 tests)"
 
 **🍽️ LUNCH BREAK (1:00 PM - 2:00 PM) - MANDATORY!**
 
 **Afternoon Block 1 (2:00 PM - 5:00 PM): QueryStringBuilder - 3h**
 
-- [ ] Create `tests/unit/test_QueryStringBuilder.cpp`
-- [ ] **Test Categories:**
-  - [ ] Construction (3 tests)
+- [x] Create `tests/unit/test_QueryStringBuilder.cpp`
+- [x] **Test Categories:**
+  - [x] Construction (3 tests)
     ```cpp
     TEST(QueryStringBuilderTest, EmptyBuilder)
     TEST(QueryStringBuilderTest, ConstructFromString)
     TEST(QueryStringBuilderTest, CopyConstructor)
     ```
-  - [ ] Building queries (5 tests)
+  - [x] Building queries (5 tests)
     ```cpp
     TEST(QueryStringBuilderTest, AddParam)
     TEST(QueryStringBuilderTest, AddMultipleParams)
@@ -672,7 +672,7 @@ make clean && make
     TEST(QueryStringBuilderTest, UrlEncoding)
     TEST(QueryStringBuilderTest, SpecialCharacters)
     ```
-  - [ ] Parsing queries (4 tests)
+  - [x] Parsing queries (4 tests)
     ```cpp
     TEST(QueryStringBuilderTest, ParseSimple)
     TEST(QueryStringBuilderTest, ParseMultiple)

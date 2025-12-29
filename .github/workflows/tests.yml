@@ -23,13 +23,19 @@ jobs:
   unit-size:
     uses: ./.github/workflows/unit_Size.yml
   
+  unit-uri:
+    uses: ./.github/workflows/unit_Uri.yml
+  
+  unit-querystringbuilder:
+    uses: ./.github/workflows/unit_QueryStringBuilder.yml
+  
   unit-mocks:
     uses: ./.github/workflows/unit_Mocks.yml
   
   # Summary job that depends on all tests
   test-summary:
     runs-on: ubuntu-latest
-    needs: [unit-errorcode, unit-httpmethod, unit-path, unit-port, unit-size, unit-mocks]
+    needs: [unit-errorcode, unit-httpmethod, unit-path, unit-port, unit-size, unit-uri, unit-querystringbuilder, unit-mocks]
     if: always()
     
     steps:
@@ -72,6 +78,18 @@ jobs:
           echo "- ✅ Size tests" >> $GITHUB_STEP_SUMMARY
         else
           echo "- ❌ Size tests" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -d "test-results/test-results-uri" ]; then
+          echo "- ✅ Uri tests" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ❌ Uri tests" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -d "test-results/test-results-querystringbuilder" ]; then
+          echo "- ✅ QueryStringBuilder tests" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ❌ QueryStringBuilder tests" >> $GITHUB_STEP_SUMMARY
         fi
         
         if [ -d "test-results/test-results-mocks" ]; then
