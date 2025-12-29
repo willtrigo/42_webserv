@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/21 10:55:26 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 20:11:56 by umeneses         ###   ########.fr       */
+/*   Updated: 2025/12/29 02:21:35 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,26 @@
 namespace domain {
 namespace shared {
 namespace value_objects {
+
+namespace {
+    const char BACKSLASH = '\\';
+    const char OPEN_BRACKET = '[';
+    const char CLOSE_BRACKET = ']';
+    const char OPEN_PAREN = '(';
+    const char CLOSE_PAREN = ')';
+    const char OPEN_BRACE = '{';
+    const char CLOSE_BRACE = '}';
+    const char CARET = '^';
+    const char LOWERCASE_I = 'i';
+    const char QUESTION_MARK = '?';
+    const char HYPHEN = '-';
+    
+    const std::size_t MIN_FLAG_MODIFIER_LENGTH = 3;
+    const std::size_t MIN_EXISTING_FLAG_LENGTH = 4;
+    const std::size_t FLAG_MODIFIER_PREFIX_LENGTH = 2;
+    const int BALANCE_ZERO = 0;
+    const int BALANCE_NEGATIVE_THRESHOLD = 0;
+}
 
 const std::string RegexPattern::SPECIAL_CHARACTERS = "\\^$.|?*+()[]{}";
 const std::string RegexPattern::CHARACTER_CLASS_SPECIAL = "\\^-]";
@@ -99,7 +119,7 @@ bool RegexPattern::isValidPattern(const std::string& pattern) {
 bool RegexPattern::isSimplePattern(const std::string& pattern) {
   for (std::size_t index = 0; index < pattern.length(); ++index) {
     if (isSpecialCharacter(pattern[index], SPECIAL_CHARACTERS)) {
-      if (index == 0 || pattern[index - 1] != '\\') {
+      if (index == 0 || pattern[index - 1] != BACKSLASH) {
         return false;
       }
     }
@@ -251,16 +271,10 @@ void RegexPattern::validatePattern(const std::string& pattern) {
         "Invalid escape sequence in pattern: '" + pattern + "'",
         shared::exceptions::RegexPatternException::INVALID_ESCAPE);
   }
-
-  if (hasUnescapedSpecialChars(pattern, SPECIAL_CHARACTERS)) {
-    throw shared::exceptions::RegexPatternException(
-        "Unescaped special character in pattern: '" + pattern + "'",
-        shared::exceptions::RegexPatternException::UNESCAPED_SPECIAL);
-  }
 }
 
 bool RegexPattern::hasBalancedBrackets(const std::string& pattern) {
-  int balance = 0;
+  int balance = BALANCE_ZERO;
   bool inEscape = false;
 
   for (std::size_t index = 0; index < pattern.length(); ++index) {
@@ -271,26 +285,26 @@ bool RegexPattern::hasBalancedBrackets(const std::string& pattern) {
       continue;
     }
 
-    if (currentChar == '\\') {
+    if (currentChar == BACKSLASH) {
       inEscape = true;
       continue;
     }
 
-    if (currentChar == '[') {
+    if (currentChar == OPEN_BRACKET) {
       ++balance;
-    } else if (currentChar == ']') {
+    } else if (currentChar == CLOSE_BRACKET) {
       --balance;
-      if (balance < 0) {
+      if (balance < BALANCE_NEGATIVE_THRESHOLD) {
         return false;
       }
     }
   }
 
-  return balance == 0;
+  return balance == BALANCE_ZERO;
 }
 
 bool RegexPattern::hasBalancedParentheses(const std::string& pattern) {
-  int balance = 0;
+  int balance = BALANCE_ZERO;
   bool inEscape = false;
   bool inCharacterClass = false;
 
@@ -302,34 +316,34 @@ bool RegexPattern::hasBalancedParentheses(const std::string& pattern) {
       continue;
     }
 
-    if (currentChar == '\\') {
+    if (currentChar == BACKSLASH) {
       inEscape = true;
       continue;
     }
 
-    if (currentChar == '[') {
+    if (currentChar == OPEN_BRACKET) {
       inCharacterClass = true;
-    } else if (currentChar == ']') {
+    } else if (currentChar == CLOSE_BRACKET) {
       inCharacterClass = false;
     }
 
     if (!inCharacterClass) {
-      if (currentChar == '(') {
+      if (currentChar == OPEN_PAREN) {
         ++balance;
-      } else if (currentChar == ')') {
+      } else if (currentChar == CLOSE_PAREN) {
         --balance;
-        if (balance < 0) {
+        if (balance < BALANCE_NEGATIVE_THRESHOLD) {
           return false;
         }
       }
     }
   }
 
-  return balance == 0;
+  return balance == BALANCE_ZERO;
 }
 
 bool RegexPattern::hasBalancedBraces(const std::string& pattern) {
-  int balance = 0;
+  int balance = BALANCE_ZERO;
   bool inEscape = false;
   bool inCharacterClass = false;
 
@@ -341,35 +355,35 @@ bool RegexPattern::hasBalancedBraces(const std::string& pattern) {
       continue;
     }
 
-    if (currentChar == '\\') {
+    if (currentChar == BACKSLASH) {
       inEscape = true;
       continue;
     }
 
-    if (currentChar == '[') {
+    if (currentChar == OPEN_BRACKET) {
       inCharacterClass = true;
-    } else if (currentChar == ']') {
+    } else if (currentChar == CLOSE_BRACKET) {
       inCharacterClass = false;
     }
 
     if (!inCharacterClass) {
-      if (currentChar == '{') {
+      if (currentChar == OPEN_BRACE) {
         ++balance;
-      } else if (currentChar == '}') {
+      } else if (currentChar == CLOSE_BRACE) {
         --balance;
-        if (balance < 0) {
+        if (balance < BALANCE_NEGATIVE_THRESHOLD) {
           return false;
         }
       }
     }
   }
 
-  return balance == 0;
+  return balance == BALANCE_ZERO;
 }
 
 bool RegexPattern::hasValidEscapeSequences(const std::string& pattern) {
   for (std::size_t index = 0; index < pattern.length(); ++index) {
-    if (pattern[index] == '\\') {
+    if (pattern[index] == BACKSLASH) {
       if (index + 1 >= pattern.length()) {
         return false;
       }
@@ -390,9 +404,23 @@ bool RegexPattern::hasUnescapedSpecialChars(
        ++position) {
     char currentChar = regexPatternToCheck[position];
 
-    updateParserState(escapeFlag, currentChar, insideCharacterClassFlag);
+    if (escapeFlag) {
+      escapeFlag = false;
+      continue;
+    }
 
-    if (escapeFlag && currentChar == '\\') {
+    if (currentChar == BACKSLASH) {
+      escapeFlag = true;
+      continue;
+    }
+
+    if (currentChar == OPEN_BRACKET) {
+      insideCharacterClassFlag = true;
+      continue;
+    }
+
+    if (currentChar == CLOSE_BRACKET && insideCharacterClassFlag) {
+      insideCharacterClassFlag = false;
       continue;
     }
 
@@ -419,17 +447,17 @@ void RegexPattern::updateParserState(bool& escapeFlag, char currentChar,
     return;
   }
 
-  if (currentChar == '\\') {
+  if (currentChar == BACKSLASH) {
+    escapeFlag = true;
+    return;
+  }
+
+  if (currentChar == OPEN_BRACKET) {
     insideCharacterClassFlag = true;
     return;
   }
 
-  if (currentChar == '[') {
-    insideCharacterClassFlag = true;
-    return;
-  }
-
-  if (currentChar == ']' && insideCharacterClassFlag) {
+  if (currentChar == CLOSE_BRACKET && insideCharacterClassFlag) {
     insideCharacterClassFlag = false;
     return;
   }
@@ -442,13 +470,13 @@ bool RegexPattern::checkInsideCharacterClass(
     return false;
   }
 
-  if (currentChar == '^' && currentPosition > 0 &&
-      regexPatternToCheck[currentPosition - 1] == '[') {
+  if (currentChar == CARET && currentPosition > 0 &&
+      regexPatternToCheck[currentPosition - 1] == OPEN_BRACKET) {
     return false;
   }
 
   return (currentPosition == 0 ||
-          regexPatternToCheck[currentPosition - 1] != '\\');
+          regexPatternToCheck[currentPosition - 1] != BACKSLASH);
 }
 
 bool RegexPattern::checkOutsideCharacterClass(
@@ -459,7 +487,7 @@ bool RegexPattern::checkOutsideCharacterClass(
   }
 
   return (currentPosition == 0 ||
-          regexPatternToCheck[currentPosition - 1] != '\\');
+          regexPatternToCheck[currentPosition - 1] != BACKSLASH);
 }
 
 std::string RegexPattern::escapeString(const std::string& text,
@@ -471,7 +499,7 @@ std::string RegexPattern::escapeString(const std::string& text,
     char currentChar = text[index];
 
     if (isSpecialCharacter(currentChar, specialChars)) {
-      escaped += '\\';
+      escaped += BACKSLASH;
     }
     escaped += currentChar;
   }
@@ -486,26 +514,29 @@ std::string RegexPattern::addFlagModifier(const std::string& pattern,
   }
 
   if (flag == FLAG_CASE_INSENSITIVE) {
-    if (pattern.length() >= 4 && pattern[0] == '(' && pattern[1] == '?' &&
-        pattern[2] == 'i' && pattern[3] == ')') {
+    if (pattern.length() >= MIN_EXISTING_FLAG_LENGTH && 
+        pattern[0] == OPEN_PAREN && pattern[1] == QUESTION_MARK &&
+        pattern[2] == LOWERCASE_I && pattern[3] == CLOSE_PAREN) {
       return pattern;
     }
 
-    if (pattern.length() >= 3 && pattern[0] == '(' && pattern[1] == '?') {
-      std::size_t pos = 2;
-      while (pos < pattern.length() && pattern[pos] != ')' &&
+    if (pattern.length() >= MIN_FLAG_MODIFIER_LENGTH && 
+        pattern[0] == OPEN_PAREN && pattern[1] == QUESTION_MARK) {
+      std::size_t pos = FLAG_MODIFIER_PREFIX_LENGTH;
+      while (pos < pattern.length() && pattern[pos] != CLOSE_PAREN &&
              ((pattern[pos] >= 'a' && pattern[pos] <= 'z') ||
-              pattern[pos] == '-')) {
-        if (pattern[pos] == 'i') {
+              pattern[pos] == HYPHEN)) {
+        if (pattern[pos] == LOWERCASE_I) {
           return pattern;
         }
         ++pos;
       }
 
-      if (pos < pattern.length() && pattern[pos] == ')') {
+      if (pos < pattern.length() && pattern[pos] == CLOSE_PAREN) {
         std::string newPattern = "(?i";
-        newPattern += pattern.substr(2, pos - 2);
-        newPattern += ')';
+        newPattern += pattern.substr(FLAG_MODIFIER_PREFIX_LENGTH, 
+                                    pos - FLAG_MODIFIER_PREFIX_LENGTH);
+        newPattern += CLOSE_PAREN;
         newPattern += pattern.substr(pos + 1);
         return newPattern;
       }
