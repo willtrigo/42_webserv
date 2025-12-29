@@ -648,9 +648,9 @@ make clean && make
     TEST(UriTest, GetFragment)
     TEST(UriTest, ToString)
     ```
-- [x] **Total: 20 tests**
-- [x] Run tests immediately, fix any failures
-- [x] **Commit checkpoint:** "test: Add Uri tests (20 tests)"
+- [x] **Total: 55 tests**
+- [ ] Run tests immediately, fix any failures
+- [x] **Commit checkpoint:** "test: Add Uri tests (55 tests)"
 
 **🍽️ LUNCH BREAK (1:00 PM - 2:00 PM) - MANDATORY!**
 
@@ -679,23 +679,23 @@ make clean && make
     TEST(QueryStringBuilderTest, ParseEncoded)
     TEST(QueryStringBuilderTest, ParseEmpty)
     ```
-- [ ] **Total: 12 tests**
+- [x] **Total: 36 tests**
 - [ ] Run and verify all pass
-- [ ] **Commit checkpoint:** "test: Add QueryStringBuilder tests (12 tests)"
+- [x] **Commit checkpoint:** "test: Add QueryStringBuilder tests (36 tests)"
 
 **☕ BREAK (5:00 PM - 5:30 PM) - REST YOUR BRAIN!**
 
 **Evening Block 1 (5:30 PM - 9:30 PM): Filesystem Value Objects - 4h**
 
 **Permission Testing (2.5h):**
-- [ ] Create `tests/unit/test_Permission.cpp`
-- [ ] **Test Categories:**
-  - [ ] Construction (4 tests)
-  - [ ] Permission bits (6 tests) - rwx for owner/group/other
-  - [ ] Validation (4 tests)
-  - [ ] Operations (4 tests) - has, add, remove permissions
-- [ ] **Total: 18 tests**
-- [ ] **Commit checkpoint:** "test: Add Permission tests (18 tests)"
+- [x] Create `tests/unit/test_Permission.cpp`
+- [x] **Test Categories:**
+  - [x] Construction (4 tests)
+  - [x] Permission bits (6 tests) - rwx for owner/group/other
+  - [x] Validation (4 tests)
+  - [x] Operations (4 tests) - has, add, remove permissions
+- [x] **Total: 51 tests**
+- [x] **Commit checkpoint:** "test: Add Permission tests (51 tests)"
 
 **UploadAccess Testing (1.5h):**
 - [ ] Create `tests/unit/test_UploadAccess.cpp`
