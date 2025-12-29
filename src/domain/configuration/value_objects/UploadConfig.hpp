@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 13:27:36 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/28 00:46:30 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/28 17:29:14 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@
 
 namespace domain {
 namespace configuration {
-namespace entities {
+namespace value_objects {
 
 struct UploadFileInfo {
   std::string originalFilename;
@@ -71,7 +71,8 @@ class UploadConfig {
   static const std::string DEFAULT_BLOCKED_EXTENSIONS[];
   static const std::size_t DEFAULT_BLOCKED_EXTENSIONS_COUNT;
 
-  explicit UploadConfig(const domain::filesystem::value_objects::Path& uploadDirectory);
+  explicit UploadConfig(
+      const domain::filesystem::value_objects::Path& uploadDirectory);
   UploadConfig(const domain::filesystem::value_objects::Path& uploadDirectory,
                const domain::filesystem::value_objects::Size& maxFileSize,
                const domain::filesystem::value_objects::Size& maxTotalSize);
@@ -98,10 +99,20 @@ class UploadConfig {
   void setEncryptFiles(bool encrypt);
   void setCompressFiles(bool compress);
 
+  void setUploadDirectory(
+      const domain::filesystem::value_objects::Path& directory);
+  void setPermissions(
+      const domain::filesystem::value_objects::Permission& permissions);
+  void setUploadAccess(const std::string& accessString);
+  const domain::filesystem::value_objects::Permission& getPermissions() const;
+  const std::string& getUploadAccess() const;
+
   // Validation methods
   bool validateUploadDirectory() const;
-  bool validateFileSize(const domain::filesystem::value_objects::Size& fileSize) const;
-  bool validateTotalSize(const domain::filesystem::value_objects::Size& totalSize) const;
+  bool validateFileSize(
+      const domain::filesystem::value_objects::Size& fileSize) const;
+  bool validateTotalSize(
+      const domain::filesystem::value_objects::Size& totalSize) const;
   bool validateFilename(const std::string& filename) const;
   bool validateExtension(const std::string& filename) const;
   bool validateMimeType(const std::string& mimeType) const;
@@ -130,19 +141,21 @@ class UploadConfig {
   std::map<std::string, std::size_t> getFileTypeDistribution() const;
 
   // Cleanup
-  bool cleanupOldFiles(int daysToKeep = 30) const; // TODO:remove magic number
+  bool cleanupOldFiles(int daysToKeep = 30) const;  // TODO:remove magic number
   bool cleanupOrphanedFiles() const;
   bool cleanupTemporaryFiles() const;
 
   // Security
-  bool scanForViruses(const domain::filesystem::value_objects::Path& filePath) const;
+  bool scanForViruses(
+      const domain::filesystem::value_objects::Path& filePath) const;
   bool verifyFileIntegrity(const std::string& storedFilename,
                            const std::string& expectedChecksum) const;
 
   // Utility methods
   std::string generateUniqueFilename(const std::string& originalFilename) const;
   std::string sanitizeFilename(const std::string& filename) const;
-  domain::filesystem::value_objects::Path getFullPath(const std::string& filename) const;
+  domain::filesystem::value_objects::Path getFullPath(
+      const std::string& filename) const;
 
   // Getters
   domain::filesystem::value_objects::Path getUploadDirectory() const;
@@ -178,8 +191,12 @@ class UploadConfig {
 
   // Dependencies (would be injected in a real implementation)
   mutable infrastructure::filesystem::adapters::FileHandler* m_fileHandler;
-  mutable infrastructure::filesystem::adapters::DirectoryLister* m_directoryLister;
+  mutable infrastructure::filesystem::adapters::DirectoryLister*
+      m_directoryLister;
   mutable infrastructure::filesystem::adapters::PathResolver* m_pathResolver;
+
+  domain::filesystem::value_objects::Permission m_permissions;
+  std::string m_uploadAccess;
 
   // Helper methods
   void initializeDependencies() const;
@@ -188,22 +205,25 @@ class UploadConfig {
   bool validateUploadConstraints(const std::string& uploader) const;
   void updateUploadStatistics(const std::string& uploader) const;
 
-  UploadFileInfo createFileInfo(const std::string& originalFilename,
-                                const std::string& storedFilename,
-                                const domain::filesystem::value_objects::Size& fileSize,
-                                const std::string& mimeType,
-                                const std::string& uploader) const;
+  UploadFileInfo createFileInfo(
+      const std::string& originalFilename, const std::string& storedFilename,
+      const domain::filesystem::value_objects::Size& fileSize,
+      const std::string& mimeType, const std::string& uploader) const;
 
   std::string extractExtension(const std::string& filename) const;
   std::string getCurrentTimestamp() const;
 
-  bool generateThumbnail(const domain::filesystem::value_objects::Path& thumbPath) const;
-  bool applyWatermark(const domain::filesystem::value_objects::Path& sourcePath,
-                      const domain::filesystem::value_objects::Path& watermarkedPath) const;
-  bool encryptFile(const domain::filesystem::value_objects::Path& sourcePath,
-                   const domain::filesystem::value_objects::Path& encryptedPath) const;
-  bool compressFile(const domain::filesystem::value_objects::Path& sourcePath,
-                    const domain::filesystem::value_objects::Path& compressedPath) const;
+  bool generateThumbnail(
+      const domain::filesystem::value_objects::Path& thumbPath) const;
+  bool applyWatermark(
+      const domain::filesystem::value_objects::Path& sourcePath,
+      const domain::filesystem::value_objects::Path& watermarkedPath) const;
+  bool encryptFile(
+      const domain::filesystem::value_objects::Path& sourcePath,
+      const domain::filesystem::value_objects::Path& encryptedPath) const;
+  bool compressFile(
+      const domain::filesystem::value_objects::Path& sourcePath,
+      const domain::filesystem::value_objects::Path& compressedPath) const;
 
   static bool isImageFile(const std::string& filename);
   static bool isTextFile(const std::string& filename);
@@ -220,7 +240,7 @@ class UploadConfig {
   static const std::string COMPRESSED_SUFFIX;
 };
 
-}  // namespace entities
+}  // namespace value_objects
 }  // namespace configuration
 }  // namespace domain
 

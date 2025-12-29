@@ -6,12 +6,12 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/12 16:08:17 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 16:47:50 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/28 21:17:42 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-// #include "application/ports/IConfigProvider.hpp"
-// #include "infrastructure/adapters/ConfigProvider.hpp"
+#include "application/ports/IConfigProvider.hpp"
+#include "infrastructure/config/adapters/ConfigProvider.hpp"
 #include "presentation/cli/CliController.hpp"
 #include "presentation/cli/CliView.hpp"
 
@@ -19,6 +19,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <sstream>
 
 CliController::CliController(CliView& view) : m_view(view) {}
 
@@ -45,10 +46,42 @@ bool CliController::run(int argc, char** argv) {
              ? std::string(argv[K_LITERAL_ARGUMENT_INDEX])
              : "default.conf");
 
-    // std::auto_ptr<application::ports::IConfigProvider> configProvider( new
-    // infrastructure::adapters::ConfigProvider(this->m_view.getLogger()));
+    // std::auto_ptr<application::ports::IConfigProvider> configProvider(
+    //     new infrastructure::config::adapters::ConfigProvider(
+    //         this->m_view.getLogger()));
     // configProvider->load(configPath, "default.conf");
-
+    // if (configProvider->isValid()) {
+    //   const domain::configuration::entities::HttpConfig& config =
+    //       configProvider->getConfiguration();
+    //
+    //   std::ostringstream oss;
+    //   oss << "Configuration loaded successfully:\n";
+    //   oss << "  Worker processes: " << config.getWorkerProcesses() << "\n";
+    //   oss << "  Worker connections: " << config.getWorkerConnections() << "\n";
+    //   oss << "  Servers: " << config.getServerConfigs().size() << "\n";
+    //
+    //   // Display server information
+    //   const std::vector<const domain::configuration::entities::ServerConfig*>&
+    //       servers = configProvider->getAllServers();
+    //   for (size_t i = 0; i < servers.size(); ++i) {
+    //     const domain::configuration::entities::ServerConfig* server =
+    //         servers[i];
+    //     oss << "\n  Server " << (i + 1) << ":\n";
+    //     if (!server->getServerNames().empty()) {
+    //       oss << "    Server names: ";
+    //       const domain::configuration::entities::ServerConfig::ServerNames&
+    //           names = server->getServerNames();
+    //       for (size_t j = 0; j < names.size(); ++j) {
+    //         if (j > 0) oss << ", ";
+    //         oss << names[j];
+    //       }
+    //       oss << "\n";
+    //     }
+    //     oss << "    Locations: " << server->getLocations().size() << "\n";
+    //   }
+    //
+    //   this->m_view.getLogger().info(oss.str());
+    // }
   } catch (const std::exception& exception) {
     this->m_view.displayError(exception.what());
     return false;

@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 12:21:54 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/28 01:32:33 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/28 17:37:42 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,12 +16,12 @@
 #include "domain/configuration/value_objects/CgiConfig.hpp"
 #include "domain/configuration/value_objects/Route.hpp"
 #include "domain/configuration/value_objects/UploadConfig.hpp"
-#include "domain/shared/value_objects/ErrorCode.hpp"
-#include "domain/http/value_objects/HttpMethod.hpp"
 #include "domain/filesystem/value_objects/Path.hpp"
-#include "domain/shared/value_objects/RegexPattern.hpp"
 #include "domain/filesystem/value_objects/Size.hpp"
+#include "domain/http/value_objects/HttpMethod.hpp"
 #include "domain/http/value_objects/Uri.hpp"
+#include "domain/shared/value_objects/ErrorCode.hpp"
+#include "domain/shared/value_objects/RegexPattern.hpp"
 
 #include <map>
 #include <set>
@@ -65,8 +65,8 @@ class LocationConfig {
   const http::value_objects::Uri& getReturnRedirect() const;
   const shared::value_objects::ErrorCode& getReturnCode() const;
   bool hasUploadConfig() const;
-  const UploadConfig& getUploadConfig() const;
-  UploadConfig& getUploadConfigMutable();
+  const value_objects::UploadConfig& getUploadConfig() const;
+  value_objects::UploadConfig& getUploadConfigMutable();
   const value_objects::CgiConfig& getCgiConfig() const;
   const ErrorPageMap& getErrorPages() const;
   const filesystem::value_objects::Size& getClientMaxBodySize() const;
@@ -89,7 +89,7 @@ class LocationConfig {
   void setReturnRedirect(const http::value_objects::Uri& redirect,
                          const shared::value_objects::ErrorCode& code);
   void setReturnRedirect(const std::string& redirect, unsigned int code);
-  void setUploadConfig(const UploadConfig& config);
+  void setUploadConfig(const value_objects::UploadConfig& config);
   void enableUpload(const filesystem::value_objects::Path& uploadDirectory);
   void enableUpload(const filesystem::value_objects::Path& uploadDirectory,
                     const filesystem::value_objects::Size& maxFileSize,
@@ -110,6 +110,12 @@ class LocationConfig {
   void setClientBodyBufferSize(const filesystem::value_objects::Size& size);
   void setClientBodyBufferSize(const std::string& sizeString);
 
+  void setUploadDirectory(const std::string& directory);
+  void setUploadPermissions(unsigned int permissions);
+  void setUploadAccess(const std::string& accessString);
+  void setUploadMaxFileSize(const std::string& sizeString);
+  void setUploadMaxTotalSize(const std::string& sizeString);
+
   bool isValid() const;
   void validate() const;
 
@@ -127,7 +133,8 @@ class LocationConfig {
   bool allowsHead() const;
   bool isUploadRoute() const;
 
-  filesystem::value_objects::Path resolvePath(const std::string& requestPath) const;
+  filesystem::value_objects::Path resolvePath(
+      const std::string& requestPath) const;
 
   bool validateUploadFile(const std::string& filename,
                           const filesystem::value_objects::Size& fileSize,
@@ -148,7 +155,7 @@ class LocationConfig {
   TryFiles m_tryFiles;
   http::value_objects::Uri m_returnRedirect;
   shared::value_objects::ErrorCode m_returnCode;
-  UploadConfig m_uploadConfig;
+  value_objects::UploadConfig m_uploadConfig;
   bool m_hasUploadConfig;
   value_objects::CgiConfig m_cgiConfig;
   ErrorPageMap m_errorPages;

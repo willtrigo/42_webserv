@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/25 21:59:54 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 16:20:03 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/29 00:19:08 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,7 +57,7 @@ const std::string ErrorPage::DEFAULT_ERROR_PAGE_TEMPLATE =
     "</html>";
 
 const filesystem::value_objects::Path ErrorPage::DEFAULT_ERROR_PAGES_DIR =
-    filesystem::value_objects::Path("error_pages");
+    filesystem::value_objects::Path("/var/www/errors", true);
 
 ErrorPage::ErrorPage()
     : m_errorCode(

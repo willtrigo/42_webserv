@@ -6,15 +6,16 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/18 12:15:54 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/19 23:46:36 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/28 15:59:54 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "shared/exceptions/ConfigException.hpp"
+#include "infrastructure/config/exceptions/ConfigException.hpp"
 
 #include <sstream>
 
-namespace shared {
+namespace infrastructure {
+namespace config {
 namespace exceptions {
 
 const std::pair<ConfigException::ErrorCode, std::string>
@@ -67,4 +68,5 @@ std::string ConfigException::getErrorMsg(ConfigException::ErrorCode code) {
 }
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace config
+}  // namespace infrastructure

@@ -6,36 +6,60 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 01:10:52 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 20:09:10 by umeneses         ###   ########.fr       */
+/*   Updated: 2025/12/29 00:34:55 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "domain/filesystem/exceptions/PathException.hpp"
 #include "domain/filesystem/value_objects/Path.hpp"
+#include "domain/shared/utils/StringUtils.hpp"
 
-#include <algorithm>
 #include <cctype>
+#include <cstring>
 #include <sstream>
 
 namespace domain {
 namespace filesystem {
 namespace value_objects {
 
-const std::string Path::CURRENT_DIR = ".";
-const std::string Path::PARENT_DIR = "..";
+namespace {
+const char ASCII_SPACE = ' ';
+const char ASCII_NULL = '\0';
+const char ASCII_NEWLINE = '\n';
+const char ASCII_CARRIAGE_RETURN = '\r';
+const char ASCII_TAB = '\t';
+const char ASCII_BACKSLASH = '\\';
+const char ASCII_COLON = ':';
+const char ASCII_ASTERISK = '*';
+const char ASCII_QUESTION = '?';
+const char ASCII_QUOTE = '"';
+const char ASCII_LESS_THAN = '<';
+const char ASCII_GREATER_THAN = '>';
+const char ASCII_PIPE = '|';
+const char ASCII_DOT = '.';
+const char ASCII_HYPHEN = '-';
+const char ASCII_UNDERSCORE = '_';
 
-const std::string Path::VALID_PATH_CHARS =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    "abcdefghijklmnopqrstuvwxyz"
-    "0123456789"
-    ".-_/";
+const unsigned char ASCII_PRINTABLE_MIN = 0x20;
+const unsigned char ASCII_PRINTABLE_MAX = 0x7E;
 
-const std::string Path::INVALID_FILENAME_CHARS = "/\\:*?\"<>|";
+const char NUMERIC_MIN = '0';
+const char NUMERIC_MAX = '9';
+const char LOWERCASE_MIN = 'a';
+const char LOWERCASE_MAX = 'z';
+const char UPPERCASE_MIN = 'A';
+const char UPPERCASE_MAX = 'Z';
 
-const std::string Path::RESERVED_FILENAMES[] = {
+const char* RESERVED_FILENAMES[] = {
     ".",    "..",   "CON",  "PRN",  "AUX",  "NUL",  "COM1", "COM2", "COM3",
     "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3",
-    "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9", ""};
+    "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9", NULL};
+}  // namespace
+
+const char Path::PATH_SEPARATOR = '/';
+const std::string Path::CURRENT_DIR = ".";
+const std::string Path::PARENT_DIR = "..";
+const std::string Path::INVALID_FILENAME_CHARS = "/\\:*?\"<>|";
 
 Path::Path() : m_isAbsolute(false) {}
 
@@ -89,7 +113,7 @@ std::string Path::getExtension() const {
   std::string filename = getFilename();
   if (filename.empty()) return "";
 
-  std::size_t lastDot = filename.find_last_of('.');
+  std::size_t lastDot = filename.find_last_of(ASCII_DOT);
   if (lastDot == std::string::npos || lastDot == 0) {
     return "";
   }
@@ -183,7 +207,8 @@ Path Path::rootDirectory() { return Path("/", true); }
 bool Path::operator==(const Path& other) const {
   Path norm1 = this->normalize();
   Path norm2 = other.normalize();
-  return norm1.m_path == norm2.m_path && norm1.m_isAbsolute == norm2.m_isAbsolute;
+  return norm1.m_path == norm2.m_path &&
+         norm1.m_isAbsolute == norm2.m_isAbsolute;
 }
 
 bool Path::operator!=(const Path& other) const { return !(*this == other); }
@@ -217,28 +242,26 @@ void Path::validatePathString(const std::string& path, bool mustBeAbsolute) {
 void Path::validateBasicProperties(const std::string& path,
                                    bool mustBeAbsolute) {
   if (path.empty()) {
-    throw exceptions::PathException(
-        "Path cannot be empty", exceptions::PathException::EMPTY_PATH);
+    throw exceptions::PathException("Path cannot be empty",
+                                    exceptions::PathException::EMPTY_PATH);
   }
 
   if (path.length() > MAX_PATH_LENGTH) {
     std::ostringstream oss;
     oss << "Path too long: " << path.length()
         << " characters (max: " << MAX_PATH_LENGTH << ")";
-    throw exceptions::PathException(
-        oss.str(), exceptions::PathException::TOO_LONG);
+    throw exceptions::PathException(oss.str(),
+                                    exceptions::PathException::TOO_LONG);
   }
 
   if (mustBeAbsolute && (path.empty() || path[0] != PATH_SEPARATOR)) {
-    throw exceptions::PathException(
-        "Path must be absolute: '" + path + "'",
-        exceptions::PathException::NOT_ABSOLUTE);
+    throw exceptions::PathException("Path must be absolute: '" + path + "'",
+                                    exceptions::PathException::NOT_ABSOLUTE);
   }
 
   if (!mustBeAbsolute && !path.empty() && path[0] == PATH_SEPARATOR) {
-    throw exceptions::PathException(
-        "Path must be relative: '" + path + "'",
-        exceptions::PathException::NOT_RELATIVE);
+    throw exceptions::PathException("Path must be relative: '" + path + "'",
+                                    exceptions::PathException::NOT_RELATIVE);
   }
 }
 
@@ -265,8 +288,8 @@ void Path::validateFilenameProperties(const std::string& path) {
     std::ostringstream oss;
     oss << "Filename too long: '" << filename << "' (" << filename.length()
         << " characters, max: " << MAX_FILENAME_LENGTH << ")";
-    throw exceptions::PathException(
-        oss.str(), exceptions::PathException::TOO_LONG);
+    throw exceptions::PathException(oss.str(),
+                                    exceptions::PathException::TOO_LONG);
   }
 
   if (filename.find_first_of(INVALID_FILENAME_CHARS) != std::string::npos) {
@@ -284,23 +307,48 @@ void Path::validateFilenameProperties(const std::string& path) {
 
 bool Path::containsInvalidChars(const std::string& path) {
   for (std::size_t i = 0; i < path.length(); ++i) {
-    char chr = path[i];
+    const char chr = path[i];
 
-    if (VALID_PATH_CHARS.find(chr) == std::string::npos) {
-      if (std::isspace(static_cast<unsigned char>(chr)) == 0) {
-        return true;
-      }
+    if (!isValidPathCharacter(chr)) {
+      return true;
     }
   }
   return false;
 }
 
-bool Path::isReservedFilename(const std::string& filename) {
-  std::string upperFilename = filename;
-  std::transform(upperFilename.begin(), upperFilename.end(),
-                 upperFilename.begin(), ::toupper);
+bool Path::isValidPathCharacter(char chr) {
+  const bool isNumeric = (chr >= NUMERIC_MIN && chr <= NUMERIC_MAX);
+  const bool isLowercase = (chr >= LOWERCASE_MIN && chr <= LOWERCASE_MAX);
+  const bool isUppercase = (chr >= UPPERCASE_MIN && chr <= UPPERCASE_MAX);
+  const bool isAlphaNum = isNumeric || isLowercase || isUppercase;
+  const bool isPathSeparator = (chr == PATH_SEPARATOR);
+  const bool isSafeSpecial = (chr == ASCII_DOT || chr == ASCII_HYPHEN ||
+                              chr == ASCII_UNDERSCORE || chr == ASCII_SPACE);
 
-  for (int i = 0; !RESERVED_FILENAMES[i].empty(); ++i) {
+  if (isAlphaNum || isPathSeparator || isSafeSpecial) {
+    return true;
+  }
+
+  if (chr < ASCII_PRINTABLE_MIN || chr > ASCII_PRINTABLE_MAX) {
+    return false;
+  }
+
+  return !isDangerousCharacter(chr);
+}
+
+bool Path::isDangerousCharacter(char chr) {
+  return chr == ASCII_NULL || chr == ASCII_NEWLINE ||
+         chr == ASCII_CARRIAGE_RETURN || chr == ASCII_BACKSLASH ||
+         chr == ASCII_COLON || chr == ASCII_ASTERISK || chr == ASCII_QUESTION ||
+         chr == ASCII_QUOTE || chr == ASCII_LESS_THAN ||
+         chr == ASCII_GREATER_THAN || chr == ASCII_PIPE || chr == ASCII_TAB;
+}
+
+bool Path::isReservedFilename(const std::string& filename) {
+  const std::string upperFilename =
+      shared::utils::StringUtils::toUpperCase(filename);
+
+  for (int i = 0; RESERVED_FILENAMES[i] != NULL; ++i) {
     if (upperFilename == RESERVED_FILENAMES[i]) {
       return true;
     }
@@ -313,7 +361,7 @@ bool Path::hasDirectoryTraversal(const std::string& path) {
 
   bool isAbsolute = (!path.empty() && path[0] == PATH_SEPARATOR);
   int depth = 0;
-  
+
   for (std::size_t i = 0; i < components.size(); ++i) {
     if (components[i] == CURRENT_DIR) {
       continue;

@@ -6,15 +6,16 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 12:52:21 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/26 23:05:02 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/28 16:56:48 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef ICONFIG_PROVIDER_HPP
 #define ICONFIG_PROVIDER_HPP
 
-#include "domain/entities/LocationConfig.hpp"
-#include "domain/entities/ServerConfig.hpp"
+#include "domain/configuration/entities/HttpConfig.hpp"
+#include "domain/configuration/entities/LocationConfig.hpp"
+#include "domain/configuration/entities/ServerConfig.hpp"
 
 #include <string>
 #include <vector>
@@ -28,19 +29,21 @@ class IConfigProvider {
   virtual void load(const std::string& configPath,
                     const std::string& includePath) = 0;
 
-  virtual const domain::entities::ServerConfig& getServerConfig(
-      const std::string& uri) const = 0;
+  virtual const domain::configuration::entities::HttpConfig& getConfiguration()
+      const = 0;
 
-  virtual const domain::entities::LocationConfig& getLocationConfig(
-      const domain::entities::ServerConfig& server,
+  virtual const domain::configuration::entities::ServerConfig* findServer(
+      const std::string& host, unsigned int port) const = 0;
+
+  virtual const domain::configuration::entities::LocationConfig* findLocation(
+      const domain::configuration::entities::ServerConfig& server,
       const std::string& path) const = 0;
 
-  virtual std::vector<const domain::entities::ServerConfig*> getAllServers()
-      const = 0;
-  virtual std::size_t serverCount() const = 0;
+  virtual const std::vector<
+      const domain::configuration::entities::ServerConfig*>&
+  getAllServers() const = 0;
 
   virtual void reload() = 0;
-
   virtual bool isValid() const = 0;
 };
 

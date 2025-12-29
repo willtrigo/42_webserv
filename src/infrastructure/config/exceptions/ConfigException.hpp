@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/18 12:05:20 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/19 23:45:01 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/28 15:59:18 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,10 +15,11 @@
 
 #include "shared/exceptions/BaseException.hpp"
 
-namespace shared {
+namespace infrastructure {
+namespace config {
 namespace exceptions {
 
-class ConfigException : public BaseException {
+class ConfigException : public ::shared::exceptions::BaseException {
  public:
   enum ErrorCode {
     PARSE_SYNTAX,
@@ -46,6 +47,7 @@ class ConfigException : public BaseException {
 };
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace config
+}  // namespace infrastructure
 
 #endif  // CONFIG_EXCEPTION_HPP

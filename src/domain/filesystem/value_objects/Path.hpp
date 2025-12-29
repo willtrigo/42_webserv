@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 01:07:22 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 03:59:11 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/29 00:31:07 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,14 +24,13 @@ class Path {
  public:
   static const std::size_t MAX_PATH_LENGTH = 4096;
   static const std::size_t MAX_FILENAME_LENGTH = 255;
-  static const char PATH_SEPARATOR = '/';
+  static const char PATH_SEPARATOR;
   static const std::string CURRENT_DIR;
   static const std::string PARENT_DIR;
 
   static const std::string VALID_PATH_CHARS;
   static const std::string INVALID_FILENAME_CHARS;
-  static const std::string RESERVED_FILENAMES[];
-
+  
   Path();
   explicit Path(const std::string& path, bool mustBeAbsolute = true);
   Path(const Path& other);
@@ -79,6 +78,8 @@ class Path {
   static void validateFilenameProperties(const std::string& path);
 
   static bool containsInvalidChars(const std::string& path);
+  static bool isValidPathCharacter(char chr);
+  static bool isDangerousCharacter(char chr);
   static bool isReservedFilename(const std::string& filename);
   static bool hasDirectoryTraversal(const std::string& path);
 

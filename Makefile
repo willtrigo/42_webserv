@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/28 15:12:59 by dande-je         ###   ########.fr        #
+#    Updated: 2025/12/28 20:29:00 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -48,9 +48,11 @@ SRCS_DOMAIN_SHARED_EXCEPTION_DIR             := $(SRCS_DOMAIN_SHARED_DIR)excepti
 SRCS_DOMAIN_SHARED_UTILS_DIR                 := $(SRCS_DOMAIN_SHARED_DIR)utils/
 SRCS_DOMAIN_SHARED_VALUE_OBJECTS_DIR         := $(SRCS_DOMAIN_SHARED_DIR)value_objects/
 
-SRCS_INFRASTRUCTURE_DIR         := $(SRCS_DIR)infrastructure/
-SRCS_ADAPTER_DIR                := $(SRCS_INFRASTRUCTURE_DIR)adapters/
-SRCS_CONFIG_DIR                 := $(SRCS_INFRASTRUCTURE_DIR)config/
+SRCS_INFRASTRUCTURE_DIR                      := $(SRCS_DIR)infrastructure/
+SRCS_INFRASTRUCTURE_CONFIG_DIR               := $(SRCS_INFRASTRUCTURE_DIR)config/
+SRCS_INFRASTRUCTURE_CONFIG_ADAPTERS_DIR      := $(SRCS_INFRASTRUCTURE_CONFIG_DIR)adapters/
+SRCS_INFRASTRUCTURE_CONFIG_EXCEPTIONS_DIR    := $(SRCS_INFRASTRUCTURE_CONFIG_DIR)exceptions/
+SRCS_INFRASTRUCTURE_CONFIG_PARSERS_DIR       := $(SRCS_INFRASTRUCTURE_CONFIG_DIR)parsers/
 SRCS_HTTP_DIR                   := $(SRCS_INFRASTRUCTURE_DIR)http/
 SRCS_IO_DIR                     := $(SRCS_INFRASTRUCTURE_DIR)io/
 
@@ -87,6 +89,7 @@ SLEEP                           := sleep 0.01
 NAME_OUTPUT                     = webserv
 NAME                            = $(BIN_DIR)$(NAME_OUTPUT)
 
+# DOMAIN
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_ENTITIES_DIR), HttpConfig.cpp \
 																	 LocationConfig.cpp \
 																	 ServerConfig.cpp)
@@ -106,10 +109,12 @@ SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_CONFIGURATION_VALUE
 
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_FILESYSTEM_EXCEPTIONS_DIR), PathException.cpp \
 																	 PermissionException.cpp \
-																	 SizeException.cpp)
+																	 SizeException.cpp \
+																	 UploadAccessException.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_FILESYSTEM_VALUE_OBJECTS_DIR), Path.cpp \
 																	 Permission.cpp \
-																	 Size.cpp)
+																	 Size.cpp \
+																	 UploadAccess.cpp)
 
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_HTTP_EXCEPTIONS_DIR), HostException.cpp \
 																	 HttpMethodException.cpp \
@@ -128,6 +133,11 @@ SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_UTILS_DIR), 
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_VALUE_OBJECTS_DIR), ErrorCode.cpp \
 																	 RegexPattern.cpp)
 
+# INFRASTRUCTURE
+SRCS_FILES                      += $(addprefix $(SRCS_INFRASTRUCTURE_CONFIG_ADAPTERS_DIR), ConfigProvider.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_INFRASTRUCTURE_CONFIG_EXCEPTIONS_DIR), ConfigException.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_INFRASTRUCTURE_CONFIG_PARSERS_DIR), ConfigParser.cpp)
+
 SRCS_FILES                      += $(addprefix $(SRCS_FILESYSTEM_EXCEPTION_DIR), DirectoryListerException.cpp \
 																	 FileHandlerException.cpp \
 																	 FileSystemHelperException.cpp \
@@ -138,12 +148,11 @@ SRCS_FILES                      += $(addprefix $(SRCS_FILESYSTEM_ADAPTERS_DIR), 
 																	 FileSystemHelper.cpp \
 																	 PathResolver.cpp)
 
-# SRCS_FILES                      += $(addprefix $(SRCS_HTTP_DIR), RequestParser.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_IO_DIR), FileWriter.cpp \
 																	 StreamWriter.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_LOGGING_DIR), Logger.cpp)
-# SRCS_FILES                      += $(addprefix $(SRCS_NETWORK_DIR), RouteMatcher.cpp)
 
+# PRESENTATION
 SRCS_FILES                      += $(addprefix $(SRCS_CLI_DIR), CliController.cpp \
 																	 CliView.cpp)
 

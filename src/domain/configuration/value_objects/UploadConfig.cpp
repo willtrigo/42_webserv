@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 13:30:43 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/28 00:47:46 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/28 17:36:46 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@
 
 namespace domain {
 namespace configuration {
-namespace entities {
+namespace value_objects {
 
 const domain::filesystem::value_objects::Size
     UploadConfig::DEFAULT_MAX_FILE_SIZE =
@@ -59,7 +59,9 @@ UploadConfig::UploadConfig(
       m_compressFiles(false),
       m_fileHandler(NULL),
       m_directoryLister(NULL),
-      m_pathResolver(NULL) {
+      m_pathResolver(NULL),
+      m_permissions(domain::filesystem::value_objects::Permission::
+                        ownerReadWriteGroupReadOtherRead()) {
   for (std::size_t i = 0; i < DEFAULT_ALLOWED_EXTENSIONS_COUNT; ++i) {
     m_allowedExtensions.push_back(DEFAULT_ALLOWED_EXTENSIONS[i]);
   }
@@ -86,7 +88,9 @@ UploadConfig::UploadConfig(
       m_compressFiles(false),
       m_fileHandler(NULL),
       m_directoryLister(NULL),
-      m_pathResolver(NULL) {
+      m_pathResolver(NULL),
+      m_permissions(domain::filesystem::value_objects::Permission::
+                        ownerReadWriteGroupReadOtherRead()) {
   for (std::size_t i = 0; i < DEFAULT_ALLOWED_EXTENSIONS_COUNT; ++i) {
     m_allowedExtensions.push_back(DEFAULT_ALLOWED_EXTENSIONS[i]);
   }
@@ -117,6 +121,8 @@ UploadConfig::UploadConfig(const UploadConfig& other)
       m_fileHandler(NULL),
       m_directoryLister(NULL),
       m_pathResolver(NULL),
+      m_permissions(domain::filesystem::value_objects::Permission::
+                        ownerReadWriteGroupReadOtherRead()),
       m_uploadHistory(other.m_uploadHistory) {}
 
 UploadConfig& UploadConfig::operator=(const UploadConfig& other) {
@@ -138,6 +144,8 @@ UploadConfig& UploadConfig::operator=(const UploadConfig& other) {
     m_blockedExtensions = other.m_blockedExtensions;
     m_allowedMimeTypes = other.m_allowedMimeTypes;
     m_blockedMimeTypes = other.m_blockedMimeTypes;
+    m_permissions = other.m_permissions;
+    m_uploadAccess = other.m_uploadAccess;
     m_uploadHistory = other.m_uploadHistory;
 
     m_fileHandler = NULL;
@@ -238,6 +246,29 @@ void UploadConfig::setEncryptFiles(bool encrypt) { m_encryptFiles = encrypt; }
 
 void UploadConfig::setCompressFiles(bool compress) {
   m_compressFiles = compress;
+}
+
+void UploadConfig::setUploadDirectory(
+    const domain::filesystem::value_objects::Path& directory) {
+  m_uploadDirectory = directory;
+}
+
+void UploadConfig::setPermissions(
+    const domain::filesystem::value_objects::Permission& permissions) {
+  m_permissions = permissions;
+}
+
+void UploadConfig::setUploadAccess(const std::string& accessString) {
+  m_uploadAccess = accessString;
+}
+
+const domain::filesystem::value_objects::Permission&
+UploadConfig::getPermissions() const {
+  return m_permissions;
+}
+
+const std::string& UploadConfig::getUploadAccess() const {
+  return m_uploadAccess;
 }
 
 bool UploadConfig::validateUploadDirectory() const {
@@ -1107,7 +1138,8 @@ bool UploadConfig::getEncryptFiles() const { return m_encryptFiles; }
 
 bool UploadConfig::getCompressFiles() const { return m_compressFiles; }
 
-void UploadConfig::initializeDependencies() const {
+void UploadConfig::initializeDependencies()
+    const {  // TODO: look at this part and make the fix
   if (m_fileHandler == NULL) {
     // Note: In a real DDD implementation, these would be injected
     // For now, create them with NULL helpers (which would need to be
@@ -1329,6 +1361,6 @@ bool UploadConfig::isArchiveFile(const std::string& filename) {
   return false;
 }
 
-}  // namespace entities
+}  // namespace value_objects
 }  // namespace configuration
 }  // namespace domain
