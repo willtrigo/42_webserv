@@ -1,75 +1,188 @@
-# Two-Person Sprint Strategy - 13 Days to Evaluation
+# Two-Person Sprint Strategy - 10 Days to Evaluation
 
 **Team:** Dande (Foundation Expert) + Bira (TDD Specialist)  
 **Deadline:** January 8, 2026  
-**Start Date:** December 26, 2025  
-**Strategy:** Parallel development with strategic pairing
+**Current Date:** December 29, 2025 (**10 DAYS REMAINING**)  
+**Strategy:** Foundation-first testing, then build server on solid ground
+
+## 🚨 CRITICAL UPDATE - December 29, 2025
+
+**What Changed:** After 3 days of work, Dande has built ~24,600 lines of excellent infrastructure code BUT we discovered:
+1. ❌ **NO ACTUAL SERVER EXISTS** - Zero network I/O code
+2. ✅ **185/187 tests passing** - Domain layer well-tested
+3. ⚠️ **9 value objects untested** - Foundation incomplete
+
+**New Reality:** We have 10 days (was 13), but we have better architecture than expected. **REVISED STRATEGY:** Test all value objects first (Days 1-5), then build server quickly (Days 6-10).
+
+**Why this works:** Solid foundation = faster server development with fewer bugs.
 
 ---
 
-## ⚠️ THE BRUTAL TRUTH
+## ⚠️ THE BRUTAL TRUTH - UPDATED DEC 29
 
-### Without This Strategy
+### Current Situation
 
-If you build without coordination, just diving in and "figuring it out":
+**What We Have:**
+- ✅ 24,600 lines of code (excellent architecture)
+- ✅ 185/187 tests passing (98.93%)
+- ✅ Complete domain layer (value objects, entities, exceptions)
+- ✅ Infrastructure adapters (ConfigParser, FileHandler, RequestParser)
+- ❌ **NO NETWORK SERVER** - Cannot bind to port, accept connections
+
+**What We're Missing:**
+- ❌ Socket server (0 lines of code)
+- ❌ Epoll/poll event loop (0 lines of code)
+- ❌ HTTP server runtime (0 lines of code)
+- ❌ 9 untested value objects (foundation gaps)
+
+### Without Foundation-First Strategy
+
+If you build the server on untested value objects:
 
 | Metric | Value | Reality Check |
 |--------|-------|---------------|
-| **Hours needed** | **273 hours** | 21 hours/day for 13 days = IMPOSSIBLE |
-| **Success probability** | **40%** | More likely to fail than succeed |
-| **Burnout risk** | **100%** | You'll hate each other by Day 5 |
-| **Integration time** | **3-4 days** | Big-bang merge = disaster |
-| **Wasted effort** | **30-40%** | Duplicate work, incompatible code |
+| **Debugging time** | **40+ hours** | "Is it my code or the value object?" |
+| **Success probability** | **60%** | Unstable foundation = unstable building |
+| **Integration bugs** | **HIGH** | Foundation bugs cascade upward |
+| **Confidence** | **LOW** | Never sure if basics work |
 
-**Translation:** You'll work yourself to death and probably still fail the evaluation.
+**Translation:** Fast start, slow finish. Debugging hell at the end.
 
 ---
 
-### With This Strategy
+### With Foundation-First Strategy (THIS PLAN)
 
-If you follow this plan (even imperfectly):
+If you test all value objects first, then build server:
 
 | Metric | Value | Reality Check |
 |--------|-------|---------------|
-| **Hours needed** | **104 hours total** | 71h per person = 5.5h/day = ACHIEVABLE |
-| **Reduction** | **38% less work** | 169 hours saved vs chaos |
-| **Success probability** | **85%** | You'll probably pass |
-| **Burnout risk** | **Low** | Sustainable pace, built-in breaks |
-| **Integration time** | **Continuous** | Small merges every 2 days |
-| **Wasted effort** | **< 10%** | Interfaces prevent duplicate work |
+| **Testing time** | **40 hours** | Days 1-5: Solid foundation |
+| **Server build time** | **60 hours** | Days 6-10: Fast development on solid base |
+| **Debugging time** | **10 hours** | Know exactly where bugs are |
+| **Success probability** | **85%** | Confidence in every layer |
+| **Integration bugs** | **LOW** | Foundation proven before building |
+| **Confidence** | **HIGH** | Tests prove basics work |
 
-**Translation:** You can sleep, stay sane, and actually pass this thing.
+**Translation:** Slow start, fast finish. Smooth development from proven foundation.
 
 ---
 
-## 🎯 GUT-LEVEL DETERMINATION
+## 🎯 THE FOUNDATION-FIRST PRINCIPLE
 
-### This Is Not Optional
+### Why Test Value Objects First?
 
-You have **13 days**. That's **312 hours** of calendar time for two people.
+**Dependency Chain:**
+```
+Value Objects (MUST TEST FIRST)
+    ↓
+Entities (depend on value objects)
+    ↓
+Infrastructure Adapters (depend on entities)
+    ↓
+Application Layer (depends on adapters)
+    ↓
+Server Runtime (depends on everything)
+```
 
-**If you work without strategy:**
-- 273 hours needed ÷ 2 people = 136.5 hours each
-- 136.5 hours ÷ 13 days = **10.5 hours per day**
-- For 13 days straight
-- With no plan
-- With constant integration conflicts
-- With duplicate work
-- **Success rate: 40%**
+**Example of cascading failure:**
+1. Uri is broken (crashes on empty string)
+2. RequestParser uses Uri → crashes
+3. HttpServer uses RequestParser → crashes
+4. **You waste 8 hours debugging server when problem was Uri**
 
-**You will fail.**
+**With foundation-first:**
+1. Test Uri thoroughly (2 hours)
+2. Know Uri works perfectly
+3. RequestParser failures must be in RequestParser code
+4. **Debug in 30 minutes, not 8 hours**
 
-**If you follow this strategy:**
-- 104 hours needed ÷ 2 people = 52 hours each (base work)
-- 54 hours together (pairing/integration) ÷ 2 = 27 hours each
-- Total: 52 + 27 = 79 hours each (we budgeted 71, so 8 hours buffer built in)
-- 79 hours ÷ 13 days = **6 hours per day**
-- With clear tasks every day
-- With daily syncs to stay aligned
-- With continuous integration (no big-bang)
-- **Success rate: 85%**
+---
 
-**You will probably pass.**
+## 📊 WHAT WE NEED TO TEST (9 Value Objects)
+
+### Currently Tested (5/14) ✅
+- ✅ **ErrorCode** (50/50 tests) - HTTP status codes
+- ✅ **HttpMethod** (5/5 tests) - GET/POST/DELETE  
+- ✅ **Path** (25/25 tests) - Filesystem paths
+- ✅ **Size** (44/44 tests) - File sizes
+- ⚠️ **Port** (8/10 tests) - Needs 2 test fixes
+
+### MUST TEST BEFORE SERVER (9 untested)
+
+**Priority 1 - HTTP Layer (3 value objects):**
+1. **Uri** - Used by: RequestParser, RouteMatcher, ALL request handling
+2. **Host** - Used by: ServerConfig, ListenDirective, multi-server routing
+3. **QueryStringBuilder** - Used by: RequestParser, CGI parameter passing
+
+**Priority 2 - Configuration Layer (4 value objects):**
+4. **ListenDirective** - Used by: ServerConfig, port binding
+5. **ErrorPage** - Used by: ServerConfig, error responses
+6. **Route** - Used by: RouteMatcher, routing logic
+7. **RegexPattern** - Used by: Route, LocationConfig (currently crashes!)
+
+**Priority 3 - Filesystem Layer (2 value objects):**
+8. **Permission** - Used by: FileHandler, upload validation
+9. **UploadAccess** - Used by: LocationConfig, security
+
+**Total Effort:** ~40 hours (20h each = 4h/day for 5 days)
+
+---
+
+## 🎯 GUT-LEVEL DETERMINATION - UPDATED
+
+### The New Math
+
+You have **10 days**. That's **240 hours** of calendar time for two people.
+
+**Option 1: Skip foundation testing (DON'T DO THIS):**
+- Build server immediately: 60 hours
+- Debug foundation bugs in server: 40 hours  
+- Total: 100 hours ÷ 2 = 50h each = 5h/day
+- **BUT:** 60% success rate (foundation bugs kill you)
+
+**Option 2: Foundation-first (THIS PLAN):**
+- Test 9 value objects: 40 hours (Days 1-5)
+- Build server on solid base: 60 hours (Days 6-10)
+- Total: 100 hours ÷ 2 = 50h each = 5h/day
+- **AND:** 85% success rate (no foundation surprises)
+
+**The difference:** Same time, but 25% higher success rate with foundation-first.
+
+---
+
+## 🚀 REVISED 10-DAY PLAN
+
+### Phase 1: Foundation Testing (Days 1-5)
+
+**Goal:** All value objects 100% tested before writing server
+
+| Day | Bira Tasks | Dande Tasks | Tests Added |
+|-----|------------|-------------|-------------|
+| **Day 1** | Uri (20 tests, 4h) | Host (15 tests, 3h) | 35 tests |
+| | QueryStringBuilder (12 tests, 3h) | Fix Port (2 tests, 1h) | +14 tests |
+| **Day 2** | Permission (18 tests, 4h) | ListenDirective (15 tests, 3h) | 33 tests |
+| | UploadAccess (10 tests, 2h) | RegexPattern fix (2h) | +10 tests |
+| **Day 3** | ErrorPage (12 tests, 3h) | Route (25 tests, 5h) | 37 tests |
+| | Document value objects (2h) | Review Bira's tests (1h) | - |
+| **Day 4** | Re-enable FileHandler tests | Re-enable ConfigParser tests | Integration |
+| | Test infrastructure adapters | Fix adapter bugs | tests |
+| **Day 5** | Review all tests | Fix remaining test issues | Buffer day |
+
+**Milestone:** ~240 tests passing, 100% value object coverage
+
+### Phase 2: Server Development (Days 6-10)
+
+**Goal:** Build HTTP server on proven foundation
+
+| Day | Bira Tasks | Dande Tasks | Milestone |
+|-----|------------|-------------|-----------|
+| **Day 6** | SocketServer (8h) | Response builder (6h) | Binds to port |
+| **Day 7** | Epoll event loop (8h) | Static file GET (6h) | Accepts connections |
+| **Day 8** | Connection manager (8h) | POST upload (6h) | Serves files |
+| **Day 9** | Request handler (6h) | DELETE + Config (7h) | All methods work |
+| **Day 10** | Integration testing | Bug fixes + valgrind | Ready for eval |
+
+**Milestone:** Functional HTTP server, all features working
 
 ---
 
@@ -483,21 +596,384 @@ make clean && make
 
 ---
 
-## 🚀 Days 1-2: Value Objects (Maximum Parallelism)
+## 🚀 Days 1-5: Foundation Testing (VALUE OBJECTS FIRST)
 
-**Goal:** Complete all value objects - no dependencies, pure parallel work
+**Philosophy:** Test every building block before building the house.
 
-**Daily sync:** 7:00 PM (30 min) + 1:00 PM checkpoint (15 min)
-**🚨 REALITY CHECK AT END OF DAY:**
-- [ ] Did we define all interfaces? (MANDATORY)
-- [ ] Did Dande complete ErrorCode? (Can slip to Day 2)
-- [ ] Did Bira complete Path? (MANDATORY for Day 2)
-- [ ] Are we comfortable with the workflow? (If not, adjust Day 2)
+**Goal:** 240+ tests passing, all value objects proven to work.
 
+**Strategy:** Both focus on testing. Dande learns TDD from Bira. Parallel work on different value objects.
 
 ---
 
-### Day 1 - December 26 (Thursday)
+### Day 1 - December 29 (Sunday) - AGGRESSIVE DAY: All HTTP + Filesystem Value Objects
+
+**Goal:** Test Uri, Host, QueryStringBuilder, Permission, UploadAccess + fix Port (COMBINED PRIORITIES 1 & 2)
+
+**🔥 INTENSIVE WORK DAY:** This is an ambitious plan combining 2 days of work. Take breaks, stay hydrated!
+
+#### Bira's Tasks (10-12 hours) - MARATHON SESSION
+
+**Morning Block 1 (9:00 AM - 1:00 PM): HTTP Value Objects - 4h**
+
+**Uri Testing (4h):**
+- [ ] Create `tests/unit/test_Uri.cpp`
+- [ ] **Test Categories:**
+  - [x] Construction tests (5 tests)
+    ```cpp
+    TEST(UriTest, ConstructFromString)
+    TEST(UriTest, ConstructFromComponents)
+    TEST(UriTest, CopyConstructor)
+    TEST(UriTest, AssignmentOperator)
+    TEST(UriTest, EmptyUri)
+    ```
+  - [x] Parsing tests (8 tests)
+    ```cpp
+    TEST(UriTest, ParseSimpleUri)
+    TEST(UriTest, ParseWithQuery)
+    TEST(UriTest, ParseWithFragment)
+    TEST(UriTest, ParseWithPort)
+    TEST(UriTest, ParseWithScheme)
+    TEST(UriTest, ParseAbsolutePath)
+    TEST(UriTest, ParseRelativePath)
+    TEST(UriTest, MalformedUri)
+    ```
+  - [x] Component extraction (7 tests)
+    ```cpp
+    TEST(UriTest, GetScheme)
+    TEST(UriTest, GetHost)
+    TEST(UriTest, GetPort)
+    TEST(UriTest, GetPath)
+    TEST(UriTest, GetQuery)
+    TEST(UriTest, GetFragment)
+    TEST(UriTest, ToString)
+    ```
+- [ ] **Total: 20 tests**
+- [ ] Run tests immediately, fix any failures
+- [ ] **Commit checkpoint:** "test: Add Uri tests (20 tests)"
+
+**🍽️ LUNCH BREAK (1:00 PM - 2:00 PM) - MANDATORY!**
+
+**Afternoon Block 1 (2:00 PM - 5:00 PM): QueryStringBuilder - 3h**
+
+- [ ] Create `tests/unit/test_QueryStringBuilder.cpp`
+- [ ] **Test Categories:**
+  - [ ] Construction (3 tests)
+    ```cpp
+    TEST(QueryStringBuilderTest, EmptyBuilder)
+    TEST(QueryStringBuilderTest, ConstructFromString)
+    TEST(QueryStringBuilderTest, CopyConstructor)
+    ```
+  - [ ] Building queries (5 tests)
+    ```cpp
+    TEST(QueryStringBuilderTest, AddParam)
+    TEST(QueryStringBuilderTest, AddMultipleParams)
+    TEST(QueryStringBuilderTest, BuildQuery)
+    TEST(QueryStringBuilderTest, UrlEncoding)
+    TEST(QueryStringBuilderTest, SpecialCharacters)
+    ```
+  - [ ] Parsing queries (4 tests)
+    ```cpp
+    TEST(QueryStringBuilderTest, ParseSimple)
+    TEST(QueryStringBuilderTest, ParseMultiple)
+    TEST(QueryStringBuilderTest, ParseEncoded)
+    TEST(QueryStringBuilderTest, ParseEmpty)
+    ```
+- [ ] **Total: 12 tests**
+- [ ] Run and verify all pass
+- [ ] **Commit checkpoint:** "test: Add QueryStringBuilder tests (12 tests)"
+
+**☕ BREAK (5:00 PM - 5:30 PM) - REST YOUR BRAIN!**
+
+**Evening Block 1 (5:30 PM - 9:30 PM): Filesystem Value Objects - 4h**
+
+**Permission Testing (2.5h):**
+- [ ] Create `tests/unit/test_Permission.cpp`
+- [ ] **Test Categories:**
+  - [ ] Construction (4 tests)
+  - [ ] Permission bits (6 tests) - rwx for owner/group/other
+  - [ ] Validation (4 tests)
+  - [ ] Operations (4 tests) - has, add, remove permissions
+- [ ] **Total: 18 tests**
+- [ ] **Commit checkpoint:** "test: Add Permission tests (18 tests)"
+
+**UploadAccess Testing (1.5h):**
+- [ ] Create `tests/unit/test_UploadAccess.cpp`
+- [ ] **Test Categories:**
+  - [ ] Construction (3 tests)
+  - [ ] Validation (4 tests)
+  - [ ] Access control (3 tests)
+- [ ] **Total: 10 tests**
+- [ ] **Commit checkpoint:** "test: Add UploadAccess tests (10 tests)"
+
+**Final Push:**
+- [ ] Run ALL tests: `./bin/test_runner`
+- [ ] **Expected: 185 + 60 = 245 tests passing!**
+- [ ] Push all commits
+- [ ] Create PR: "test: Add 60 tests for HTTP and Filesystem value objects"
+- [ ] Update test status documentation
+
+**Expected Output:** 60 new tests passing (Uri: 20, QueryStringBuilder: 12, Permission: 18, UploadAccess: 10)
+
+**🎯 Milestone:** HTTP value objects + Filesystem value objects 100% tested!
+
+---
+
+#### Dande's Tasks (7 hours) - Support & Preparation
+
+**Morning Block (10:00 AM - 1:00 PM): Host Testing - 3h**
+
+- [ ] Create `tests/unit/test_Host.cpp`
+- [ ] **Test Categories:**
+  - [ ] Construction (4 tests)
+    ```cpp
+    TEST(HostTest, ConstructFromString)
+    TEST(HostTest, ConstructFromIpAddress)
+    TEST(HostTest, CopyConstructor)
+    TEST(HostTest, AssignmentOperator)
+    ```
+  - [ ] Validation (6 tests)
+    ```cpp
+    TEST(HostTest, ValidHostname)
+    TEST(HostTest, ValidIpAddress)
+    TEST(HostTest, InvalidHostname)
+    TEST(HostTest, EmptyHost)
+    TEST(HostTest, TooLongHostname)
+    TEST(HostTest, SpecialCharacters)
+    ```
+  - [ ] Operations (5 tests)
+    ```cpp
+    TEST(HostTest, ToString)
+    TEST(HostTest, IsIpAddress)
+    TEST(HostTest, IsLocalhost)
+    TEST(HostTest, Equality)
+    TEST(HostTest, Comparison)
+    ```
+- [ ] **Total: 15 tests**
+- [ ] **Commit checkpoint:** "test: Add Host tests (15 tests)"
+
+**Afternoon Block (2:00 PM - 3:00 PM): Fix Port Tests - 1h**
+
+- [ ] Open `src/domain/http/value_objects/Port.cpp`
+- [ ] Fix failing tests:
+  - [ ] **DefaultConstructor:** Decide default (0 or 80?)
+    ```cpp
+    // Current: returns 0
+    // Test expects: 80
+    // Decision: Change default to 80 or update test?
+    ```
+  - [ ] **InvalidPortZero:** Make Port(0) throw exception
+    ```cpp
+    Port::Port(unsigned int value) {
+      if (value == 0 || value > 65535)
+        throw PortException("Invalid port");
+      m_value = value;
+    }
+    ```
+- [ ] Run tests: `./bin/test_runner --gtest_filter='PortTest.*'`
+- [ ] Verify: **10/10 tests passing** ✅
+- [ ] **Commit:** "fix: Port implementation - now 10/10 tests passing"
+
+**Evening Block (3:00 PM - 6:00 PM): Study & Prepare - 3h**
+
+- [ ] Study TDD from Bira's test code:
+  - [ ] Read `tests/unit/test_Path.cpp` - Test structure patterns
+  - [ ] Read `tests/unit/test_Size.cpp` - Test organization
+  - [ ] Read `tests/unit/test_ErrorCode.cpp` - Assertion patterns
+- [ ] Document learnings: What makes a good test?
+- [ ] Prepare for Day 2: RegexPattern bug fix strategy
+- [ ] Study RegexPattern implementation to understand crash bug
+- [ ] Review Bira's PRs as they come in
+- [ ] Help Bira with any test failures if needed
+
+**Expected Output:** 17 new tests passing (Host: 15, Port fixes: 2)
+
+**🎯 Milestone:** All HTTP value objects tested + Port proven!
+
+---
+
+### Day 2 - December 30 (Monday) - RegexPattern Fix & Configuration Foundation
+
+**Goal:** Fix RegexPattern crash bug, prepare for configuration testing
+
+**⚠️ NOTE:** Day 1 was intensive, so Day 2 is lighter - focus on quality over quantity
+
+#### Dande's Tasks (5-6 hours) - RegexPattern Bug Fix
+
+**Morning (9:00 AM - 12:00 PM): RegexPattern Crash Debug - 3h**
+
+- [ ] **Understand the bug:**
+  - [ ] Empty pattern crashes in constructor
+  - [ ] Currently excluded from compilation: `! -name 'RegexPattern.cpp'`
+  - [ ] Location: `src/shared/utils/RegexPattern.cpp`
+- [ ] **Debug strategy:**
+  - [ ] Read RegexPattern implementation
+  - [ ] Identify crash point (likely missing null check)
+  - [ ] Write minimal test to reproduce crash
+- [ ] **Fix implementation:**
+  - [ ] Add validation for empty patterns
+  - [ ] Add proper error handling
+  - [ ] Test fix locally
+
+**Afternoon (1:00 PM - 3:00 PM): RegexPattern Testing - 2h**
+
+- [ ] Remove RegexPattern from Makefile exclusions
+- [ ] Create `tests/unit/test_RegexPattern.cpp`
+- [ ] **Test Categories:**
+  - [ ] Construction (4 tests) - including empty pattern
+  - [ ] Pattern matching (6 tests)
+  - [ ] Edge cases (3 tests)
+- [ ] **Total: 13 tests**
+- [ ] Run and verify all pass
+- [ ] **Commit:** "fix: RegexPattern empty pattern crash + tests (13 tests)"
+
+**Evening (3:00 PM - 4:00 PM): Configuration Directory Prep - 1h**
+
+- [ ] Analyze `tests/Makefile` exclusions
+- [ ] Identify what's blocking `domain/configuration/*`
+- [ ] Document findings for Day 3
+- [ ] Prepare plan to re-enable configuration directory
+
+**Expected Output:** RegexPattern fixed, 13 new tests, path to configuration testing cleared
+
+#### Bira's Tasks (4-5 hours) - Documentation & Review
+
+**Morning (9:00 AM - 11:00 AM): Update Documentation - 2h**
+
+- [ ] Update `TESTING_STATUS.md` with Day 1 results:
+  - [ ] 245/247 tests passing (98.8%)
+  - [ ] 11/15 value objects tested
+  - [ ] HTTP value objects: Uri, Host, QueryStringBuilder, Port ✅
+  - [ ] Filesystem value objects: Permission, UploadAccess ✅
+- [ ] Update test count in all README files
+- [ ] Create summary of Day 1 achievements
+- [ ] Document any bugs found during testing
+
+**Afternoon (1:00 PM - 4:00 PM): Code Review & Cleanup - 3h**
+
+- [ ] Review all Day 1 test code for consistency
+- [ ] Refactor any duplicated test patterns
+- [ ] Improve test readability and documentation
+- [ ] Help Dande with RegexPattern if needed
+- [ ] Prepare for Day 3: Configuration testing strategy
+
+**Expected Output:** Documentation updated, test code polished, ready for Day 3
+
+---
+
+### Day 2 Evening Checkpoint (Both, 30 min)
+
+**5:00 PM:** Review progress
+- [ ] Verify RegexPattern fixed and tested
+- [ ] Review documentation updates
+- [ ] Merge Day 2 PRs
+- [ ] **Test Count:** 245 + 13 = 258 tests passing
+- [ ] Plan Day 3: Configuration value objects (ListenDirective, ErrorPage, Route, CgiConfig, UploadConfig)
+
+---
+
+### Day 3 - December 31 (Tuesday) - Configuration Value Objects (BLOCKED → UNBLOCKED)
+
+**Expected Output:** 28 new tests passing
+
+---
+
+#### Dande's Tasks (7 hours)
+
+**Morning (3h):** ListenDirective Testing
+- [ ] Create `tests/unit/test_ListenDirective.cpp`
+- [ ] **Test Categories:**
+  - [ ] Construction (4 tests)
+  - [ ] Parsing "host:port" (5 tests)
+  - [ ] Validation (3 tests)
+  - [ ] Operations (3 tests)
+- [ ] **Total: 15 tests**
+
+**Afternoon (4h):** Fix RegexPattern (CRITICAL)
+- [ ] **Current Issue:** Crashes on empty pattern
+- [ ] Open `src/domain/shared/value_objects/RegexPattern.cpp`
+- [ ] Find crash: `RegexPatternException("pattern cannot be empty")`
+- [ ] **Fix Strategy:**
+  ```cpp
+  RegexPattern::RegexPattern(const std::string& pattern) {
+    if (pattern.empty()) {
+      // DON'T throw immediately, set to invalid state
+      m_isValid = false;
+      m_pattern = "";
+      return;
+    }
+    // ... rest of logic
+  }
+  ```
+- [ ] Update all usages to check `isValid()` before using
+- [ ] **Files to update:**
+  - `src/domain/configuration/value_objects/Route.cpp`
+  - `src/domain/configuration/entities/LocationConfig.cpp`
+  - `src/domain/configuration/value_objects/CgiConfig.cpp`
+- [ ] Re-enable in tests/Makefile (remove ! -name exclusions)
+- [ ] Run all tests
+- [ ] **Verify:** ConfigParser no longer crashes
+
+**Expected Output:** 15 tests + RegexPattern fixed (unblocks 10+ files)
+
+---
+
+### Day 3 - December 31 (Tuesday) - Configuration Value Objects
+
+**Goal:** Test ErrorPage, Route, comprehensive review
+
+#### Bira's Tasks (6 hours)
+
+**Morning (3h):** ErrorPage Testing
+- [ ] Create `tests/unit/test_ErrorPage.cpp`  
+- [ ] **Total: 12 tests** (construction, validation, operations)
+
+**Afternoon (3h):** Test Documentation
+- [ ] Update `tests/README.md` with new test counts
+- [ ] Update `tests/docs/TESTING_STATUS.md`
+- [ ] Document all tested value objects
+- [ ] Create test coverage report
+
+---
+
+#### Dande's Tasks (6 hours)
+
+**Morning (5h):** Route Testing (Complex!)
+- [ ] Create `tests/unit/test_Route.cpp`
+- [ ] **Test Categories:**
+  - [ ] Construction (5 tests)
+  - [ ] Pattern matching (8 tests)
+  - [ ] HTTP method validation (5 tests)
+  - [ ] Parameter extraction (4 tests)
+  - [ ] Operations (3 tests)
+- [ ] **Total: 25 tests**
+
+**Afternoon (1h):** Review Bira's PRs
+- [ ] Code review all value object tests
+- [ ] Verify test quality
+- [ ] Approve and merge
+
+---
+
+### Days 4-5 - Jan 1-2 - Infrastructure Adapter Testing
+
+**Goal:** Re-enable all infrastructure tests, fix bugs
+
+#### Day 4: Re-enable Infrastructure Tests
+- [ ] Remove directory exclusions from tests/Makefile
+- [ ] Fix include paths in infrastructure files
+- [ ] Test FileHandler, PathResolver, DirectoryLister
+- [ ] Fix compilation errors
+- [ ] Gradually add files back to build
+
+#### Day 5: Buffer & Integration
+- [ ] Fix remaining test failures
+- [ ] Ensure all 240+ tests passing
+- [ ] Memory leak check with valgrind
+- [ ] Documentation complete
+- [ ] Ready for server development
+
+**Milestone:** ~250 tests passing, 100% domain layer coverage
 
 #### Dande's Tasks (6 hours)
 
@@ -744,1591 +1220,457 @@ make clean && make
 
 ---
 
-## 🌐 Days 3-4: Core Server + HTTP Protocol
+## 🌐 Days 6-10: Server Development (BUILD ON SOLID FOUNDATION)
 
-**Goal:** Socket server accepting connections + HTTP request/response handling
+**Philosophy:** Now that foundation is proven, build server with confidence.
 
-**Strategy:** Coordinated parallelism - both build against agreed interfaces
+**Goal:** Functional HTTP server serving GET/POST/DELETE with multi-server config.
 
-**Daily sync:** 7:00 PM (30 min) + 1:00 PM checkpoint (15 min)
-
----
-
-### Day 3 - December 28 (Saturday)
-
-#### Dande's Tasks (6 hours)
-
-**Branch:** `8-feat/core-server-dande`
-
-**Morning (3 hours):**
-- [ ] **Socket management** (3h)
-  - [ ] Create `src/infrastructure/network/SocketManager.hpp`
-  - [ ] Create `src/infrastructure/network/SocketManager.cpp`
-  - [ ] `socket()` + `bind()` + `listen()` setup
-  - [ ] Set non-blocking: `fcntl(fd, F_SETFL, O_NONBLOCK)`
-  - [ ] Set SO_REUSEADDR option
-  - [ ] Multi-port support (bind to multiple ports)
-  - [ ] Error handling (already in use, permission denied)
-  - [ ] Basic test: bind to 8080, verify with `netstat`
-
-**Afternoon (3 hours):**
-- [ ] **I/O multiplexing (epoll) start** (3h)
-  - [ ] Create `src/infrastructure/network/EventLoop.hpp`
-  - [ ] Create `src/infrastructure/network/EventLoop.cpp`
-  - [ ] `epoll_create1()` setup
-  - [ ] Add server socket to epoll: `epoll_ctl()`
-  - [ ] `epoll_wait()` loop skeleton
-  - [ ] Handle EPOLLIN events
-  - [ ] Accept new connections
-  - [ ] Basic logging (connection received)
-  - [ ] Test: `telnet localhost 8080` should connect
-
-**Evening:**
-- [ ] Test milestone: Server accepts connection without crashing
-- [ ] Commit and push
-- [ ] Update Bira on interface compliance
-
-**Blockers to communicate:**
-- If epoll is too complex, consider `poll()` fallback
-- Document any interface changes needed
+**Advantage:** When server bugs appear, you KNOW it's not the value objects!
 
 ---
 
-#### Bira's Tasks (6 hours)
-
-**Branch:** `9-feat/http-protocol-bira`
-
-**Morning (3 hours):**
-- [ ] **Request Parser - Part 1** (3h)
-  - [ ] Create `src/infrastructure/http/RequestParser.hpp`
-  - [ ] Create `src/infrastructure/http/RequestParser.cpp`
-  - [ ] Implements `IRequestParser` interface
-  - [ ] **Parse request line:**
-    ```cpp
-    "GET /path HTTP/1.1\r\n" → 
-      method="GET", uri="/path", version="HTTP/1.1"
-    ```
-  - [ ] State machine: READING_METHOD, READING_URI, READING_VERSION
-  - [ ] **Unit tests:**
-    - [ ] `ParseSimpleGET` ✅
-    - [ ] `ParsePOST` ✅
-    - [ ] `ParseDELETE` ✅
-    - [ ] `InvalidMethod` (should throw/return error)
-    - [ ] `MissingHTTPVersion` (should handle gracefully)
-  - [ ] All tests passing
-
-**Afternoon (3 hours):**
-- [ ] **Request Parser - Part 2** (3h)
-  - [ ] **Parse headers:**
-    ```cpp
-    "Host: localhost\r\n"
-    "Content-Length: 100\r\n"
-    "\r\n" → headers map
-    ```
-  - [ ] State machine: READING_HEADERS
-  - [ ] Split on `: ` (colon + space)
-  - [ ] Store in `std::map<string, string>`
-  - [ ] Detect end of headers (`\r\n\r\n`)
-  - [ ] **Unit tests:**
-    - [ ] `ParseHeaders` ✅
-    - [ ] `ParseMultipleHeaders` ✅
-    - [ ] `MissingHost` (should handle)
-    - [ ] `MalformedHeader` (no colon)
-  - [ ] All tests passing
-
-**Evening:**
-- [ ] Commit and push
-- [ ] Share progress with Dande
-- [ ] Test parser with mock socket data
-
-**Note:** Don't implement body parsing yet - save for Day 4
-
----
-
-### Day 4 - December 29 (Sunday)
-
-#### Dande's Tasks (6 hours)
-
-**Morning (3 hours):**
-- [ ] **Complete epoll event loop** (3h)
-  - [ ] Handle client read events
-  - [ ] Buffer management (read into buffer)
-  - [ ] Detect partial reads (need more data)
-  - [ ] Detect complete requests (see `\r\n\r\n`)
-  - [ ] Call Bira's parser (using mock for now)
-  - [ ] Handle connection close (EPOLLHUP, EPOLLERR)
-  - [ ] Test: Send raw HTTP request via telnet, see it received
-
-**Afternoon (3 hours):**
-- [ ] **Client management** (3h)
-  - [ ] Create `src/infrastructure/network/Client.hpp`
-  - [ ] Create `src/infrastructure/network/Client.cpp`
-  - [ ] Track client state (READING, PROCESSING, WRITING)
-  - [ ] Read buffer (accumulate data)
-  - [ ] Write buffer (response queue)
-  - [ ] Connection timeout handling
-  - [ ] Test: Multiple concurrent connections
-
-**Evening:**
-- [ ] **Integration prep** (1h with Bira)
-  - [ ] Server can receive data ✅
-  - [ ] Parser can parse data ✅
-  - [ ] Integrate: Server → Parser → mock response
-  - [ ] Test: `curl localhost:8080` should get response
-
----
-
-#### Bira's Tasks (6 hours)
-
-**Morning (3 hours):**
-- [ ] **Request Parser - Part 3** (2h)
-  - [ ] **Parse body (for POST):**
-    - [ ] Check `Content-Length` header
-    - [ ] Read exactly N bytes
-    - [ ] State machine: READING_BODY
-    - [ ] Store body as string
-  - [ ] **Unit tests:**
-    - [ ] `ParsePOSTWithBody` ✅
-    - [ ] `ParseBodyPartial` (incomplete)
-    - [ ] `ParseBodyComplete` ✅
-  - [ ] All tests passing
-
-- [ ] **Request validation** (1h)
-  - [ ] Validate HTTP version (only 1.1)
-  - [ ] Validate method (GET, POST, DELETE only)
-  - [ ] Validate URI (not empty)
-  - [ ] Return error codes for invalid requests
-
-**Afternoon (3 hours):**
-- [ ] **Response Builder** (3h)
-  - [ ] Create `src/infrastructure/http/ResponseBuilder.hpp`
-  - [ ] Create `src/infrastructure/http/ResponseBuilder.cpp`
-  - [ ] Implements `IResponseBuilder` interface
-  - [ ] **Build status line:**
-    ```cpp
-    build(200, "OK") → "HTTP/1.1 200 OK\r\n"
-    ```
-  - [ ] **Add headers:**
-    ```cpp
-    addHeader("Content-Type", "text/html")
-    addHeader("Content-Length", "13")
-    ```
-  - [ ] **Build complete response:**
-    ```
-    HTTP/1.1 200 OK\r\n
-    Content-Type: text/html\r\n
-    Content-Length: 13\r\n
-    \r\n
-    Hello, World!
-    ```
-  - [ ] **Unit tests:**
-    - [ ] `Build200Response` ✅
-    - [ ] `Build404Response` ✅
-    - [ ] `BuildWithHeaders` ✅
-    - [ ] `BuildWithBody` ✅
-  - [ ] All tests passing
-
-**Evening:**
-- [ ] **Integration with Dande** (1h together)
-  - [ ] Swap mocks with real implementations
-  - [ ] Server → Parser → ResponseBuilder → Client
-  - [ ] Test end-to-end: `curl -v localhost:8080`
-  - [ ] Verify valid HTTP response received
-
----
-
-### Day 4 Evening: Integration Checkpoint
-
-**Both together (1 hour):**
-
-**Integration test:**
-```bash
-# Start server
-./webserv test_config.conf
-
-# Test in another terminal
-curl -v http://localhost:8080/
-# Should see:
-# HTTP/1.1 200 OK
-# Content-Type: text/html
-# Content-Length: 13
-#
-# 🚨 REALITY CHECK:**
-- [ ] Can we connect and get a response?
-- [ ] **If YES:** You're 40% done! Keep going!
-- [ ] **If NO:** EMERGENCY MODE
-  - Pair program tomorrow (both on server)
-  - Skip routing temporarily
-  - Get ONE working endpoint first
-  - Sacrifice features, not core functionality
-
-**Hello, World!
-```
-
-**Verify:**
-- [ ] ✅ Server accepts connections
-- [ ] ✅ Parser extracts method, URI, headers
-- [ ] ✅ Response builder creates valid HTTP response
-- [ ] ✅ `curl` shows proper HTTP response
-- [ ] ✅ No crashes, no leaks (quick valgrind check)
-
-**Merge:**
-- [ ] Merge both branches into `develop`
-- [ ] Tag: `v0.2-http-server-working`
-
-**Plan Days 5-6:**
-- [ ] Dande: ConfigParser (complex, needs focus)
-- [ ] Bira: Routing + error handling
-- [ ] Both need config format agreement
-
----
-
-## ⚙️ Days 5-6: Configuration + Routing
-
-**Goal:** Parse nginx-like config files, route requests to handlers
-
-**Strategy:** Dande defines config format, Bira consumes it
-
----
-
-### Day 5 - December 30 (Monday)
-
-#### Morning Session Together (30 minutes)
-
-**Define config file format:**
-
-```nginx
-# Example config for reference
-server {
-    listen 8080;
-    server_name localhost;
-    root /var/www/html;
-    
-    error_page 404 /404.html;
-    error_page 500 502 503 /50x.html;
-    
-    client_max_body_size 10M;
-    
-    location / {
-        allow_methods GET POST;
-        index index.html;
-    }
-    
-    location /upload {
-        allow_methods POST DELETE;
-        upload_path /var/www/uploads;
-    }
-    
-    location ~ \.php$ {
-        cgi_pass /usr/bin/php-cgi;
-        cgi_ext .php;
-    }
-}
-
-server {
-    listen 8081;
-    server_name app.local;
-    root /var/www/app;
-}
-```
-
-**Agreement:**
-- [ ] Which directives are mandatory
-- [ ] Default values
-- [ ] Data structure representation
-- [ ] How Bira's router will consume it
-
----
-
-#### Dande's Tasks (6 hours)
-
-**Branch:** `10-feat/config-parser-dande`
-
-**Morning (3 hours after sync):**
-- [ ] **Config parser skeleton** (3h)
-  - [ ] Create `src/infrastructure/config/ConfigParser.hpp`
-  - [ ] Create `src/infrastructure/config/ConfigParser.cpp`
-  - [ ] Create `src/infrastructure/config/Config.hpp` (data structures)
-  - [ ] Tokenizer: split file into tokens
-  - [ ] State machine: OUTSIDE_BLOCK, IN_SERVER, IN_LOCATION
-  - [ ] Parse `server {` and `}` blocks
-  - [ ] Parse `listen` directive
-  - [ ] Parse `server_name` directive
-  - [ ] Parse `root` directive
-  - [ ] Basic validation (closing braces)
-  - [ ] Test with simple config file
-
-**Afternoon (3 hours):**
-- [ ] **Config parser advanced** (3h)
-  - [ ] Parse `location` blocks
-  - [ ] Parse `allow_methods` directive
-  - [ ] Parse `error_page` directives
-  - [ ] Parse `client_max_body_size`
-  - [ ] Parse CGI directives (`cgi_pass`, `cgi_ext`)
-  - [ ] Handle multiple servers
-  - [ ] Handle nested locations
-  - [ ] Error reporting (line numbers)
-  - [ ] Test with complex config file
-
-**Evening:**
-- [ ] Enable ConfigParser tests: `mv test_ConfigParser.cpp.disabled test_ConfigParser.cpp`
-- [ ] Run existing tests, fix failures
-- [ ] Commit and push
-
----
-
-#### Bira's Tasks (5 hours)
-
-**Branch:** `11-feat/routing-bira`
-
-**Morning (3 hours after sync):**
-- [ ] **Route entity** (2h)
-  - [ ] Create `src/domain/entities/Route.hpp`
-  - [ ] Create `src/domain/entities/Route.cpp`
-  - [ ] Properties: path, methods, root, errorPages, cgi
-  - [ ] Match logic: exact match, prefix match
-  - [ ] **Unit tests:**
-    - [ ] `ExactMatch` - "/api" matches "/api" ✅
-    - [ ] `PrefixMatch` - "/api" matches "/api/users" ✅
-    - [ ] `MethodFilter` - GET allowed, POST denied ✅
-    - [ ] `NotFound` - no match returns nullptr
-
-- [ ] **Documentation** (1h)
-  - [ ] Document routing algorithm
-  - [ ] Document match priorities
-  - [ ] Examples for Dande to understand
-
-**Afternoon (2 hours):**
-- [ ] **Error handling** (2h)
-  - [ ] Create `src/infrastructure/http/ErrorPageHandler.hpp`
-  - [ ] Create `src/infrastructure/http/ErrorPageHandler.cpp`
-  - [ ] Generate default error pages (404, 500, 403)
-  - [ ] Load custom error pages from config
-  - [ ] **Unit tests:**
-    - [ ] `DefaultErrorPage` ✅
-    - [ ] `CustomErrorPage` ✅
-    - [ ] `ErrorPageNotFound` (fallback to default)
-
-**Evening:**
-- [ ] Research Path security patterns
-- [ ] Prepare for file operations (Days 7-8)
-
----
-
-### Day 6 - December 31 (Tuesday)
-
-#### Dande's Tasks (5 hours + 1h merge)
-
-**Morning (3 hours):**
-- [ ] **Complete ConfigParser** (2h)
-  - [ ] Final edge cases (comments, whitespace)
-  - [ ] Validation (duplicate server names, invalid ports)
-  - [ ] Default values for optional directives
-  - [ ] All ConfigParser tests passing
-
-- [ ] **Config to Route adapter** (1h)
-  - [ ] Create `src/infrastructure/adapters/RouteConfigAdapter.hpp`
-  - [ ] Convert Config → List of Routes
-  - [ ] For each location block → create Route object
-  - [ ] Apply server-level defaults
-  - [ ] Test with mock config
-
-**Afternoon (2 hours):**
-- [ ] **Code review Bira's routing** (1h)
-  - [ ] Review Route implementation
-  - [ ] Test route matching logic
-  - [ ] Suggest improvements
-
-- [ ] **Documentation** (1h)
-  - [ ] Document config file format
-  - [ ] Add example configs
-  - [ ] Update TESTING_STATUS.md
-
-**Evening (1 hour):**
-- [ ] **Integration with Bira**
-  - [ ] ConfigParser → RouteAdapter → Router
-  - [ ] Test: Load config, match routes
-  - [ ] Verify multi-server support
-
----
-
-#### Bira's Tasks (5 hours + 1h merge)
-
-**Morning (3 hours):**
-- [ ] **Route Matcher** (3h)
-  - [ ] Create `src/domain/entities/RouteMatcher.hpp`
-  - [ ] Create `src/domain/entities/RouteMatcher.cpp`
-  - [ ] Algorithm:
-    1. Find all matching routes (prefix match)
-    2. Sort by specificity (longest prefix first)
-    3. Filter by HTTP method
-    4. Return best match
-  - [ ] **Unit tests:**
-    - [ ] `MatchSingleRoute` ✅
-    - [ ] `MatchMultipleRoutes` (returns most specific) ✅
-    - [ ] `MethodNotAllowed` (route exists but method wrong) ✅
-    - [ ] `NoMatchFound` ✅
-  - [ ] All tests passing
-
-**Afternoon (2 hours):**
-- [ ] **Path security hardening** (2h)
-  - [ ] Revisit Path implementation
-  - [ ] Add more security checks:
-    - [ ] Reject `../` in any form (`..%2F`, `..%5C`)
-    - [ ] Reject absolute paths outside root
-    - [ ] Reject URL-encoded attacks
-    - [ ] Canonicalize paths (resolve `.` and `..`)
-  - [ ] **Security tests:**
-    - [ ] `RejectParentDirectory` ✅
-    - [ ] `RejectURLEncoded` ✅
-    - [ ] `RejectAbsolutePath` ✅
-    - [ ] `AllowValidPaths` ✅
-  - [ ] Document security considerations
-
-**Evening (1 hour):**
-- [ ] **Integration with Dande**
-  - [ ] Verify config → routes → matcher works
-  - [ ] Test with example config
-  - [ ] Merge both branches
-
----
-
-### Day 6 Evening: Checkpoint
-🚨 REALITY CHECK:**
-- [ ] Does config parsing work at all?
-- [ ] **If YES:** You're 60% done! File ops next!
-- [ ] **If NO:** ESCAPE HATCH
-  - Tomorrow: Both work on config together
-  - Simplify: No regex, no nested locations
-  - Hardcode routes if needed
-  - Cut multiple servers if desperate
-  - ONE working server > broken fancy system
-
-**
-**Both together (30 minutes):**
-
-**Verify:**
-- [ ] ✅ Config file parsing works
-- [ ] ✅ Multiple servers supported
-- [ ] ✅ Location blocks parsed
-- [ ] ✅ Routes match correctly
-- [ ] ✅ Error pages configured
-- [ ] ✅ Path security solid
-
-**Test:**
-```bash
-./webserv multi_server.conf
-curl http://localhost:8080/api/users  # Should route correctly
-curl http://localhost:8081/           # Different server
-curl http://localhost:8080/../etc/passwd  # Should reject
-```
-
-**Merge:**
-- [ ] Merge to `develop`
-- [ ] Tag: `v0.3-config-routing-working`
-
-**Plan Days 7-8:**
-- [ ] Dande: GET (static file serving)
-- [ ] Bira: POST/DELETE (file upload/deletion)
-- [ ] Can work in parallel
-
----
-
-## 📁 Days 7-8: File Operations
-
-**Goal:** Serve static files (GET), upload files (POST), delete files (DELETE)
-
-**Strategy:** Split by HTTP method - minimal overlap
-
----
-
-### Day 7 - January 1 (Wednesday)
-
-#### Dande's Tasks (6 hours)
-
-**Branch:** `12-feat/file-get-dande`
-
-**Morning (3 hours):**
-- [ ] **FileHandler integration** (1h)
-  - [ ] Fix FileSystemHelper constructor (make public)
-  - [ ] Enable FileHandler tests: `mv test_FileHandler_Integration.cpp.disabled ...`
-  - [ ] Update Makefile to include FileHandler
-  - [ ] Run tests, fix immediate failures
-
-- [ ] **Static file serving** (2h)
-  - [ ] Create `src/infrastructure/http/StaticFileHandler.hpp`
-  - [ ] Create `src/infrastructure/http/StaticFileHandler.cpp`
-  - [ ] Read file with `fopen()` + `fread()`
-  - [ ] Return file contents as string
-  - [ ] Handle file not found → 404
-  - [ ] Handle permission denied → 403
-  - [ ] Basic test: Serve test.html
-
-**Afternoon (3 hours):**
-- [ ] **Content-Type detection** (2h)
-  - [ ] Create `src/infrastructure/http/MimeTypeDetector.hpp`
-  - [ ] Hardcode common types:
-    ```cpp
-    if (ext == ".html") return "text/html";
-    if (ext == ".css") return "text/css";
-    if (ext == ".js") return "text/javascript";
-    if (ext == ".jpg" || ext == ".jpeg") return "image/jpeg";
-    if (ext == ".png") return "image/png";
-    if (ext == ".gif") return "image/gif";
-    return "application/octet-stream";  // Default
-    ```
-  - [ ] Extract extension from path
-  - [ ] Test with various file types
-
-- [ ] **Directory index** (1h)
-  - [ ] Check if path is directory
-  - [ ] Look for index.html
-  - [ ] Serve index.html if exists
-  - [ ] Return 404 if no index
-
-**Evening:**
-- [ ] Test GET requests:
+### Day 6 - January 3 (Friday) - Socket Foundation
+
+**Goal:** Server binds to port, accepts connections
+
+#### Bira's Tasks (8 hours) - SocketServer
+
+**Create:** `src/infrastructure/network/SocketServer.hpp/cpp`
+
+**Morning (4h):**
+- [ ] **SocketServer class:**
+  ```cpp
+  class SocketServer {
+    int createSocket();
+    void bindSocket(int fd, const Host& host, const Port& port);
+    void listenSocket(int fd, int backlog);
+    int acceptConnection(int listenFd);
+    void setNonBlocking(int fd);
+    void setReuseAddr(int fd);
+    void closeSocket(int fd);
+  };
+  ```
+- [ ] Implement each method
+- [ ] Error handling (EADDRINUSE, EACCES)
+- [ ] Test: Bind to port 8080
+
+**Afternoon (4h):**
+- [ ] **Unit tests:** `tests/unit/test_SocketServer.cpp`
+  ```cpp
+  TEST(SocketServerTest, CreateSocketReturnsValidFd)
+  TEST(SocketServerTest, BindSocketSucceeds)
+  TEST(SocketServerTest, ListenSocketSucceeds)
+  TEST(SocketServerTest, SetNonBlockingSucceeds)
+  TEST(SocketServerTest, SetReuseAddrSucceeds)
+  ```
+- [ ] Manual test:
   ```bash
-  curl http://localhost:8080/index.html  # Should return HTML
-  curl http://localhost:8080/style.css   # Should return CSS
-  curl http://localhost:8080/missing     # Should return 404
+  ./webserv test.conf &
+  netstat -tuln | grep 8080  # Should show LISTEN
+  telnet localhost 8080       # Should connect
   ```
-- [ ] Commit and push
+
+**Expected Output:** Can bind and accept 1 connection
 
 ---
 
-#### Bira's Tasks (6 hours)
+#### Dande's Tasks (6 hours) - Response Builder
 
-**Branch:** `13-feat/file-post-delete-bira`
+**Create:** `src/infrastructure/http/ResponseBuilder.hpp/cpp`
 
-**Morning (3 hours):**
-- [ ] **Multipart parser research** (1h)
-  - [ ] Study multipart/form-data format:
-    ```
-    POST /upload HTTP/1.1
-    Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
-    
-    ------WebKitFormBoundary
-    Content-Disposition: form-data; name="file"; filename="test.txt"
-    Content-Type: text/plain
-    
-    [file contents here]
-    ------WebKitFormBoundary--
-    ```
-  - [ ] Plan parsing strategy
-  - [ ] Document boundary detection
-
-- [ ] **Multipart parser implementation** (2h)
-  - [ ] Create `src/infrastructure/http/MultipartParser.hpp`
-  - [ ] Create `src/infrastructure/http/MultipartParser.cpp`
-  - [ ] Extract boundary from Content-Type header
-  - [ ] Split body by boundary
-  - [ ] Parse Content-Disposition header
-  - [ ] Extract filename
-  - [ ] Extract file contents
-  - [ ] **Unit tests:**
-    - [ ] `ParseSingleFile` ✅
-    - [ ] `ParseFilename` ✅
-    - [ ] `ExtractContents` ✅
-
-**Afternoon (3 hours):**
-- [ ] **File upload handler** (3h)
-  - [ ] Create `src/infrastructure/http/FileUploadHandler.hpp`
-  - [ ] Create `src/infrastructure/http/FileUploadHandler.cpp`
-  - [ ] Receive multipart body from parser
-  - [ ] Validate filename (security: no `../`, no absolute paths)
-  - [ ] Write to upload directory (from config)
-  - [ ] Write file with `fopen()` + `fwrite()`
-  - [ ] Return 201 Created on success
-  - [ ] Return 400 on validation error
-  - [ ] Return 500 on write error
-  - [ ] **Integration test:**
-    ```bash
-    curl -X POST -F "file=@test.txt" http://localhost:8080/upload
-    # Should see file in upload directory
-    ```
-
-**Evening:**
-- [ ] Test edge cases:
-  - [ ] Large file (10MB)
-  - [ ] Binary file (image)
-  - [ ] Invalid filename
-- [ ] Commit and push
-
----
-
-### Day 8 - January 2 (Thursday)
-
-#### Dande's Tasks (4 hours)
-
-**Morning (2 hours):**
-- [ ] **GET polish** (2h)
-  - [ ] Range requests (optional, bonus feature)
-  - [ ] Cache headers (Last-Modified, ETag)
-  - [ ] Error page integration (use configured error pages)
-  - [ ] Performance: Buffered reads for large files
-  - [ ] Test with large file (100MB)
-
-**Afternoon (2 hours):**
-- [ ] **Code review Bira's POST/DELETE** (1h)
-  - [ ] Review upload handler security
-  - [ ] Test upload with malicious filenames
-  - [ ] Suggest improvements
-
-- [ ] **Documentation** (1h)
-  - [ ] Document file serving flow
-  - [ ] Document MIME type mapping
-  - [ ] Update TESTING_STATUS.md
-
----
-
-#### Bira's Tasks (4 hours)
-
-**Morning (2 hours):**
-- [ ] **DELETE method** (2h)
-  - [ ] Create `src/infrastructure/http/FileDeleteHandler.hpp`
-  - [ ] Create `src/infrastructure/http/FileDeleteHandler.cpp`
-  - [ ] Parse DELETE request URI
-  - [ ] Validate path (security!)
-  - [ ] Check file exists
-  - [ ] Delete with `unlink()`
-  - [ ] Return 204 No Content on success
-  - [ ] Return 404 if file not found
-  - [ ] Return 403 if permission denied
-  - [ ] **Integration test:**
-    ```bash
-    curl -X DELETE http://localhost:8080/test.txt
-    # File should be deleted
-    ```
-
-**Afternoon (2 hours):**
-- [ ] **Error handling integration** (1h)
-  - [ ] Wire error pages into GET/POST/DELETE handlers
-  - [ ] Return custom 404 page
-  - [ ] Return custom 500 page
-  - [ ] Test error responses
-
-- [ ] **Security review** (1h)
-  - [ ] Review all path validations
-  - [ ] Test directory traversal attacks
-  - [ ] Test upload attacks
-  - [ ] Test delete attacks
-  - [ ] Document security measures
-
----
-
-### Day 8 Evening: Integration (2 hours together)
-
-**Both together:**
-
-**Full HTTP test:**
-**🚨 CRITICAL DECISION POINT:**
-- [ ] Do GET + POST + DELETE work?
-- [ ] **If YES:** You have ALL mandatory methods! CGI decision time!
-- [ ] **If NO:** EMERGENCY - Days 9-13 = Fix mandatory features
-  - Must have GET working (serve static files)
-  - Must have POST working (upload files)
-  - Must have DELETE working (remove files)
-  - **Cannot pass without all three methods**
-
-**CGI Decision (Check your subject PDF!):**
-- [ ] **Option 1 (CGI is BONUS):** Skip CGI, focus on polish
-  - Days 9-13: Stability, tests, valgrind, siege
-  - 100% of mandatory = guaranteed pass
-- [ ] **Option 2 (CGI is MANDATORY):** Minimal CGI implementation
-  - Days 9-10: Basic PHP-CGI execution only
-  - Just fork + exec + read output
-  - No advanced features, just working
-- [ ] **Option 3 (Ahead of schedule):** Full CGI (follow plan)
-
-**⚠️ CHECK YOUR SUBJECT PDF RIGHT NOW:**
-- Is CGI in the mandatory part? ________________
-- If yes → MUST implement (minimal is okay)
-- If bonus → Can skip for stability
-
-**Decision:** __________________ (write your choice)
-
-**Merge:**
-- [ ] Merge both branches to `develop`
-- [ ] Tag: `v0.4-file-operations-working`
-- [ ] Run valgrind, fix leaks
-- [ ] Commit
-
-**Plan Days 9-10:**
-- [ ] PAIR PROGRAMMING on CGI (or fixing issues if behind)
-
----
-
-## 🔧 Days 9-10: CGI (PAIR PROGRAMMING)
-
-**Goal:** Execute PHP-CGI scripts, return output as HTTP response
-
-**Strategy:** STOP PARALLELISM - Work together
-
-**Why together:**
-- CGI involves fork(), exec(), pipes, env vars (complex)
-- High integration risk
-- Immediate feedback loop faster
-- Reduces debugging time later
-
-**Branch:** `14-feat/cgi-integration` (both work on same branch)
-
----
-
-### Day 9 - January 3 (Friday)
-
-**Both together (8 hours total, 4h each)**
-
-**Morning (4 hours together):**
-
-- [ ] **CGI configuration** (1h)
-  - [ ] Fix RegexPattern empty constructor bug:
-    ```cpp
-    RegexPattern::RegexPattern(const std::string& pattern) {
-        if (pattern.empty()) {
-            // Don't throw - allow empty pattern
-            return;
-        }
-        // ... rest of validation
-    }
-    ```
-  - [ ] Create `src/infrastructure/cgi/CgiConfig.hpp`
-  - [ ] Create `src/infrastructure/cgi/CgiConfig.cpp`
-  - [ ] Map file extensions to CGI executables:
-    ```cpp
-    .php → /usr/bin/php-cgi
-    .py  → /usr/bin/python3
-    .pl  → /usr/bin/perl
-    ```
-  - [ ] Test: Config parses CGI directives
-
-- [ ] **CGI executor skeleton** (3h)
-  - [ ] Create `src/infrastructure/cgi/CgiExecutor.hpp`
-  - [ ] Create `src/infrastructure/cgi/CgiExecutor.cpp`
-  - [ ] Basic structure:
-    ```cpp
-    std::string execute(const std::string& scriptPath,
-                        const HttpRequest& request) {
-        // 1. Fork process
-        // 2. Setup pipes (stdin, stdout)
-        // 3. Setup environment variables
-        // 4. Execute CGI script
-        // 5. Read output
-        // 6. Wait for child
-        // 7. Return output
-    }
-    ```
-  - [ ] Implement fork():
-    ```cpp
-    pid_t pid = fork();
-    if (pid == 0) {
-        // Child process
-        execve(cgi_path, args, env);
-    } else {
-        // Parent process
-        wait(&status);
-    }
-    ```
-
-**Afternoon (4 hours together):**
-
-- [ ] **Pipe communication** (2h)
-  - [ ] Create pipes for stdin/stdout:
-    ```cpp
-    int stdin_pipe[2];
-    int stdout_pipe[2];
-    pipe(stdin_pipe);
-    pipe(stdout_pipe);
-    ```
-  - [ ] In child:
-    ```cpp
-    dup2(stdin_pipe[0], STDIN_FILENO);
-    dup2(stdout_pipe[1], STDOUT_FILENO);
-    close(stdin_pipe[1]);
-    close(stdout_pipe[0]);
-    ```
-  - [ ] In parent:
-    ```cpp
-    close(stdin_pipe[0]);
-    close(stdout_pipe[1]);
-    write(stdin_pipe[1], request_body);
-    read(stdout_pipe[0], output_buffer);
-    ```
-  - [ ] Test with simple script: `echo "Hello CGI"`
-
-- [ ] **Environment variables** (2h)
-  - [ ] Create env array:
-    ```cpp
-    std::vector<char*> env_vars;
-    env_vars.push_back("REQUEST_METHOD=GET");
-    env_vars.push_back("SCRIPT_FILENAME=/path/to/script.php");
-    env_vars.push_back("PATH_INFO=/api/users");
-    env_vars.push_back("QUERY_STRING=id=123");
-    env_vars.push_back("CONTENT_LENGTH=100");
-    env_vars.push_back("CONTENT_TYPE=application/json");
-    env_vars.push_back(NULL);
-    ```
-  - [ ] Pass to execve():
-    ```cpp
-    execve(cgi_path, args, env_vars.data());
-    ```
-  - [ ] Test: PHP script can access `$_SERVER` variables
-
-**Evening:**
-- [ ] Test with real PHP script:
-  ```php
-  <?php
-  echo "Hello from PHP!";
-  echo "Method: " . $_SERVER['REQUEST_METHOD'];
-  ?>
+**Morning (3h):**
+- [ ] **ResponseBuilder class:**
+  ```cpp
+  class ResponseBuilder {
+    void setStatus(const ErrorCode& code);
+    void addHeader(const std::string& key, const std::string& value);
+    void setBody(const std::string& body);
+    std::string build();
+    std::string buildStatusLine();
+  };
   ```
-- [ ] Verify output received
-- [ ] Commit progress
+- [ ] Implement HTTP/1.1 response format
+- [ ] Auto-add Content-Length header
 
----
-
-### Day 10 - January 4 (Saturday)
-
-**Both together (8 hours total, 4h each)**
-
-**Morning (4 hours together):**
-
-- [ ] **CGI output parsing** (2h)
-  - [ ] CGI returns:
-    ```
-    Content-Type: text/html
-    
-    <html>Hello</html>
-    ```
-  - [ ] Parse headers from output
-  - [ ] Split on first `\r\n\r\n`
-  - [ ] Headers before, body after
-  - [ ] Build HTTP response:
-    ```
-    HTTP/1.1 200 OK
-    Content-Type: text/html
-    [headers from CGI]
-    
-    [body from CGI]
-    ```
-
-- [ ] **Error handling** (2h)
-  - [ ] CGI script not found → 404
-  - [ ] CGI script not executable → 500
-  - [ ] CGI script timeout (5 seconds) → 504
-  - [ ] CGI script segfault → 500
-  - [ ] Use `waitpid()` with timeout:
-    ```cpp
-    int status;
-    pid_t result = waitpid(pid, &status, WNOHANG);
-    if (result == 0) {
-        // Still running, check timeout
-        if (elapsed > 5.0) {
-            kill(pid, SIGKILL);
-            return "504 Gateway Timeout";
-        }
-    }
-    ```
-
-**Afternoon (4 hours together):**
-
-- [ ] **POST request to CGI** (2h)
-  - [ ] Write request body to CGI stdin
-  - [ ] Set CONTENT_LENGTH env var
-  - [ ] Set CONTENT_TYPE env var
-  - [ ] Test form submission:
-    ```bash
-    curl -X POST -d "name=John&age=30" http://localhost:8080/form.php
-    ```
-
-- [ ] **CGI integration testing** (2h)
-  - [ ] Test various scripts:
-    - [ ] Simple output
-    - [ ] Form processing
-    - [ ] File upload via CGI
-    - [ ] Database query (if available)
-  - [ ] Test error cases:
-    - [ ] Script doesn't exist
-    - [ ] Script syntax error
-    - [ ] Script infinite loop (timeout)
-  - [ ] Fix bugs found
-
-**Evening:**
-- [ ] Full CGI test suite:
+**Afternoon (3h):**
+- [ ] **Unit tests:** `tests/unit/test_ResponseBuilder.cpp`
+  ```cpp
+  TEST(ResponseBuilderTest, BuildSimple200Response)
+  TEST(ResponseBuilderTest, BuildWithHeaders)
+  TEST(ResponseBuilderTest, BuildWithBody)
+  TEST(ResponseBuilderTest, Build404Response)
+  TEST(ResponseBuilderTest, ContentLengthAutomatic)
+  ```
+- [ ] Test with curl:
   ```bash
-  curl http://localhost:8080/hello.php  # ✅
-  curl -X POST -d "data=test" http://localhost:8080/form.php  # ✅
-  curl http://localhost:8080/missing.php  # ✅ 404
+  # Hardcode response in server
+  curl -v http://localhost:8080/
+  # Should see valid HTTP/1.1 200 OK
   ```
-- [ ] Commit and push
-- [ ] Merge to `develop`
-- [ ] Tag: `v0.5-cgi-working`
+
+**Expected Output:** Can generate valid HTTP responses
 
 ---
 
-### Day 10 Evening: Major Milestone
+### Day 7 - January 4 (Saturday) - Event Loop + GET
 
-**Both together (1 hour):**
+**Goal:** Non-blocking server serving static files
 
-**Celebrate:** 🎉 All major features complete!
+#### Bira's Tasks (8 hours) - Epoll Event Loop
 
-**Verify:**
-- [ ] ✅ HTTP server running
-- [ ] ✅ Configuration parsed
-- [ ] ✅ Routes matching
-- [ ] ✅ GET serving files
-- [ ] ✅ POST uploading files
-- [ ] ✅ DELETE removing files
-- [ ] ✅ CGI executing scripts (or skipped if behind)
+**Create:** `src/infrastructure/network/EpollManager.hpp/cpp`
 
-**Test full flow:**
-```bash
-# 1. Server starts
-./webserv webserv.conf
-
-# 2. GET request
-curl http://localhost:8080/index.html  # ✅
-
-# 3. POST upload
-curl -X POST -F "file=@test.txt" http://localhost:8080/upload  # ✅
-
-# 4. DELETE file
-curl -X DELETE http://localhost:8080/upload/test.txt  # ✅
-
-# 5. CGI script (if implemented)
-curl http://localhost:8080/test.php  # ✅
-ls upload_dir/upload.txt  # ✅ File exists
-
-# DELETE
-curl -X DELETE http://localhost:8080/upload/upload.txt  # ✅
-ls upload_dir/upload.txt  # ✅ File gone
-
-# Security
-curl http://localhost:8080/../etc/passwd  # ✅ 403
-curl -X POST -F "file=@test.txt" http://localhost:8080/../etc/  # ✅ 400
-```
-
-**Merge:**
-- [ ] Merge both branches to `develop`
-- [ ] Tag: `v0.4-file-operations-working`
-- [ ] Run valgrind, fix leaks
-- [ ] Commit
-
-**Plan Days 9-10:**
-- [ ] PAIR PROGRAMMING on CGI
-- [ ] Complex, high-risk - better together
-
----
-
-## 🔧 Days 9-10: CGI (PAIR PROGRAMMING)
-
-**Goal:** Execute PHP-CGI scripts, return output as HTTP response
-
-**Strategy:** STOP PARALLELISM - Work together
-
-**Why together:**
-- CGI involves fork(), exec(), pipes, env vars (complex)
-- High integration risk
-- Immediate feedback loop faster
-- Reduces debugging time later
-
-**Branch:** `14-feat/cgi-integration` (both work on same branch)
-
----
-
-### Day 9 - January 3 (Friday)
-
-**Both together (8 hours total, 4h each)**
-
-**Morning (4 hours together):**
-
-- [ ] **CGI configuration** (1h)
-  - [ ] Fix RegexPattern empty constructor bug:
-    ```cpp
-    RegexPattern::RegexPattern(const std::string& pattern) {
-        if (pattern.empty()) {
-            // Don't throw - allow empty pattern
-            return;
-        }
-        // ... rest of validation
-    }
-    ```
-  - [ ] Create `src/infrastructure/cgi/CgiConfig.hpp`
-  - [ ] Create `src/infrastructure/cgi/CgiConfig.cpp`
-  - [ ] Map file extensions to CGI executables:
-    ```cpp
-    .php → /usr/bin/php-cgi
-    .py  → /usr/bin/python3
-    .pl  → /usr/bin/perl
-    ```
-  - [ ] Test: Config parses CGI directives
-
-- [ ] **CGI executor skeleton** (3h)
-  - [ ] Create `src/infrastructure/cgi/CgiExecutor.hpp`
-  - [ ] Create `src/infrastructure/cgi/CgiExecutor.cpp`
-  - [ ] Basic structure:
-    ```cpp
-    std::string execute(const std::string& scriptPath,
-                        const HttpRequest& request) {
-        // 1. Fork process
-        // 2. Setup pipes (stdin, stdout)
-        // 3. Setup environment variables
-        // 4. Execute CGI script
-        // 5. Read output
-        // 6. Wait for child
-        // 7. Return output
-    }
-    ```
-  - [ ] Implement fork():
-    ```cpp
-    pid_t pid = fork();
-    if (pid == 0) {
-        // Child process
-        execve(cgi_path, args, env);
-    } else {
-        // Parent process
-        wait(&status);
-    }
-    ```
-
-**Afternoon (4 hours together):**
-
-- [ ] **Pipe communication** (2h)
-  - [ ] Create pipes for stdin/stdout:
-    ```cpp
-    int stdin_pipe[2];
-    int stdout_pipe[2];
-    pipe(stdin_pipe);
-    pipe(stdout_pipe);
-    ```
-  - [ ] In child:
-    ```cpp
-    dup2(stdin_pipe[0], STDIN_FILENO);
-    dup2(stdout_pipe[1], STDOUT_FILENO);
-    close(stdin_pipe[1]);
-    close(stdout_pipe[0]);
-    ```
-  - [ ] In parent:
-    ```cpp
-    close(stdin_pipe[0]);
-    close(stdout_pipe[1]);
-    write(stdin_pipe[1], request_body);
-    read(stdout_pipe[0], output_buffer);
-    ```
-  - [ ] Test with simple script: `echo "Hello CGI"`
-
-- [ ] **Environment variables** (2h)
-  - [ ] Create env array:
-    ```cpp
-    std::vector<char*> env_vars;
-    env_vars.push_back("REQUEST_METHOD=GET");
-    env_vars.push_back("SCRIPT_FILENAME=/path/to/script.php");
-    env_vars.push_back("PATH_INFO=/api/users");
-    env_vars.push_back("QUERY_STRING=id=123");
-    env_vars.push_back("CONTENT_LENGTH=100");
-    env_vars.push_back("CONTENT_TYPE=application/json");
-    env_vars.push_back(NULL);
-    ```
-  - [ ] Pass to execve():
-    ```cpp
-    execve(cgi_path, args, env_vars.data());
-    ```
-  - [ ] Test: PHP script can access `$_SERVER` variables
-
-**Evening:**
-- [ ] Test with real PHP script:
-  ```php
-  <?php
-  echo "Hello from PHP!";
-  echo "Method: " . $_SERVER['REQUEST_METHOD'];
-  ?>
+**Morning (4h):**
+- [ ] **EpollManager class:**
+  ```cpp
+  class EpollManager {
+    int createEpoll();
+    void addFd(int fd, uint32_t events);
+    void modifyFd(int fd, uint32_t events);
+    void removeFd(int fd);
+    std::vector<epoll_event> wait(int timeout);
+  };
   ```
-- [ ] Verify output received
-- [ ] Commit progress
+- [ ] Implement epoll_create1, epoll_ctl, epoll_wait
+- [ ] Handle EPOLLIN, EPOLLOUT, EPOLLERR, EPOLLHUP
+
+**Afternoon (4h):**
+- [ ] **HttpServer class:** `src/infrastructure/network/HttpServer.hpp/cpp`
+  ```cpp
+  class HttpServer {
+    void start(const std::vector<ServerConfig>& configs);
+    void eventLoop();
+    void handleAccept(int listenFd);
+    void handleRead(int clientFd);
+    void handleWrite(int clientFd);
+    void stop();
+  };
+  ```
+- [ ] Integrate SocketServer + EpollManager
+- [ ] Basic read/write loop
+
+**Expected Output:** Event loop processing connections
 
 ---
 
-### Day 10 - January 4 (Saturday)
+#### Dande's Tasks (6 hours) - Static File GET
 
-**Both together (8 hours total, 4h each)**
+**Create:** `src/application/handlers/GetHandler.hpp/cpp`
 
-**Morning (4 hours together):**
+**Morning (3h):**
+- [ ] **GetHandler class:**
+  ```cpp
+  class GetHandler {
+    Response handle(const ParsedRequest& req, const ServerConfig& config);
+  private:
+    std::string readFile(const Path& path);
+    std::string detectContentType(const Path& path);
+    Response buildFileResponse(const std::string& content, const std::string& type);
+  };
+  ```
+- [ ] Use Dande's FileHandler (already exists!)
+- [ ] Content-Type detection (html, css, js, jpg, default)
 
-- [ ] **CGI output parsing** (2h)
-  - [ ] CGI returns:
-    ```
-    Content-Type: text/html
-    
-    <html>Hello</html>
-    ```
-  - [ ] Parse headers from output
-  - [ ] Split on first `\r\n\r\n`
-  - [ ] Headers before, body after
-  - [ ] Build HTTP response:
-    ```
-    HTTP/1.1 200 OK
-    Content-Type: text/html
-    [headers from CGI]
-    
-    [body from CGI]
-    ```
+**Afternoon (3h):**
+- [ ] **Integration with server:**
+  - [ ] RequestParser parses request
+  - [ ] GetHandler serves file
+  - [ ] ResponseBuilder formats response
+  - [ ] Server sends to client
+- [ ] Test:
+  ```bash
+  echo "Hello World" > var/www/index.html
+  curl http://localhost:8080/index.html
+  # Should return: Hello World
+  ```
 
-- [ ] **Error handling** (2h)
-  - [ ] CGI script not found → 404
-  - [ ] CGI script not executable → 500
-  - [ ] CGI script timeout (5 seconds) → 504
-  - [ ] CGI script segfault → 500
-  - [ ] Use `waitpid()` with timeout:
-    ```cpp
-    int status;
-    pid_t result = waitpid(pid, &status, WNOHANG);
-    if (result == 0) {
-        // Still running, check timeout
-        if (elapsed > 5.0) {
-            kill(pid, SIGKILL);
-            return "504 Gateway Timeout";
-        }
-    }
-    ```
+**Expected Output:** GET requests serve static files
 
-**Afternoon (4 hours together):**
+---
 
-- [ ] **POST request to CGI** (2h)
-  - [ ] Write request body to CGI stdin
-  - [ ] Set CONTENT_LENGTH env var
-  - [ ] Set CONTENT_TYPE env var
-  - [ ] Test form submission:
-    ```bash
-    curl -X POST -d "name=John&age=30" http://localhost:8080/form.php
-    ```
+### Day 8 - January 5 (Sunday) - Connection Management + POST/DELETE
 
-- [ ] **CGI integration testing** (2h)
-  - [ ] Test various scripts:
-    - [ ] Simple output
-    - [ ] Form processing
-    - [ ] File upload via CGI
-    - [ ] Database query (if available)
-  - [ ] Test error cases:
-    - [ ] Script doesn't exist
-    - [ ] Script syntax error
-    - [ ] Script infinite loop (timeout)
-  - [ ] Fix bugs found
+**Goal:** All HTTP methods working
 
-**Evening:** (or skipped if behind)
+#### Bira's Tasks (8 hours) - Connection Manager
 
-**Test full flow:**
+**Create:** `src/infrastructure/network/ConnectionManager.hpp/cpp`
+
+**Morning (4h):**
+- [ ] **Connection class:**
+  ```cpp
+  class Connection {
+    enum State { READING_REQUEST, PROCESSING, WRITING_RESPONSE, CLOSED };
+    State state;
+    std::string readBuffer;
+    std::string writeBuffer;
+    time_t lastActivity;
+  };
+  
+  class ConnectionManager {
+    void addConnection(int fd);
+    void removeConnection(int fd);
+    Connection* getConnection(int fd);
+    void processConnection(int fd);
+    void cleanupTimeouts();
+  };
+  ```
+- [ ] Track connection state
+- [ ] Buffer management
+- [ ] Timeout handling (30 seconds)
+
+**Afternoon (4h):**
+- [ ] Integrate with HttpServer
+- [ ] Handle partial reads/writes
+- [ ] Test concurrent connections:
+  ```bash
+  for i in {1..10}; do curl http://localhost:8080/ & done
+  wait
+  # All should succeed
+  ```
+
+**Expected Output:** Handles 10+ concurrent connections
+
+---
+
+#### Dande's Tasks (6 hours) - POST/DELETE Handlers
+
+**Morning (3h):** POST Upload Handler
+- [ ] **PostHandler class:**
+  ```cpp
+  class PostHandler {
+    Response handle(const ParsedRequest& req, const ServerConfig& config);
+  private:
+    Response saveUpload(const std::vector<char>& body, const Path& uploadPath);
+  };
+  ```
+- [ ] Parse multipart/form-data (simple version)
+- [ ] Save file using FileWriter
+- [ ] Return 201 Created
+- [ ] Test:
+  ```bash
+  curl -F "file=@test.txt" http://localhost:8080/upload
+  ls var/www/uploads/test.txt  # Should exist
+  ```
+
+**Afternoon (3h):** DELETE Handler
+- [ ] **DeleteHandler class:**
+  ```cpp
+  class DeleteHandler {
+    Response handle(const ParsedRequest& req, const ServerConfig& config);
+  private:
+    bool validatePath(const Path& path);
+  };
+  ```
+- [ ] Validate file exists
+- [ ] Check permissions
+- [ ] Remove file using FileHandler
+- [ ] Return 204 No Content
+- [ ] Test:
+  ```bash
+  curl -X DELETE http://localhost:8080/test.txt
+  # File should be gone
+  ```
+
+**Expected Output:** POST uploads, DELETE removes files
+
+---
+
+### Day 9 - January 6 (Monday) - Config Integration + CGI
+
+**Goal:** Multi-server config, basic CGI
+
+#### Dande's Tasks (7 hours) - Config Integration
+
+**Morning (4h):**
+- [ ] Integrate ConfigParser with HttpServer
+- [ ] Multi-server setup (different ports)
+- [ ] Location block routing
+- [ ] Error page configuration
+- [ ] Test multi-server:
+  ```bash
+  # Config:
+  server { listen 8080; root /var/www1; }
+  server { listen 8081; root /var/www2; }
+  
+  curl http://localhost:8080/  # Server 1
+  curl http://localhost:8081/  # Server 2
+  ```
+
+**Afternoon (3h):**
+- [ ] Error handling polish
+- [ ] Proper 404/403/500 responses
+- [ ] Client body size limits
+- [ ] Timeout enforcement
+
+---
+
+#### Bira's Tasks (6 hours) - Basic CGI
+
+**Create:** `src/infrastructure/cgi/CgiExecutor.hpp/cpp`
+
+**Morning (3h):**
+- [ ] **CgiExecutor class:**
+  ```cpp
+  class CgiExecutor {
+    std::string execute(const Path& scriptPath, const ParsedRequest& req);
+  private:
+    void setupEnvironment(const ParsedRequest& req);
+    std::string readFromPipe(int fd);
+  };
+  ```
+- [ ] fork() + execve() for PHP-CGI
+- [ ] Environment variables (PATH_INFO, QUERY_STRING)
+- [ ] Pipe for stdin/stdout
+
+**Afternoon (3h):**
+- [ ] CGI response parsing (headers + body)
+- [ ] Timeout (5 seconds using alarm())
+- [ ] Test:
+  ```bash
+  echo '<?php echo "CGI Works"; ?>' > var/www/test.php
+  curl http://localhost:8080/test.php
+  # Should return: CGI Works
+  ```
+
+**Expected Output:** Basic PHP-CGI execution works
+
+---
+
+### Day 10 - January 7 (Tuesday) - FINAL TESTING
+
+**Goal:** Bug-free, leak-free, evaluation-ready
+
+#### Both Together (16 hours total - 8h each)
+
+**Morning (4h each):** Integration Testing
+- [ ] Test every feature end-to-end
+- [ ] GET files from all configured roots
+- [ ] POST uploads to different servers
+- [ ] DELETE with permission checks
+- [ ] CGI scripts with parameters
+- [ ] Error pages (404, 403, 500)
+- [ ] Multiple concurrent requests
+- [ ] Config file edge cases
+
+**Afternoon (4h each):** Bug Fixes + Valgrind
+- [ ] Fix all discovered bugs
+- [ ] Valgrind check:
+  ```bash
+  valgrind --leak-check=full --show-leak-kinds=all ./webserv webserv.conf
+  # MUST show: 0 bytes lost
+  ```
+- [ ] Stress test:
+  ```bash
+  siege -c 50 -r 100 http://localhost:8080/
+  # MUST NOT crash
+  ```
+- [ ] Memory fixes
+- [ ] Edge case handling
+
+**Evening (both):** Documentation & Checklist
+- [ ] Update README.md
+- [ ] Create evaluation checklist
+- [ ] Test with subject requirements PDF
+- [ ] Verify every mandatory feature works
+- [ ] Commit final version
+- [ ] Tag release: `v1.0-evaluation-ready`
+
+**Expected Output:** ✅ READY FOR EVALUATION
+
+---
+
+## ✅ SUCCESS CHECKLIST (January 7 Evening)
+
+### Mandatory Requirements (MUST ALL BE ✅)
+
+**Server Basics:**
+- [ ] Binds to multiple ports
+- [ ] Accepts connections
+- [ ] Non-blocking I/O (epoll/poll)
+- [ ] No crashes under normal load
+- [ ] No memory leaks (valgrind clean)
+
+**HTTP Methods:**
+- [ ] GET serves static files
+- [ ] POST accepts file uploads
+- [ ] DELETE removes files
+- [ ] Proper HTTP/1.1 responses
+
+**Configuration:**
+- [ ] Parses nginx-like config
+- [ ] Multiple server blocks work
+- [ ] Location blocks route correctly
+- [ ] Error pages configurable
+- [ ] Client body size limit enforced
+
+**CGI:**
+- [ ] Executes PHP-CGI scripts
+- [ ] Environment variables set correctly
+- [ ] Handles CGI output (headers + body)
+- [ ] Timeout protection (no infinite scripts)
+
+**Error Handling:**
+- [ ] 404 Not Found
+- [ ] 403 Forbidden  
+- [ ] 500 Internal Server Error
+- [ ] 405 Method Not Allowed
+- [ ] 413 Payload Too Large
+
+### Testing Verification (Run ALL Before Evaluation)
+
 ```bash
-# 1. Server starts
-./webserv webserv.conf
+# 1. Compilation test
+make clean && make
+# ✅ Must compile without errors or warnings
 
-# 2. GET request
-curl http://localhost:8080/index.html  # ✅
+# 2. Test suite
+cd tests && make && ./bin/test_runner
+# ✅ Must show ~250 tests passing
 
-# 3. POST upload
-curl -X POST -F "file=@test.txt" http://localhost:8080/upload  # ✅
+# 3. Basic server test
+./webserv webserv.conf &
+curl http://localhost:8080/
+# ✅ Must return valid HTTP response
 
-# 4. DELETE file
-curl -X DELETE http://localhost:8080/upload/test.txt  # ✅
+# 4. Memory leak test
+valgrind --leak-check=full ./webserv webserv.conf
+# ✅ Must show "0 bytes lost"
 
-# 5. CGI script (if implemented)
-curl http://localhost:8080/test.php  # ✅
+# 5. Concurrent connection test
+siege -c 50 -r 100 http://localhost:8080/
+# ✅ Must complete without crashes
+
+# 6. CGI test
+curl http://localhost:8080/test.php
+# ✅ Must execute PHP script
+
+# 7. File operations test
+curl -F "file=@test.txt" http://localhost:8080/upload  # Upload
+curl http://localhost:8080/test.txt                    # Download
+curl -X DELETE http://localhost:8080/test.txt          # Delete
+# ✅ All must work correctly
 ```
 
-**🚨 FINAL REALITY CHECK (Use subject PDF checklist):**
-- [ ] ✅ Does server compile without errors/warnings?
-- [ ] ✅ Does server start and listen on multiple ports?
-- [ ] ✅ Does GET serve static files correctly?
-- [ ] ✅ Does POST upload files and save them?
-- [ ] ✅ Does DELETE remove files correctly?
-- [ ] ✅ Does config file parse multiple servers?
-- [ ] ✅ Do routes match (location blocks)?
-- [ ] ✅ Do default error pages work (404, 403, 500)?
-- [ ] ✅ Does it handle wrong method (405)?
-- [ ] ✅ Is I/O non-blocking (epoll/poll/select)?
-
-**Count your checkmarks:**
-- **10/10** → Perfect! You'll get bonus points!
-- **8-9/10** → Solid pass, just polish the rest
-- **6-7/10** → Borderline, Days 11-13 = fix missing items
-- **< 6/10** → CRISIS MODE
-
-**If < 6/10 → Days 11-13 Emergency Plan:**
-1. List what's broken vs what's missing
-2. Fix broken things first (crashes, leaks)
-3. Implement missing mandatory features
-4. Forget about bonus features entirely
-5. Focus: Stable + Complete mandatory > Unstable + Bonus
-
-**Remember:** Evaluator prefers "works perfectly with no bonus" over "crashes with all features"
-
-**State of project:** ____/10 complete
-**Verify:**
-- [ ] ✅ HTTP server running
-- [ ] ✅ Configuration parsed
-- [ ] ✅ Routes matching
-- [ ] ✅ GET serving files
-- [ ] ✅ POST uploading files
-- [ ] ✅ DELETE removing files
-- [ ] ✅ CGI executing scripts
-
-**Test full flow:**
-```bash
-# 1. Server starts
-./webserv webserv.conf
-
-# 2. GET request
-curl http://localhost:8080/index.html  # ✅
-
-# 3. POST upload
-curl -X POST -F "file=@test.txt" http://localhost:8080/upload  # ✅
-
-# 4. DELETE file
-curl -X DELETE http://localhost:8080/upload/test.txt  # ✅
-
-# 5. CGI script
-curl http://localhost:8080/test.php  # ✅
-```
-
-**Plan Days 11-13:**
-- [ ] Integration testing
-- [ ] Bug hunting
-- [ ] Valgrind
-- [ ] Siege
-- [ ] Final polish
+**If ANY test fails → FIX BEFORE EVALUATION**
 
 ---
 
-## 🧪 Days 11-13: Integration & Polish (TOGETHER)
+## 🎉 YOU'RE READY!
 
-**Goal:** Stable, leak-free, crash-free server ready for evaluation
+**What you built in 10 days:**
+- ✅ ~250 tests (100% value object coverage)
+- ✅ Complete HTTP/1.1 server
+- ✅ Multi-server configuration
+- ✅ GET/POST/DELETE methods
+- ✅ Basic CGI execution
+- ✅ Non-blocking I/O
+- ✅ No memory leaks
+- ✅ Evaluation-ready
 
-**Strategy:** MUST be together - integration requires both perspectives
+**Success rate with this plan:** 85%
 
----
+**Why it worked:** Foundation-first = solid building, fewer bugs, faster development.
 
-### Day 11 - January 5 (Sunday)
-
-**Both together (10 hours total, 5h each)**
-
-**Morning (3 hours):**
-
-- [ ] **Full integration testing** (3h)
-  - [ ] Test every feature in sequence
-  - [ ] Test every feature combination:
-    - [ ] GET from server 1, server 2
-    - [ ] POST to different locations
-    - [ ] DELETE with error pages
-    - [ ] CGI on different routes
-  - [ ] Test concurrent requests:
-    ```bash
-    # Run 10 curl commands in parallel
-    for i in {1..10}; do
-        curl http://localhost:8080/ &
-    done
-    wait
-    ```
-  - [ ] Document all bugs found
-
-**Afternoon (2 hours):**
-
-- [ ] **Bug fixes - Critical** (2h)
-  - [ ] Fix any crashes
-  - [ ] Fix any segfaults
-  - [ ] Fix any hangs/deadlocks
-  - [ ] Fix any data corruption
-  - [ ] Priority: Stability over features
-
-**Evening (5 hours - may extend):**
-
-- [ ] **Valgrind leak hunting** (5h)
-  - [ ] Run full test suite under valgrind:
-    ```bash
-    valgrind --leak-check=full \
-             --show-leak-kinds=all \
-             --track-origins=yes \
-             ./webserv test.conf
-    ```
-  - [ ] Fix every memory leak:
-    - [ ] Unreachable blocks
-    - [ ] Still reachable blocks
-    - [ ] Lost blocks
-  - [ ] Common sources:
-    - [ ] Missing `delete` for `new`
-    - [ ] Missing `close()` for file descriptors
-    - [ ] Missing `free()` for C allocations
-  - [ ] Goal: **0 bytes leaked**
-  - [ ] Commit after each fix
-
----
-
-### Day 12 - January 6 (Monday)
-
-**Both together (10 hours total, 5h each)**
-
-**Morning (3 hours):**
-
-- [ ] **Siege stress testing** (3h)
-  - [ ] Install siege: `sudo apt install siege`
-  - [ ] Run stress test:
-    ```bash
-    # 50 concurrent users, 100 requests each = 5000 total
-    siege -c 50 -r 100 http://localhost:8080/
-    ```
-  - [ ] Monitor with top/htop:
-    - [ ] CPU usage
-    - [ ] Memory usage
-    - [ ] Connection count
-  - [ ] Check results:
-    ```
-    Transactions: 5000 hits
-    Availability: 99.50 %  ← MUST BE > 99.5%
-    Elapsed time: X.XX secs
-    Response time: X.XX secs
-    Transaction rate: XXX trans/sec
-    Failed transactions: 25  ← MUST BE < 50
-    ```
-  - [ ] If availability < 99.5%:
-    - [ ] Check for race conditions
-    - [ ] Check for deadlocks
-    - [ ] Increase timeout values
-    - [ ] Fix and retest
-
-**Afternoon (3 hours):**
-
-- [ ] **Bug fixes - Non-critical** (3h)
-  - [ ] Fix edge cases
-  - [ ] Fix error messages
-  - [ ] Fix logging output
-  - [ ] Improve error handling
-  - [ ] Code cleanup
-
-**Evening (4 hours):**
-
-- [ ] **Final validation** (4h)
-  - [ ] Run all tests again:
-    ```bash
-    cd tests/
-    make clean && make
-    ./bin/test_runner  # All pass?
-    ```
-  - [ ] Run valgrind again (verify 0 leaks)
-  - [ ] Run siege again (verify 99.5%+)
-  - [ ] Test with evaluator checklist:
-    - [ ] Multiple servers work
-    - [ ] All HTTP methods work
-    - [ ] Error pages work
-    - [ ] CGI works
-    - [ ] No crashes
-  - [ ] Fix any remaining issues
-
----
-
-### Day 13 - January 7 (Tuesday) - FINAL DAY
-
-**Both together (10 hours total, 5h each)**
-
-**Morning (3 hours):**
-
-- [ ] **Documentation** (2h)
-  - [ ] Update README.md:
-    - [ ] How to compile
-    - [ ] How to run
-    - [ ] Example configs
-    - [ ] Supported features
-  - [ ] Create CONFIG_GUIDE.md:
-    - [ ] All directives explained
-    - [ ] Examples
-    - [ ] Default values
-  - [ ] Update TESTING_STATUS.md:
-    - [ ] Mark everything complete
-    - [ ] Document known limitations
-
-- [ ] **Code review** (1h)
-  - [ ] Both review full codebase
-  - [ ] Check for TODOs
-  - [ ] Check for debug prints
-  - [ ] Clean up dead code
-
-**Afternoon (3 hours):**
-
-- [ ] **Evaluation preparation** (2h)
-  - [ ] Create demo config files:
-    - [ ] `basic.conf` - Simple server
-    - [ ] `multi.conf` - Multiple servers
-    - [ ] `cgi.conf` - CGI enabled
-  - [ ] Create test files:
-    - [ ] index.html
-    - [ ] 404.html
-    - [ ] test.php
-  - [ ] Practice evaluation demo:
-    - [ ] Start server
-    - [ ] Show GET
-    - [ ] Show POST
-    - [ ] Show DELETE
-    - [ ] Show CGI
-    - [ ] Show multiple ser (or at least GET + POST)
-- [ ] CGI works with PHP-CGI (if implemented)
-- [ ] Multiple servers work (if implemented)
-- [ ] Configuration file valid
-- [ ] No memory leaks (valgrind clean)
-- [ ] No crashes under load (siege passed)
-- [ ] Documentation complete
-
-**🎯 ABSOLUTE MINIMUM FOR PASSING (0 if missing ANY):**
-- [ ] Server compiles without errors ✅ (MANDATORY)
-- [ ] Server starts without crashes ✅ (MANDATORY)
-- [ ] GET serves static files ✅ (MANDATORY)
-- [ ] POST receives and stores files ✅ (MANDATORY)
-- [ ] DELETE removes files ✅ (MANDATORY)
-- [ ] Config file parsed (multiple servers) ✅ (MANDATORY)
-- [ ] Multiple ports listening ✅ (MANDATORY)
-- [ ] Routes/location blocks work ✅ (MANDATORY)
-- [ ] Non-blocking I/O (select/poll/epoll) ✅ (MANDATORY)
-- [ ] Error pages (404, 403, 500) ✅ (MANDATORY)
-- [ ] No segfaults/crashes ✅ (MANDATORY)
-- [ ] Valgrind shows 0 bytes lost ✅ (MANDATORY)
-
-**BONUS POINTS (check your subject PDF):**
-- [ ] CGI execution (might be mandatory - CHECK PDF!)
-- [ ] Cookies/Session management
-- [ ] Multiple CGI support
-- [ ] Custom error page files (beyond hardcoded HTML)
-- [ ] Siege > 99.5% availability
-- [ ] Directory listing
-- [ ] URL rewriting
-
-**⚠️ BEFORE EVALUATION - VERIFY AGAINST SUBJECT PDF:**
-- [ ] Read mandatory section line by line
-- [ ] Test every mandatory feature listed
-- [ ] Don't assume anything is "good enough"
-
-**Evaluation structure:**
-1. **Compile and run** (evaluator watches)
-2. **Basic tests** (curl commands)
-3. **Siege stress test** (evaluator runs)
-4. **Valgrind** (evaluator checks)
-5. **Code review** (evaluator asks questions)
-
-**Both answer questions:**
-- Dande: Architecture, server implementation
-- Bira: Testing, security, validation
-
-**Remember:** 
-- Calm confidence > nervous perfection
-- Explain trade-offs you made
-- "We prioritized stability over features"
-- If something doesn't work: "We identified this risk and focused on core functionality"
-
-**Good luck!** 🚀
-
----
-
-## 🏆 POST-EVALUATION DEBRIEF
-
-**After evaluation (regardless of result):**
-
-**What worked:**
-- What parts of the strategy helped most?
-- What communication patterns worked?
-- What technical decisions were right?
-
-**What didn't work:**
-- Where did the plan break down?
-- What took longer than expected?
-- What would you do differently?
-
-**For future projects:**
-- Would you use this strategy again?
-- What would you change?
-- What did you learn about teamwork?
-
-**Write your notes here after Jan 8:**
-
-___________________________________________
-___________________________________________
-___________________________________________
-___________________________________________
-___________________________________________
-## ✅ Evaluation Day - January 8 (Wednesday)
-
-**Both present for evaluation:**
-
-**Pre-evaluation checklist:**
-- [ ] Server compiles with no warnings
-- [ ] Server starts with no errors
-- [ ] All HTTP methods work
-- [ ] CGI works with PHP-CGI
-- [ ] Multiple servers work
-- [ ] Configuration file valid
-- [ ] No memory leaks (valgrind clean)
-- [ ] No crashes under load (siege passed)
-- [ ] Documentation complete
-
-**Evaluation structure:**
-1. **Compile and run** (evaluator watches)
-2. **Basic tests** (curl commands)
-3. **Siege stress test** (evaluator runs)
-4. **Valgrind** (evaluator checks)
-5. **Code review** (evaluator asks questions)
-
-**Both answer questions:**
-- Dande: Architecture, server implementation
-- Bira: Testing, security, validation
-
-**Good luck!** 🚀
-
----
-
-## 📊 Summary Statistics
-
-### Workload Distribution
-
-| Phase | Dande Hours | Bira Hours | Together | Total |
-|-------|-------------|------------|----------|-------|
-| Days 1-2: Value Objects | 11h | 11h | 2h | 24h |
-| Days 3-4: Server/HTTP | 12h | 12h | 2h | 26h |
-| Days 5-6: Config/Routes | 11h | 10h | 2h | 23h |
-| Days 7-8: File Ops | 10h | 10h | 2h | 22h |
-| Days 9-10: CGI | - | - | 16h | 16h |
-| Days 11-13: Integration | - | - | 30h | 30h |
-| **Total** | **44h** | **43h** | **54h** | **141h** |
-
-**Per person:** 44h + 27h (half of together) = **71 hours**  
-**Per day:** 71h ÷ 13 days = **5.5 hours/day**
-
-**vs Solo:** 104 hours ÷ 13 days = 8 hours/day  
-**Savings:** 2.5 hours/day per person = **31% less workload**
-
----
-
-## 🎯 Success Factors
-
-### Communication
-- [ ] Daily standups (15 min)
-- [ ] Daily check-ins (10 min)
-- [ ] Code reviews (< 2 hour turnaround)
-- [ ] Shared task board updated daily
-
-### Integration
-- [ ] Interfaces defined Day 0
-- [ ] Small frequent merges (Days 2, 4, 6, 8)
-- [ ] No big-bang integration
-- [ ] Continuous testing
-
-### Knowledge Sharing
-- [ ] Dande documents while building
-- [ ] Bira shares TDD practices
-- [ ] Code reviews = learning
-- [ ] Pair programming on complex parts
-
-### Risk Mitigation
-- [ ] Mock when blocked
-- [ ] Backup tasks ready
-- [ ] Stop parallelism for high-risk parts
-- [ ] Buffer time built in
-
----
-
-**Good luck to both Dande and Bira!** 🎉
-
-You've got this! 💪
+**Good luck! You've got this! 🚀**
