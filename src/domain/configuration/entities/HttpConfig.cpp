@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 17:13:33 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/28 15:11:50 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/29 04:41:48 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,6 +73,7 @@ void HttpConfig::copyFrom(const HttpConfig& other) {
   m_clientMaxBodySize = other.m_clientMaxBodySize;
   m_mimeTypes = other.m_mimeTypes;
   m_mimeTypesLoaded = other.m_mimeTypesLoaded;
+  m_errorPages = other.m_errorPages;
 
   for (ServerConfigs::const_iterator it = other.m_serverConfigs.begin();
        it != other.m_serverConfigs.end(); ++it) {
@@ -249,6 +250,10 @@ bool HttpConfig::hasMimeType(const std::string& extension) const {
   return m_mimeTypes.find(ext) != m_mimeTypes.end();
 }
 
+const HttpConfig::ErrorPagesMap& HttpConfig::getErrorPages() const {
+  return m_errorPages;
+}
+
 void HttpConfig::addServerConfig(entities::ServerConfig* serverConfig) {
   if (serverConfig == NULL) {
     throw exceptions::HttpConfigException(
@@ -360,6 +365,31 @@ void HttpConfig::setAccessLogPath(const std::string& path) {
     throw exceptions::HttpConfigException(
         oss.str(), exceptions::HttpConfigException::INVALID_ACCESS_LOG_PATH);
   }
+}
+
+void HttpConfig::setErrorPage(const shared::value_objects::ErrorCode& code,
+                               const std::string& uri) {
+  if (uri.empty()) {
+    throw exceptions::HttpConfigException(
+        "Error page URI cannot be empty",
+        exceptions::HttpConfigException::INVALID_ERROR_PAGE);
+  }
+
+  std::string trimmedUri = shared::utils::StringUtils::trim(uri);
+  
+  if (trimmedUri.empty()) {
+    throw exceptions::HttpConfigException(
+        "Error page URI cannot be empty or whitespace",
+        exceptions::HttpConfigException::INVALID_ERROR_PAGE);
+  }
+
+  if (trimmedUri[0] != '/') {
+    throw exceptions::HttpConfigException(
+        "Error page URI must start with '/'",
+        exceptions::HttpConfigException::INVALID_ERROR_PAGE);
+  }
+
+  m_errorPages[code.getValue()] = trimmedUri;
 }
 
 void HttpConfig::setMimeTypesPath(const filesystem::value_objects::Path& path) {
@@ -560,6 +590,7 @@ void HttpConfig::clear() {
       filesystem::value_objects::Size::fromMegabytes(MAX_CLIENT_BODY_SIZE_GB);
   m_mimeTypes.clear();
   m_mimeTypesLoaded = false;
+  m_errorPages.clear();
   clearServerConfigs();
 }
 

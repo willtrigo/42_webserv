@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 17:11:38 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 15:46:42 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/29 04:37:56 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,6 +51,7 @@ class HttpConfig {
 
   typedef std::vector<entities::ServerConfig*> ServerConfigs;
   typedef std::map<std::string, std::string> MimeTypesMap;
+  typedef std::map<unsigned int, std::string> ErrorPagesMap;
 
   HttpConfig();
   explicit HttpConfig(const std::string& configFilePath);
@@ -79,6 +80,8 @@ class HttpConfig {
   void loadMimeTypes();
   bool hasMimeType(const std::string& extension) const;
 
+  const ErrorPagesMap& getErrorPages() const;
+
   void addServerConfig(entities::ServerConfig* serverConfig);
   void setWorkerProcesses(unsigned int processes);
   void setWorkerConnections(unsigned int connections);
@@ -88,6 +91,8 @@ class HttpConfig {
   void setErrorLogPath(const std::string& path);
   void setAccessLogPath(const filesystem::value_objects::Path& path);
   void setAccessLogPath(const std::string& path);
+  void setErrorPage(const shared::value_objects::ErrorCode& code,
+                    const std::string& uri);
   void setMimeTypesPath(const filesystem::value_objects::Path& path);
   void setMimeTypesPath(const std::string& path);
   void setClientMaxBodySize(const filesystem::value_objects::Size& size);
@@ -107,6 +112,7 @@ class HttpConfig {
   unsigned int m_sendTimeout;
   filesystem::value_objects::Path m_errorLogPath;
   filesystem::value_objects::Path m_accessLogPath;
+  ErrorPagesMap m_errorPages;
   filesystem::value_objects::Path m_mimeTypesPath;
   filesystem::value_objects::Size m_clientMaxBodySize;
   ServerConfigs m_serverConfigs;

@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 16:28:16 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 15:38:32 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/29 04:51:15 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,7 @@ const std::pair<HttpConfigException::ErrorCode, std::string>
         std::make_pair(INVALID_ACCESS_LOG_PATH, "Invalid access log path"),
         std::make_pair(INVALID_MIME_TYPES_PATH, "Invalid MIME types file path"),
         std::make_pair(INVALID_CONFIG_FILE, "Invalid configuration file"),
+        std::make_pair(INVALID_ERROR_PAGE, "Invalid error page"),
         std::make_pair(FILE_NOT_FOUND, "Configuration file not found"),
         std::make_pair(FILE_READ_ERROR, "Error reading configuration file"),
         std::make_pair(PARSE_ERROR, "Error parsing configuration file"),
@@ -50,9 +51,7 @@ const std::pair<HttpConfigException::ErrorCode, std::string>
         std::make_pair(SERVER_SELECTION_FAILED,
                        "Failed to select server for request"),
         std::make_pair(PORT_CONFLICT, "Port conflict detected"),
-        std::make_pair(ADDRESS_CONFLICT, "Address conflict detected"),
-        std::make_pair(CODE_COUNT, "")  // Sentinel value
-};
+        std::make_pair(ADDRESS_CONFLICT, "Address conflict detected")};
 
 HttpConfigException::HttpConfigException(const std::string& msg, ErrorCode code)
     : BaseException("", static_cast<int>(code)) {

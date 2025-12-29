@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 16:27:35 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/28 15:05:36 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/29 04:43:48 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,6 +36,7 @@ class HttpConfigException : public ::shared::exceptions::BaseException {
     INVALID_ACCESS_LOG_PATH,
     INVALID_MIME_TYPES_PATH,
     INVALID_CONFIG_FILE,
+    INVALID_ERROR_PAGE,
     FILE_NOT_FOUND,
     FILE_READ_ERROR,
     PARSE_ERROR,
