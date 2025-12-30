@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 12:55:05 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/30 17:51:00 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/30 18:10:36 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,7 +52,7 @@ class ParserContext {
   std::size_t m_currentIndex;
   std::stack<ParserState> m_stateStack;
   std::string m_sourceFile;
-  
+
   static std::string tokenTypeToString(lexer::Token::Type type);
 };
 
