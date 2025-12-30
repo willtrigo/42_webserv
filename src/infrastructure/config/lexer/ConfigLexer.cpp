@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 14:25:44 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/30 14:33:31 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/30 18:23:00 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,6 +50,7 @@ std::vector<Token> ConfigLexer::tokenizeFile(const std::string& filePath) {
   std::ostringstream oss;
   oss << "Tokenized " << tokens.size() << " tokens from " << filePath;
   m_logger.debug(oss.str());
+  currentTokens(tokens);
 
   return tokens;
 }
@@ -73,6 +74,41 @@ std::vector<Token> ConfigLexer::tokenizeString(const std::string& content) {
   m_logger.debug(oss.str());
 
   return tokens;
+}
+
+void ConfigLexer::currentTokens(std::vector<Token>& tokens) {
+  std::ostringstream oss;
+  oss << "Current tokens (" << tokens.size() << "):\n";
+
+  for (std::vector<Token>::const_iterator it = tokens.begin();
+       it != tokens.end(); ++it) {
+    oss << "  [Line " << it->lineNumber << "] ";
+
+    switch (it->type) {
+      case Token::BLOCK_START:
+        oss << "BLOCK_START: '" << it->value << "'";
+        break;
+      case Token::BLOCK_END:
+        oss << "BLOCK_END: '" << it->value << "'";
+        break;
+      case Token::SEMICOLON:
+        oss << "SEMICOLON: '" << it->value << "'";
+        break;
+      case Token::STRING:
+        oss << "STRING: '" << it->value << "'";
+        break;
+      case Token::EOF_T:
+        oss << "EOF";
+        break;
+      default:
+        oss << "UNKNOWN: '" << it->value << "'";
+        break;
+    }
+
+    oss << "\n";
+  }
+
+  m_logger.debug(oss.str());
 }
 
 void ConfigLexer::processLine(const std::string& line, std::size_t lineNumber,

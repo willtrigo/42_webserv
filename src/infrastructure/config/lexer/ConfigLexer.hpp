@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 12:47:09 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/30 14:30:38 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/30 18:16:06 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,8 @@ class ConfigLexer {
 
   std::vector<Token> tokenizeFile(const std::string& filePath);
   std::vector<Token> tokenizeString(const std::string& content);
+
+  void currentTokens(std::vector<Token>& tokens);
 
  private:
   application::ports::ILogger& m_logger;

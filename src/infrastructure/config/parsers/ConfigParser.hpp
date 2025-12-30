@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/18 18:10:12 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/30 16:43:34 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/30 20:35:32 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,12 +41,18 @@ class ConfigParser : public application::ports::IConfigParser {
   application::ports::ILogger& m_logger;
   lexer::ConfigLexer m_lexer;
   parser::BlockParser m_blockParser;
-  
+
   void initializeParser(const std::string& configPath);
   void parseTokens(parser::ParserContext& context,
                    domain::configuration::entities::HttpConfig& httpConfig);
-  void handleTopLevelDirectives(parser::ParserContext& context,
-                                domain::configuration::entities::HttpConfig& httpConfig);
+  void handleBlockDeclaration(
+      parser::ParserContext& context,
+      domain::configuration::entities::HttpConfig& httpConfig,
+      const std::string& blockName);
+
+  void handleSingleDirective(
+      parser::ParserContext& context,
+      domain::configuration::entities::HttpConfig& httpConfig);
 };
 
 }  // namespace parsers

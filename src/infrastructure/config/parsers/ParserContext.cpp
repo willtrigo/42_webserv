@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 14:47:24 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/30 17:50:47 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/30 20:36:42 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -127,7 +127,17 @@ std::size_t ParserContext::currentLine() const {
   return currentToken().lineNumber;
 }
 
-std::string ParserContext::sourceFile() const { return m_sourceFile; }
+std::size_t ParserContext::currentIndex() const {
+  return m_currentIndex;
+}
+
+std::size_t ParserContext::tokenCount() const {
+  return m_tokens.size();
+}
+
+std::string ParserContext::sourceFile() const { 
+  return m_sourceFile; 
+}
 
 std::string ParserContext::currentContextDescription() const {
   ParserState state = currentState();

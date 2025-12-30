@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 12:55:02 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/30 16:57:19 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/30 20:36:05 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,9 +14,7 @@
 #define BLOCK_PARSER_HPP
 
 #include "application/ports/ILogger.hpp"
-#include "infrastructure/config/handlers/GlobalDirectiveHandler.hpp"
-#include "infrastructure/config/handlers/LocationDirectiveHandler.hpp"
-#include "infrastructure/config/handlers/ServerDirectiveHandler.hpp"
+#include "domain/configuration/entities/HttpConfig.hpp"
 #include "infrastructure/config/parsers/ParserContext.hpp"
 
 namespace infrastructure {
@@ -39,26 +37,21 @@ class BlockParser {
  private:
   application::ports::ILogger& m_logger;
 
-  void parseDirective(
+  void handleNestedBlock(
+      ParserContext& context, const std::string& blockName,
+      domain::configuration::entities::HttpConfig* httpConfig,
+      domain::configuration::entities::ServerConfig* server,
+      domain::configuration::entities::LocationConfig* location);
+
+  void handleDirective(
       ParserContext& context, const lexer::Token& directiveToken,
-      domain::configuration::entities::HttpConfig* httpConfig = NULL,
-      domain::configuration::entities::ServerConfig* server = NULL,
-      domain::configuration::entities::LocationConfig* location = NULL);
-  void parseNestedBlocks(
+      domain::configuration::entities::HttpConfig* httpConfig,
+      domain::configuration::entities::ServerConfig* server,
+      domain::configuration::entities::LocationConfig* location);
+
+  void handleLimitExceptBlock(
       ParserContext& context,
-      domain::configuration::entities::HttpConfig& httpConfig,
-      ParserState::Context allowedContext);
-
-  handlers::GlobalDirectiveHandler* createGlobalHandler(
-      domain::configuration::entities::HttpConfig& httpConfig);
-  handlers::ServerDirectiveHandler* createServerHandler(
-      domain::configuration::entities::ServerConfig& server);
-  handlers::LocationDirectiveHandler* createLocationHandler(
       domain::configuration::entities::LocationConfig& location);
-
-  static bool isAllowedInContext(const std::string& directive,
-                                 ParserState::Context context);
-  static std::vector<std::string> collectArguments(ParserContext& context);
 };
 
 }  // namespace parser

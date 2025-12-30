@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 12:55:05 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/30 18:10:36 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/30 20:37:24 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,6 +41,8 @@ class ParserContext {
   ParserState currentState() const;
 
   std::size_t currentLine() const;
+  std::size_t currentIndex() const;
+  std::size_t tokenCount() const;
   std::string sourceFile() const;
 
   std::string currentContextDescription() const;

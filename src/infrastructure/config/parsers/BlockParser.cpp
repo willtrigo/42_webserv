@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 16:35:11 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/30 16:54:59 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/30 20:38:45 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,9 +14,11 @@
 #include "domain/configuration/entities/LocationConfig.hpp"
 #include "domain/configuration/entities/ServerConfig.hpp"
 #include "infrastructure/config/exceptions/SyntaxException.hpp"
+#include "infrastructure/config/handlers/GlobalDirectiveHandler.hpp"
+#include "infrastructure/config/handlers/LocationDirectiveHandler.hpp"
+#include "infrastructure/config/handlers/ServerDirectiveHandler.hpp"
 #include "infrastructure/config/parsers/BlockParser.hpp"
 
-#include <map>
 #include <sstream>
 
 namespace infrastructure {
@@ -29,15 +31,16 @@ BlockParser::BlockParser(application::ports::ILogger& logger)
 void BlockParser::parseHttpBlock(
     ParserContext& context,
     domain::configuration::entities::HttpConfig& httpConfig) {
-  m_logger.debug("Parsing http block");
+  m_logger.debug("Parsing http block content");
 
   while (context.hasMoreTokens()) {
     const lexer::Token& token = context.currentToken();
 
     if (token.type == lexer::Token::BLOCK_END) {
+      context.advance();  // Consume the '}'
       context.popState();
       m_logger.debug("End of http block");
-      break;
+      return;
     }
 
     if (token.type == lexer::Token::EOF_T) {
@@ -46,36 +49,44 @@ void BlockParser::parseHttpBlock(
           exceptions::SyntaxException::UNEXPECTED_EOF);
     }
 
-    if (token.type == lexer::Token::BLOCK_START) {
-      std::string blockName = token.value;
+    if (token.type == lexer::Token::STRING) {
+      std::string tokenValue = token.value;
 
-      if (blockName == "server") {
-        context.pushState(ParserState::SERVER, "server");
-        parseServerBlock(context, httpConfig);
+      // Look ahead to determine if this is a nested block or directive
+      if (context.currentIndex() + 1 < context.tokenCount()) {
+        const lexer::Token& nextToken = context.peekToken();
+
+        if (nextToken.type == lexer::Token::BLOCK_START) {
+          // This is a nested block (e.g., "server {")
+          handleNestedBlock(context, tokenValue, &httpConfig, NULL, NULL);
+        } else {
+          // This is a directive
+          handleDirective(context, token, &httpConfig, NULL, NULL);
+        }
       } else {
         std::ostringstream oss;
-        oss << "Unknown block '" << blockName << "' in http context";
+        oss << "Unexpected end of file after token '" << tokenValue
+            << "' in http block";
         throw exceptions::SyntaxException(
-            oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
+            oss.str(), exceptions::SyntaxException::UNEXPECTED_EOF);
       }
-      continue;
-    }
-
-    if (token.type == lexer::Token::STRING) {
-      parseDirective(context, token);
     } else {
       std::ostringstream oss;
-      oss << "Unexpected token in http block: " << token.typeToString();
+      oss << "Unexpected token in http block: " << token.typeToString()
+          << " at line " << token.lineNumber;
       throw exceptions::SyntaxException(
           oss.str(), exceptions::SyntaxException::UNEXPECTED_TOKEN);
     }
   }
+
+  throw exceptions::SyntaxException("Http block not properly closed",
+                                    exceptions::SyntaxException::MISSING_BRACE);
 }
 
 void BlockParser::parseServerBlock(
     ParserContext& context,
     domain::configuration::entities::HttpConfig& httpConfig) {
-  m_logger.debug("Parsing server block");
+  m_logger.debug("Parsing server block content");
 
   domain::configuration::entities::ServerConfig* server =
       new domain::configuration::entities::ServerConfig();
@@ -85,9 +96,9 @@ void BlockParser::parseServerBlock(
       const lexer::Token& token = context.currentToken();
 
       if (token.type == lexer::Token::BLOCK_END) {
+        context.advance();  // Consume the '}'
         context.popState();
 
-        // Validate and add server to http config
         server->validate();
         httpConfig.addServerConfig(server);
 
@@ -95,7 +106,7 @@ void BlockParser::parseServerBlock(
         oss << "End of server block, added server with "
             << server->getListenDirectives().size() << " listen directives";
         m_logger.debug(oss.str());
-        break;
+        return;
       }
 
       if (token.type == lexer::Token::EOF_T) {
@@ -105,32 +116,41 @@ void BlockParser::parseServerBlock(
             exceptions::SyntaxException::UNEXPECTED_EOF);
       }
 
-      if (token.type == lexer::Token::BLOCK_START) {
-        std::string blockName = token.value;
+      if (token.type == lexer::Token::STRING) {
+        std::string tokenValue = token.value;
 
-        if (blockName == "location") {
-          context.pushState(ParserState::LOCATION, "location");
-          parseLocationBlock(context, *server);
+        if (context.currentIndex() + 1 < context.tokenCount()) {
+          const lexer::Token& nextToken = context.peekToken();
+
+          if (nextToken.type == lexer::Token::BLOCK_START) {
+            // Nested block (e.g., "location /path {")
+            handleNestedBlock(context, tokenValue, NULL, server, NULL);
+          } else {
+            // Server directive
+            handleDirective(context, token, NULL, server, NULL);
+          }
         } else {
           delete server;
           std::ostringstream oss;
-          oss << "Unknown block '" << blockName << "' in server context";
+          oss << "Unexpected end of file after token '" << tokenValue
+              << "' in server block";
           throw exceptions::SyntaxException(
-              oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
+              oss.str(), exceptions::SyntaxException::UNEXPECTED_EOF);
         }
-        continue;
-      }
-
-      if (token.type == lexer::Token::STRING) {
-        parseDirective(context, token);
       } else {
         delete server;
         std::ostringstream oss;
-        oss << "Unexpected token in server block: " << token.typeToString();
+        oss << "Unexpected token in server block: " << token.typeToString()
+            << " at line " << token.lineNumber;
         throw exceptions::SyntaxException(
             oss.str(), exceptions::SyntaxException::UNEXPECTED_TOKEN);
       }
     }
+
+    delete server;
+    throw exceptions::SyntaxException(
+        "Server block not properly closed",
+        exceptions::SyntaxException::MISSING_BRACE);
 
   } catch (...) {
     delete server;
@@ -141,19 +161,15 @@ void BlockParser::parseServerBlock(
 void BlockParser::parseLocationBlock(
     ParserContext& context,
     domain::configuration::entities::ServerConfig& server) {
-  // Expect location path
-  std::string path = context.consumeString("location path");
+  // At this point, currentToken should be the location path
+  const lexer::Token& pathToken = context.currentToken();
+  std::string path = pathToken.value;
 
-  // Expect block start
-  context.expect(lexer::Token::BLOCK_START, "location block");
-  std::string blockName = context.currentToken().value;
+  context.advance();  // Move past the path
 
-  if (blockName != "location") {
-    std::ostringstream oss;
-    oss << "Expected location block start but got '" << blockName << "'";
-    throw exceptions::SyntaxException(
-        oss.str(), exceptions::SyntaxException::UNEXPECTED_TOKEN);
-  }
+  // Now we should be at BLOCK_START "{"
+  context.expect(lexer::Token::BLOCK_START, "location block start");
+  context.advance();  // Move past the "{"
 
   // Parse match type from path prefix
   domain::configuration::entities::LocationConfig::LocationMatchType matchType;
@@ -178,7 +194,9 @@ void BlockParser::parseLocationBlock(
     matchType = domain::configuration::entities::LocationConfig::MATCH_PREFIX;
   }
 
-  m_logger.debug("Parsing location block for path: " + path);
+  std::ostringstream logMsg;
+  logMsg << "Parsing location block for path: " << path;
+  m_logger.debug(logMsg.str());
 
   domain::configuration::entities::LocationConfig* location =
       new domain::configuration::entities::LocationConfig(cleanPath, matchType);
@@ -188,16 +206,16 @@ void BlockParser::parseLocationBlock(
       const lexer::Token& token = context.currentToken();
 
       if (token.type == lexer::Token::BLOCK_END) {
+        context.advance();  // Consume the '}'
         context.popState();
 
-        // Validate and add location to server
         location->validate();
         server.addLocation(location);
 
         std::ostringstream oss;
         oss << "End of location block, added location for path: " << cleanPath;
         m_logger.debug(oss.str());
-        break;
+        return;
       }
 
       if (token.type == lexer::Token::EOF_T) {
@@ -207,34 +225,54 @@ void BlockParser::parseLocationBlock(
             exceptions::SyntaxException::UNEXPECTED_EOF);
       }
 
-      if (token.type == lexer::Token::BLOCK_START) {
-        // Nested location blocks (not common but possible)
-        std::string nestedBlockName = token.value;
+      if (token.type == lexer::Token::STRING) {
+        std::string tokenValue = token.value;
 
-        if (nestedBlockName == "location") {
-          context.pushState(ParserState::LOCATION, "location");
-          parseLocationBlock(context, server);
+        if (context.currentIndex() + 1 < context.tokenCount()) {
+          const lexer::Token& nextToken = context.peekToken();
+
+          if (nextToken.type == lexer::Token::BLOCK_START) {
+            // Handle special case: limit_except block
+            if (tokenValue == "limit_except") {
+              handleLimitExceptBlock(context, *location);
+            } else if (tokenValue == "location") {
+              // Nested location
+              context.pushState(ParserState::LOCATION, "location");
+              parseLocationBlock(context, server);
+            } else {
+              delete location;
+              std::ostringstream oss;
+              oss << "Unknown block '" << tokenValue
+                  << "' in location context at line " << token.lineNumber;
+              throw exceptions::SyntaxException(
+                  oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
+            }
+          } else {
+            // Location directive
+            handleDirective(context, token, NULL, NULL, location);
+          }
         } else {
           delete location;
           std::ostringstream oss;
-          oss << "Unknown block '" << nestedBlockName
-              << "' in location context";
+          oss << "Unexpected end of file after token '" << tokenValue
+              << "' in location block";
           throw exceptions::SyntaxException(
-              oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
+              oss.str(), exceptions::SyntaxException::UNEXPECTED_EOF);
         }
-        continue;
-      }
-
-      if (token.type == lexer::Token::STRING) {
-        parseDirective(context, token);
       } else {
         delete location;
         std::ostringstream oss;
-        oss << "Unexpected token in location block: " << token.typeToString();
+        oss << "Unexpected token in location block: " << token.typeToString()
+            << " at line " << token.lineNumber;
         throw exceptions::SyntaxException(
             oss.str(), exceptions::SyntaxException::UNEXPECTED_TOKEN);
       }
     }
+
+    delete location;
+    throw exceptions::SyntaxException(
+        "Location block not properly closed",
+        exceptions::SyntaxException::MISSING_BRACE);
 
   } catch (...) {
     delete location;
@@ -242,41 +280,120 @@ void BlockParser::parseLocationBlock(
   }
 }
 
-void BlockParser::parseDirective(
+void BlockParser::handleNestedBlock(
+    ParserContext& context, const std::string& blockName,
+    domain::configuration::entities::HttpConfig* httpConfig,
+    domain::configuration::entities::ServerConfig* server,
+    domain::configuration::entities::LocationConfig* location) {
+  std::size_t lineNumber = context.currentToken().lineNumber;
+  ParserState currentState = context.currentState();
+
+  if (currentState.context == ParserState::HTTP && blockName == "server") {
+    if (httpConfig == NULL) {
+      throw exceptions::SyntaxException(
+          "Internal error: httpConfig is NULL",
+          exceptions::SyntaxException::UNEXPECTED_TOKEN);
+    }
+
+    context.advance();  // Move past "server"
+    context.expect(lexer::Token::BLOCK_START, "server block start");
+    context.advance();  // Move past "{"
+
+    context.pushState(ParserState::SERVER, "server");
+    parseServerBlock(context, *httpConfig);
+
+  } else if (currentState.context == ParserState::SERVER &&
+             blockName == "location") {
+    if (server == NULL) {
+      throw exceptions::SyntaxException(
+          "Internal error: server is NULL",
+          exceptions::SyntaxException::UNEXPECTED_TOKEN);
+    }
+
+    context.advance();  // Move past "location"
+    context.pushState(ParserState::LOCATION, "location");
+    parseLocationBlock(context, *server);
+
+  } else if (currentState.context == ParserState::LOCATION &&
+             blockName == "limit_except") {
+    if (location == NULL) {
+      throw exceptions::SyntaxException(
+          "Internal error: location is NULL",
+          exceptions::SyntaxException::UNEXPECTED_TOKEN);
+    }
+
+    handleLimitExceptBlock(context, *location);
+
+  } else {
+    std::ostringstream oss;
+    oss << "Unknown or misplaced block '" << blockName << "' in "
+        << currentState.contextToString() << " context at line " << lineNumber;
+    throw exceptions::SyntaxException(
+        oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
+  }
+}
+
+void BlockParser::handleDirective(
     ParserContext& context, const lexer::Token& directiveToken,
     domain::configuration::entities::HttpConfig* httpConfig,
     domain::configuration::entities::ServerConfig* server,
     domain::configuration::entities::LocationConfig* location) {
   std::string directive = directiveToken.value;
-  std::vector<std::string> args = collectArguments(context);
-
-  // Expect semicolon
-  context.expect(lexer::Token::SEMICOLON, "directive termination");
-
-  ParserState currentState = context.currentState();
   std::size_t lineNumber = directiveToken.lineNumber;
+
+  context.advance();  // Move past the directive name
+
+  std::vector<std::string> args;
+
+  // Collect arguments until we hit a semicolon
+  while (context.hasMoreTokens()) {
+    const lexer::Token& token = context.currentToken();
+
+    if (token.type == lexer::Token::SEMICOLON) {
+      context.advance();  // Consume the semicolon
+      break;
+    }
+    if (token.type == lexer::Token::STRING) {
+      args.push_back(token.value);
+      context.advance();
+    } else {
+      std::ostringstream oss;
+      oss << "Expected argument or semicolon after directive '" << directive
+          << "' at line " << token.lineNumber << ", but found "
+          << token.typeToString();
+      throw exceptions::SyntaxException(
+          oss.str(), exceptions::SyntaxException::UNEXPECTED_TOKEN);
+    }
+  }
+
+  // Dispatch to appropriate handler based on context
+  ParserState currentState = context.currentState();
 
   try {
     if (currentState.context == ParserState::HTTP && httpConfig != NULL) {
       handlers::GlobalDirectiveHandler handler(m_logger, *httpConfig);
       handler.handle(directive, args, lineNumber);
+
     } else if (currentState.context == ParserState::SERVER && server != NULL) {
       handlers::ServerDirectiveHandler handler(m_logger, *server);
       handler.handle(directive, args, lineNumber);
+
     } else if (currentState.context == ParserState::LOCATION &&
                location != NULL) {
       handlers::LocationDirectiveHandler handler(m_logger, *location);
       handler.handle(directive, args, lineNumber);
+
     } else {
       std::ostringstream oss;
       oss << "Directive '" << directive << "' not allowed in "
-          << currentState.contextToString() << " context";
+          << currentState.contextToString() << " context at line "
+          << lineNumber;
       throw exceptions::SyntaxException(
           oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
     }
 
     std::ostringstream oss;
-    oss << "Parsed directive '" << directive << "' with " << args.size()
+    oss << "Processed directive '" << directive << "' with " << args.size()
         << " arguments at line " << lineNumber;
     m_logger.debug(oss.str());
 
@@ -291,103 +408,110 @@ void BlockParser::parseDirective(
   }
 }
 
-handlers::GlobalDirectiveHandler* BlockParser::createGlobalHandler(
-    domain::configuration::entities::HttpConfig& httpConfig) {
-  return new handlers::GlobalDirectiveHandler(m_logger, httpConfig);
-}
-
-handlers::ServerDirectiveHandler* BlockParser::createServerHandler(
-    domain::configuration::entities::ServerConfig& server) {
-  return new handlers::ServerDirectiveHandler(m_logger, server);
-}
-
-handlers::LocationDirectiveHandler* BlockParser::createLocationHandler(
+void BlockParser::handleLimitExceptBlock(
+    ParserContext& context,
     domain::configuration::entities::LocationConfig& location) {
-  return new handlers::LocationDirectiveHandler(m_logger, location);
-}
+  const lexer::Token& limitExceptToken = context.currentToken();
+  std::size_t lineNumber = limitExceptToken.lineNumber;
 
-bool BlockParser::isAllowedInContext(const std::string& directive,
-                                     ParserState::Context context) {
-  // Define which directives are allowed in which contexts
-  static std::map<std::string, ParserState::Context> directiveContexts;
+  context.advance();  // Move past "limit_except"
 
-  if (directiveContexts.empty()) {
-    // Global/HTTP context directives
-    directiveContexts["worker_processes"] = ParserState::GLOBAL;
-    directiveContexts["worker_connections"] = ParserState::GLOBAL;
-    directiveContexts["client_max_body_size"] = ParserState::GLOBAL;
-    directiveContexts["error_log"] = ParserState::GLOBAL;
-    directiveContexts["access_log"] = ParserState::GLOBAL;
-    directiveContexts["error_page"] = ParserState::GLOBAL;
-    directiveContexts["include"] = ParserState::GLOBAL;
-
-    // Server context directives
-    directiveContexts["listen"] = ParserState::SERVER;
-    directiveContexts["server_name"] = ParserState::SERVER;
-    directiveContexts["root"] = ParserState::SERVER;
-    directiveContexts["index"] = ParserState::SERVER;
-    directiveContexts["return"] = ParserState::SERVER;
-
-    // Location context directives
-    directiveContexts["alias"] = ParserState::LOCATION;
-    directiveContexts["limit_except"] = ParserState::LOCATION;
-    directiveContexts["autoindex"] = ParserState::LOCATION;
-    directiveContexts["try_files"] = ParserState::LOCATION;
-    directiveContexts["upload_store"] = ParserState::LOCATION;
-    directiveContexts["upload_store_permissions"] = ParserState::LOCATION;
-    directiveContexts["upload_store_access"] = ParserState::LOCATION;
-    directiveContexts["script"] = ParserState::LOCATION;
-    directiveContexts["cgi_root"] = ParserState::LOCATION;
-    directiveContexts["fastcgi_param"] = ParserState::LOCATION;
-    directiveContexts["upload_max_file_size"] = ParserState::LOCATION;
-    directiveContexts["upload_max_total_size"] = ParserState::LOCATION;
-
-    // Shared directives (allowed in multiple contexts)
-    directiveContexts["root"] = ParserState::SERVER;        // Also in LOCATION
-    directiveContexts["index"] = ParserState::SERVER;       // Also in LOCATION
-    directiveContexts["error_page"] = ParserState::SERVER;  // Also in GLOBAL
-    directiveContexts["client_max_body_size"] =
-        ParserState::SERVER;                              // Also in GLOBAL
-    directiveContexts["return"] = ParserState::LOCATION;  // Also in SERVER
-  }
-
-  std::map<std::string, ParserState::Context>::iterator it =
-      directiveContexts.find(directive);
-
-  if (it == directiveContexts.end()) {
-    return false;  // Unknown directive
-  }
-
-  // Check if directive is allowed in current context
-  ParserState::Context allowedContext = it->second;
-
-  // Some directives are allowed in multiple contexts
-  if (directive == "root" || directive == "index") {
-    return context == ParserState::SERVER || context == ParserState::LOCATION;
-  } else if (directive == "error_page" || directive == "client_max_body_size") {
-    return context == ParserState::GLOBAL || context == ParserState::SERVER;
-  } else if (directive == "return") {
-    return context == ParserState::SERVER || context == ParserState::LOCATION;
-  }
-
-  return context == allowedContext;
-}
-
-std::vector<std::string> BlockParser::collectArguments(ParserContext& context) {
-  std::vector<std::string> args;
-
+  // Collect HTTP methods
+  std::vector<std::string> methods;
   while (context.hasMoreTokens()) {
-    const lexer::Token& token = context.peekToken();
+    const lexer::Token& token = context.currentToken();
 
+    if (token.type == lexer::Token::BLOCK_START) {
+      break;
+    }
     if (token.type == lexer::Token::STRING) {
-      args.push_back(token.value);
+      methods.push_back(token.value);
       context.advance();
     } else {
-      break;
+      std::ostringstream oss;
+      oss << "Expected HTTP method or '{' in limit_except at line "
+          << token.lineNumber;
+      throw exceptions::SyntaxException(
+          oss.str(), exceptions::SyntaxException::UNEXPECTED_TOKEN);
     }
   }
 
-  return args;
+  if (methods.empty()) {
+    std::ostringstream oss;
+    oss << "limit_except requires at least one HTTP method at line "
+        << lineNumber;
+    throw exceptions::SyntaxException(
+        oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
+  }
+
+  // Now we should be at BLOCK_START
+  context.expect(lexer::Token::BLOCK_START, "limit_except block start");
+  context.advance();  // Move past "{"
+
+  // Add allowed methods to location
+  for (std::size_t i = 0; i < methods.size(); ++i) {
+    try {
+      domain::http::value_objects::HttpMethod method(methods[i]);
+      location.addAllowedMethod(method);
+
+      std::ostringstream oss;
+      oss << "Added allowed method '" << methods[i]
+          << "' via limit_except at line " << lineNumber;
+      m_logger.debug(oss.str());
+
+    } catch (const std::exception& e) {
+      std::ostringstream oss;
+      oss << "Invalid HTTP method in limit_except: '" << methods[i]
+          << "': " << e.what() << " at line " << lineNumber;
+      throw exceptions::SyntaxException(
+          oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
+    }
+  }
+
+  // Parse the block content (typically just "deny all;")
+  while (context.hasMoreTokens()) {
+    const lexer::Token& token = context.currentToken();
+
+    if (token.type == lexer::Token::BLOCK_END) {
+      context.advance();  // Consume the '}'
+
+      std::ostringstream oss;
+      oss << "Completed limit_except block with " << methods.size()
+          << " allowed methods";
+      m_logger.debug(oss.str());
+      return;
+    }
+
+    if (token.type == lexer::Token::STRING) {
+      // Typically "deny all;" - we just skip it
+      std::string word = token.value;
+      context.advance();
+
+      if (word == "deny") {
+        if (context.hasMoreTokens() &&
+            context.currentToken().type == lexer::Token::STRING &&
+            context.currentToken().value == "all") {
+          context.advance();
+          context.expect(lexer::Token::SEMICOLON, "deny all statement");
+          context.advance();
+        }
+      } else {
+        std::ostringstream oss;
+        oss << "Unknown statement '" << word
+            << "' in limit_except block at line " << token.lineNumber;
+        m_logger.warn(oss.str());
+      }
+    } else {
+      std::ostringstream oss;
+      oss << "Unexpected token in limit_except block: " << token.typeToString()
+          << " at line " << token.lineNumber;
+      throw exceptions::SyntaxException(
+          oss.str(), exceptions::SyntaxException::UNEXPECTED_TOKEN);
+    }
+  }
+
+  throw exceptions::SyntaxException("limit_except block not properly closed",
+                                    exceptions::SyntaxException::MISSING_BRACE);
 }
 
 }  // namespace parser

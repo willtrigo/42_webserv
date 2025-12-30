@@ -6,13 +6,14 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/18 18:26:50 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/30 17:09:09 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/30 20:38:15 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "infrastructure/config/exceptions/ConfigException.hpp"
 #include "infrastructure/config/exceptions/SyntaxException.hpp"
 #include "infrastructure/config/exceptions/ValidationException.hpp"
+#include "infrastructure/config/handlers/GlobalDirectiveHandler.hpp"
 #include "infrastructure/config/parsers/ConfigParser.hpp"
 
 #include <sstream>
@@ -69,8 +70,6 @@ void ConfigParser::initializeParser(const std::string& configPath) {
 void ConfigParser::parseTokens(
     parser::ParserContext& context,
     domain::configuration::entities::HttpConfig& httpConfig) {
-  handleTopLevelDirectives(context, httpConfig);
-
   while (context.hasMoreTokens()) {
     const lexer::Token& token = context.currentToken();
 
@@ -78,72 +77,133 @@ void ConfigParser::parseTokens(
       break;
     }
 
-    if (token.type == lexer::Token::BLOCK_START) {
-      std::string blockName = token.value;
+    if (token.type == lexer::Token::STRING) {
+      std::string tokenValue = token.value;
 
-      if (blockName == "http") {
-        context.pushState(parser::ParserState::HTTP, "http");
-        m_blockParser.parseHttpBlock(context, httpConfig);
-      } else if (blockName == "server") {
-        context.pushState(parser::ParserState::SERVER, "server");
-        m_blockParser.parseServerBlock(context, httpConfig);
+      // Look ahead to determine if this is a block or directive
+      if (context.currentIndex() + 1 < context.tokenCount()) {
+        const lexer::Token& nextToken = context.peekToken();
+
+        if (nextToken.type == lexer::Token::BLOCK_START) {
+          // This is a block declaration: "http {" or "server {"
+          handleBlockDeclaration(context, httpConfig, tokenValue);
+        } else {
+          // This is a directive
+          handleSingleDirective(context, httpConfig);
+        }
       } else {
         std::ostringstream oss;
-        oss << "Unknown block type '" << blockName << "'";
+        oss << "Unexpected end of file after token '" << tokenValue
+            << "' at line " << token.lineNumber;
         throw exceptions::SyntaxException(
-            oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
+            oss.str(), exceptions::SyntaxException::UNEXPECTED_EOF);
       }
-    } else if (token.type == lexer::Token::STRING) {
-      handleTopLevelDirectives(context, httpConfig);
+    } else if (token.type == lexer::Token::BLOCK_START) {
+      std::ostringstream oss;
+      oss << "Unexpected block start without block name at line "
+          << token.lineNumber;
+      throw exceptions::SyntaxException(
+          oss.str(), exceptions::SyntaxException::UNEXPECTED_TOKEN);
+    } else if (token.type == lexer::Token::SEMICOLON) {
+      std::ostringstream oss;
+      oss << "Unexpected semicolon at top level at line " << token.lineNumber;
+      throw exceptions::SyntaxException(
+          oss.str(), exceptions::SyntaxException::UNEXPECTED_TOKEN);
     } else {
       std::ostringstream oss;
-      oss << "Unexpected token at top level: " << token.typeToString();
+      oss << "Unexpected token at top level: " << token.typeToString()
+          << " at line " << token.lineNumber;
       throw exceptions::SyntaxException(
           oss.str(), exceptions::SyntaxException::UNEXPECTED_TOKEN);
     }
   }
 }
 
-void ConfigParser::handleTopLevelDirectives(
+void ConfigParser::handleBlockDeclaration(
+    parser::ParserContext& context,
+    domain::configuration::entities::HttpConfig& httpConfig,
+    const std::string& blockName) {
+  std::size_t lineNumber = context.currentToken().lineNumber;
+
+  context.advance();  // Move past the block name (e.g., "http" or "server")
+
+  // Now we should be at BLOCK_START "{"
+  context.expect(lexer::Token::BLOCK_START, "block start");
+  context.advance();  // Move past the "{"
+
+  if (blockName == "http") {
+    context.pushState(parser::ParserState::HTTP, "http");
+
+    std::ostringstream oss;
+    oss << "Entering http block at line " << lineNumber;
+    m_logger.debug(oss.str());
+
+    m_blockParser.parseHttpBlock(context, httpConfig);
+
+  } else if (blockName == "server") {
+    context.pushState(parser::ParserState::SERVER, "server");
+
+    std::ostringstream oss;
+    oss << "Entering server block at line " << lineNumber;
+    m_logger.debug(oss.str());
+
+    m_blockParser.parseServerBlock(context, httpConfig);
+
+  } else {
+    std::ostringstream oss;
+    oss << "Unknown block type '" << blockName << "' at line " << lineNumber;
+    throw exceptions::SyntaxException(
+        oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
+  }
+}
+
+void ConfigParser::handleSingleDirective(
     parser::ParserContext& context,
     domain::configuration::entities::HttpConfig& httpConfig) {
-  while (context.hasMoreTokens()) {
-    const lexer::Token& token = context.peekToken();
+  const lexer::Token& directiveToken = context.currentToken();
+  std::string directive = directiveToken.value;
+  std::size_t lineNumber = directiveToken.lineNumber;
 
-    if (token.type == lexer::Token::EOF_T ||
-        token.type == lexer::Token::BLOCK_START) {
+  context.advance();  // Move past the directive name
+
+  std::vector<std::string> args;
+
+  // Collect arguments until we hit a semicolon
+  while (context.hasMoreTokens()) {
+    const lexer::Token& token = context.currentToken();
+
+    if (token.type == lexer::Token::SEMICOLON) {
+      context.advance();  // Consume the semicolon
       break;
     }
-
     if (token.type == lexer::Token::STRING) {
-      context.advance();  // Move to directive token
-
-      std::string directive = token.value;
-      std::vector<std::string> args;
-
-      // Collect arguments
-      while (context.hasMoreTokens()) {
-        const lexer::Token& argToken = context.peekToken();
-        if (argToken.type == lexer::Token::STRING) {
-          args.push_back(argToken.value);
-          context.advance();
-        } else {
-          break;
-        }
-      }
-
-      // Expect semicolon
-      context.expect(lexer::Token::SEMICOLON, "directive termination");
-
-      // Handle directive
-      handlers::GlobalDirectiveHandler handler(m_logger, httpConfig);
-      handler.handle(directive, args, token.lineNumber);
-    } else {
+      args.push_back(token.value);
+      context.advance();
+    } else if (token.type == lexer::Token::BLOCK_START) {
+      std::ostringstream oss;
+      oss << "Unexpected block start in directive '" << directive
+          << "' at line " << token.lineNumber
+          << ". Did you mean to declare a block?";
       throw exceptions::SyntaxException(
-          "Expected directive at top level",
-          exceptions::SyntaxException::UNEXPECTED_TOKEN);
+          oss.str(), exceptions::SyntaxException::UNEXPECTED_TOKEN);
+    } else {
+      std::ostringstream oss;
+      oss << "Expected argument or semicolon after directive '" << directive
+          << "' at line " << token.lineNumber << ", but found "
+          << token.typeToString();
+      throw exceptions::SyntaxException(
+          oss.str(), exceptions::SyntaxException::UNEXPECTED_TOKEN);
     }
   }
+
+  // Handle the directive using the appropriate handler
+  handlers::GlobalDirectiveHandler handler(m_logger, httpConfig);
+  handler.handle(directive, args, lineNumber);
+
+  std::ostringstream oss;
+  oss << "Processed top-level directive '" << directive << "' with "
+      << args.size() << " arguments at line " << lineNumber;
+  m_logger.debug(oss.str());
 }
 
 void ConfigParser::mergeIncludes(
@@ -151,7 +211,7 @@ void ConfigParser::mergeIncludes(
     const std::string& includePath) {
   (void)httpConfig;
   m_logger.debug("Merge includes called with path: " + includePath);
-  // Implementation would go here
+  // TODO: Implementation would go here for recursive file inclusion
 }
 
 void ConfigParser::validateConfiguration(
