@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 11:08:29 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 20:10:54 by umeneses         ###   ########.fr       */
+/*   Updated: 2025/12/30 16:09:07 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,9 @@ class ErrorCode {
   enum StatusCode {
     MIN_CODE = 100,
     MAX_CODE = 599,
+
+    MIN_VALID_CODE = 400,
+    MAX_VALID_CODE = 599,
 
     INFORMATIONAL_MIN = 100,
     INFORMATIONAL_MAX = 199,

@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/28 20:29:00 by dande-je         ###   ########.fr        #
+#    Updated: 2025/12/30 17:18:19 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -52,6 +52,8 @@ SRCS_INFRASTRUCTURE_DIR                      := $(SRCS_DIR)infrastructure/
 SRCS_INFRASTRUCTURE_CONFIG_DIR               := $(SRCS_INFRASTRUCTURE_DIR)config/
 SRCS_INFRASTRUCTURE_CONFIG_ADAPTERS_DIR      := $(SRCS_INFRASTRUCTURE_CONFIG_DIR)adapters/
 SRCS_INFRASTRUCTURE_CONFIG_EXCEPTIONS_DIR    := $(SRCS_INFRASTRUCTURE_CONFIG_DIR)exceptions/
+SRCS_INFRASTRUCTURE_CONFIG_HANDLERS_DIR      := $(SRCS_INFRASTRUCTURE_CONFIG_DIR)handlers/
+SRCS_INFRASTRUCTURE_CONFIG_LEXER_DIR         := $(SRCS_INFRASTRUCTURE_CONFIG_DIR)lexer/
 SRCS_INFRASTRUCTURE_CONFIG_PARSERS_DIR       := $(SRCS_INFRASTRUCTURE_CONFIG_DIR)parsers/
 SRCS_HTTP_DIR                   := $(SRCS_INFRASTRUCTURE_DIR)http/
 SRCS_IO_DIR                     := $(SRCS_INFRASTRUCTURE_DIR)io/
@@ -135,8 +137,20 @@ SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_VALUE_OBJECT
 
 # INFRASTRUCTURE
 SRCS_FILES                      += $(addprefix $(SRCS_INFRASTRUCTURE_CONFIG_ADAPTERS_DIR), ConfigProvider.cpp)
-SRCS_FILES                      += $(addprefix $(SRCS_INFRASTRUCTURE_CONFIG_EXCEPTIONS_DIR), ConfigException.cpp)
-SRCS_FILES                      += $(addprefix $(SRCS_INFRASTRUCTURE_CONFIG_PARSERS_DIR), ConfigParser.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_INFRASTRUCTURE_CONFIG_EXCEPTIONS_DIR), ConfigException.cpp \
+																	 ParserException.cpp \
+																	 SyntaxException.cpp \
+																	 ValidationException.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_INFRASTRUCTURE_CONFIG_HANDLERS_DIR), ADirectiveHandler.cpp \
+																	 GlobalDirectiveHandler.cpp \
+																	 LocationDirectiveHandler.cpp \
+																	 ServerDirectivehandler.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_INFRASTRUCTURE_CONFIG_LEXER_DIR), ConfigLexer.cpp \
+																	 Token.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_INFRASTRUCTURE_CONFIG_PARSERS_DIR), BlockParser.cpp \
+																	 ConfigParser.cpp \
+																	 ParserContext.cpp \
+																	 ParserState.cpp)
 
 SRCS_FILES                      += $(addprefix $(SRCS_FILESYSTEM_EXCEPTION_DIR), DirectoryListerException.cpp \
 																	 FileHandlerException.cpp \
