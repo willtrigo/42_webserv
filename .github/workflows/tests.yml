@@ -11,6 +11,9 @@ jobs:
   unit-errorcode:
     uses: ./.github/workflows/unit_ErrorCode.yml
   
+  unit-errorpage:
+    uses: ./.github/workflows/unit_ErrorPage.yml
+  
   unit-httpmethod:
     uses: ./.github/workflows/unit_HttpMethod.yml
   
@@ -44,7 +47,7 @@ jobs:
   # Summary job that depends on all tests
   test-summary:
     runs-on: ubuntu-latest
-    needs: [unit-errorcode, unit-httpmethod, unit-path, unit-port, unit-size, unit-uri, unit-querystringbuilder, unit-permission, unit-uploadaccess, unit-host, unit-mocks]
+    needs: [unit-errorcode, unit-errorpage, unit-httpmethod, unit-path, unit-port, unit-size, unit-uri, unit-querystringbuilder, unit-permission, unit-uploadaccess, unit-host, unit-mocks]
     if: always()
     
     steps:
@@ -63,6 +66,12 @@ jobs:
           echo "- ✅ ErrorCode tests" >> $GITHUB_STEP_SUMMARY
         else
           echo "- ❌ ErrorCode tests" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -d "test-results/test-results-errorpage" ]; then
+          echo "- ✅ ErrorPage tests" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ❌ ErrorPage tests" >> $GITHUB_STEP_SUMMARY
         fi
         
         if [ -d "test-results/test-results-httpmethod" ]; then

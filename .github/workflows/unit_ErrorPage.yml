@@ -1,0 +1,84 @@
+name: Unit Tests - ErrorPage
+
+on:
+  push:
+    branches: [ main, master, develop, "**feat**" ]
+  pull_request:
+    branches: [ main, master, develop ]
+  workflow_call:
+
+jobs:
+  unit-errorpage:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        submodules: recursive
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake valgrind
+    
+    - name: Cache Google Test
+      id: cache-gtest
+      uses: actions/cache@v5
+      with:
+        path: |
+          /usr/local/lib/libgtest.a
+          /usr/local/lib/libgtest_main.a
+          /usr/local/include/gtest
+        key: gtest-1.8.1-${{ runner.os }}
+    
+    - name: Install Google Test 1.8.1 (C++98 compatible)
+      if: steps.cache-gtest.outputs.cache-hit != 'true'
+      run: |
+        cd tests/
+        sudo ./install_gtest.sh
+    
+    - name: Cache build artifacts
+      uses: actions/cache@v5
+      with:
+        path: |
+          build
+          bin
+          tests/build
+        key: build-${{ runner.os }}-${{ hashFiles('src/**/*.cpp', 'src/**/*.hpp', 'Makefile') }}
+        restore-keys: |
+          build-${{ runner.os }}-
+    
+    - name: Build project and tests
+      run: |
+        make
+        cd tests/
+        make
+    
+    - name: Run ErrorPage tests
+      run: |
+        cd tests/
+        ./bin/test_runner --gtest_filter='ErrorPageTest.*' --gtest_output=xml:test-results-errorpage.xml
+    
+    - name: Run ErrorPage tests with Valgrind
+      run: |
+        cd tests/
+        valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --error-exitcode=1 --log-file=valgrind-errorpage.txt ./bin/test_runner --gtest_filter='ErrorPageTest.*'
+    
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: test-results-errorpage
+        path: |
+          tests/test-results-errorpage.xml
+          tests/valgrind-errorpage.txt
+    
+    - name: Test Summary
+      if: always()
+      run: |
+        echo "## ErrorPage Test Results" >> $GITHUB_STEP_SUMMARY
+        cd tests/
+        if [ -f test-results-errorpage.xml ]; then
+          echo "✅ ErrorPage tests completed" >> $GITHUB_STEP_SUMMARY
+        fi
