@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/24 09:42:14 by umeneses          #+#    #+#              #
-#    Updated: 2025/12/30 16:11:54 by umeneses         ###   ########.fr        #
+#    Updated: 2025/12/30 19:26:12 by umeneses         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -40,23 +40,66 @@ MOCKS_DIR                       := mocks
 
 NAME                            := $(BIN_DIR)/test_runner
 
-# Source files from main project (exclude main.cpp and unimplemented features)
+# ============================================================================
+# SOURCE FILE EXCLUSIONS
+# ============================================================================
+# Explicitly exclude files that cannot be compiled in test environment.
+# Files are excluded when they depend on infrastructure not yet implemented
+# or when they're part of the main application (not library code).
+#
+# INFRASTRUCTURE/NETWORK (2 files):
+#   - RouteMatcher.cpp, RouteMatcherException.cpp
+#
+# INFRASTRUCTURE/HTTP (2 files):
+#   - RequestParser.cpp, RequestParserException.cpp
+#
+# INFRASTRUCTURE/CONFIG (3 files):
+#   - ConfigParser.cpp, ConfigProvider.cpp, ConfigException.cpp
+#
+# INFRASTRUCTURE/FILESYSTEM/ADAPTERS (6 files):
+#   - FileHandler.cpp, DirectoryLister.cpp, PathResolver.cpp
+#   - FileSystemHelper.cpp, DirectoryEntryComparators.cpp
+#   - RouteConfigAdapter.cpp
+#
+# PRESENTATION/CLI (2 files):
+#   - CliController.cpp, CliView.cpp
+#
+# CONFIGURATION/ENTITIES (6 files - depend on infrastructure):
+#   - HttpConfig.cpp, HttpConfigException.cpp
+#   - ServerConfig.cpp, ServerConfigException.cpp
+#   - LocationConfig.cpp, LocationConfigException.cpp
+#
+# CONFIGURATION/VALUE_OBJECTS (2 files - depend on infrastructure):
+#   - UploadConfig.cpp, UploadConfigException.cpp
+#
+# Total: 25 files excluded + main.cpp
+# ============================================================================
+
 PROJECT_SRCS                    := $(shell find $(SRC_DIR) -name '*.cpp' \
 											! -name 'main.cpp' \
-											! -path '*/infrastructure/network/*' \
-											! -path '*/infrastructure/http/*' \
-											! -path '*/infrastructure/config/*' \
-											! -path '*/infrastructure/filesystem/adapters/*' \
-											! -path '*/domain/configuration/entities/*' \
+											! -name 'RouteMatcher.cpp' \
+											! -name 'RouteMatcherException.cpp' \
+											! -name 'RequestParser.cpp' \
+											! -name 'RequestParserException.cpp' \
+											! -name 'ConfigParser.cpp' \
+											! -name 'ConfigProvider.cpp' \
+											! -name 'ConfigException.cpp' \
+											! -name 'FileHandler.cpp' \
+											! -name 'DirectoryLister.cpp' \
+											! -name 'PathResolver.cpp' \
+											! -name 'FileSystemHelper.cpp' \
+											! -name 'DirectoryEntryComparators.cpp' \
 											! -name 'RouteConfigAdapter.cpp' \
-											! -name 'CgiConfigException.cpp' \
+											! -name 'CliController.cpp' \
+											! -name 'CliView.cpp' \
+											! -name 'HttpConfig.cpp' \
 											! -name 'HttpConfigException.cpp' \
-											! -name 'LocationConfigException.cpp' \
+											! -name 'ServerConfig.cpp' \
 											! -name 'ServerConfigException.cpp' \
-											! -name 'UploadConfigException.cpp' \
+											! -name 'LocationConfig.cpp' \
+											! -name 'LocationConfigException.cpp' \
 											! -name 'UploadConfig.cpp' \
-											! -name 'CgiConfig.cpp' \
-											! -path '*/presentation/cli/*' \
+											! -name 'UploadConfigException.cpp' \
 											)
 
 
