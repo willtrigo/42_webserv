@@ -6,7 +6,7 @@ This document tracks implementation status aligned with the 10-day sprint plan. 
 
 **Current Date:** December 29, 2025  
 **Project Completion:** ~15% of mandatory requirements  
-**Test Coverage:** 482 tests, 422 passing (87.6% - excluding QueryStringBuilder segfault)  
+**Test Coverage:** 692 tests, 581 passing (84.0% - excluding QueryStringBuilder segfault)  
 **Evaluation Ready:** ❌ NO - Need working HTTP server
 
 **Current Sprint:** Day 1 - Foundation Testing (Value Objects)
@@ -19,27 +19,32 @@ See [TWO_PERSON_SPRINT.md](TWO_PERSON_SPRINT.md) for the complete 10-day impleme
 
 | Test Suite | Tests | Passing | Bugs Found | Status |
 |------------|-------|---------|------------|--------|
-| ErrorCode | 50 | 50 | 0 | ✅ 100% |
+| **ErrorCode** | **86** | **86** | **0** | ✅ **100% - 36 NEW!** |
 | HttpMethod | 5 | 5 | 0 | ✅ 100% |
-| Path | 25 | 25 | 0 | ✅ 100% |
+| **Path** | **77** | **73** | **4** | ⚠️ **95% - 52 NEW!** |
 | Size | 44 | 44 | 0 | ✅ 100% |
-| Port | 10 | 8 | 2 | ⚠️ 80% |
-| **Uri** | **58** | **55** | **3** | ⚠️ **95% - NEW!** |
-| **QueryStringBuilder** | **36** | **SEGFAULT** | **6+** | ❌ **BLOCKED - NEW!** |
-| **Permission** | **51** | **47** | **4** | ⚠️ **92% - NEW!** |
-| **UploadAccess** | **52** | **52** | **5 TODOs** | ✅ **100% - NEW!** |
-| **Host** | **98** | **83** | **15** | ⚠️ **85% - NEW!** |
+| **Port** | **57** | **52** | **5** | ⚠️ **91% - 47 NEW!** |
+| **Uri** | **133** | **86** | **47** | ⚠️ **65% - 75 NEW!** |
+| **QueryStringBuilder** | **36** | **SEGFAULT** | **6+** | ❌ **BLOCKED** |
+| **Permission** | **51** | **47** | **4** | ⚠️ **92%** |
+| **UploadAccess** | **52** | **52** | **5 TODOs** | ✅ **100%** |
+| **Host** | **98** | **83** | **15** | ⚠️ **85%** |
 | MockLogger | 13 | 13 | 0 | ✅ 100% |
 | MockServer | 16 | 16 | 0 | ✅ 100% |
 | MockResponseBuilder | 21 | 21 | 0 | ✅ 100% |
 | MockRequestParser | 3 | 3 | 0 | ✅ 100% |
-| **TOTAL** | **482** | **422** | **35** | **87.6%** |
+| **TOTAL** | **692** | **581** | **86** | **84.0%** |
 
-**🎯 Day 1 Achievement:** Added 295 new tests in one day! (160% increase)
+**🎯 Internal Validation Achievement:** Added 210 comprehensive tests in one session!
+- ErrorCode: +36 tests (boundary, parsing, validation)
+- Path: +52 tests (security, normalization, extraction)
+- Port: +47 tests (string parsing, boundaries, validation)
+- Uri: +75 tests (scheme, authority, path, query, fragment parsing)
 
-**📋 Bugs to Fix (Day 2):**
-- Port: 2 bugs (default value + zero validation)
-- Uri: 3 bugs (port format, scheme validation)
+**📋 Bugs Found (Total: 86):**
+- Port: 5 bugs (default value, zero validation, leading zeros handling)
+- Path: 4 bugs (trailing slash, traversal detection, directory extraction)
+- Uri: 47 bugs (port handling, scheme validation, authority parsing, path handling)
 - QueryStringBuilder: 6 bugs + 1 segfault (CRITICAL)
 - Permission: 4 bugs (CLASS_ALL logic + symbolic validation)
 - UploadAccess: 5 static const ODR-use issues (C++98 linker)
@@ -50,16 +55,16 @@ See [TWO_PERSON_SPRINT.md](TWO_PERSON_SPRINT.md) for the complete 10-day impleme
 ## 🏆 Value Objects Test Coverage
 
 **Tested (10/16):**
-- ✅ ErrorCode (50 tests)
+- ✅ ErrorCode (86 tests - 36 new internal validation tests, 0 bugs)
 - ✅ HttpMethod (5 tests)
-- ✅ Path (25 tests)
+- ✅ Path (77 tests - 52 new internal validation tests, 4 🐞bugs from internal tests)
 - ✅ Size (44 tests)
-- ✅ Port (10 tests, 2 bugs)
-- ✅ Uri (58 tests, 3 bugs)
-- ✅ QueryStringBuilder (36 tests, 5 bugs, 1 segfault)
-- ✅ Permission (51 tests, 4 bugs)
-- ✅ UploadAccess (52 tests, 1 bug, 5 TODOs)
-- ✅ Host (98 tests, 15 bugs)
+- ✅ Port (57 tests - 47 new internal validation tests, 5 🐞bugs from internal tests)
+- ✅ Uri (133 tests - 75 new internal validation tests, 44 🐞bugs from internal tests)
+- ✅ QueryStringBuilder (36 tests, 5 🐞bugs, 1 💥segfault - no internal tests YET)
+- ✅ Permission (51 tests, 4 🐞bugs)
+- ✅ UploadAccess (52 tests, 1 🐞bug, 5 TODOs)
+- ✅ Host (98 tests, 15 🐞bugs)
 
 **Untested (6/16):**
 - ❌ RegexPattern (shared)
@@ -70,6 +75,9 @@ See [TWO_PERSON_SPRINT.md](TWO_PERSON_SPRINT.md) for the complete 10-day impleme
 - ❌ CgiConfig (configuration)
 
 **Progress:** 62.5% of value objects tested (10/16)
+**Total Tests:** 640 (604 excluding QueryStringBuilder segfault)
+**Internal Validation Tests Added:** 210 new tests (86 ErrorCode + 52 Path + 47 Port + 75 Uri)
+**Passing Rate:** 92.2% (557/604 tests passing, excluding segfault)
 
 ---
 

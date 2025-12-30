@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/24 09:42:14 by umeneses          #+#    #+#              #
-#    Updated: 2025/12/29 15:34:23 by umeneses         ###   ########.fr        #
+#    Updated: 2025/12/29 21:09:45 by umeneses         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -47,7 +47,18 @@ PROJECT_SRCS                    := $(shell find $(SRC_DIR) -name '*.cpp' \
 											! -path '*/infrastructure/http/*' \
 											! -path '*/infrastructure/config/*' \
 											! -path '*/infrastructure/filesystem/adapters/*' \
-											! -path '*/domain/configuration/*' \
+											! -path '*/domain/configuration/entities/*' \
+											! -name 'CgiConfigException.cpp' \
+											! -name 'HttpConfigException.cpp' \
+											! -name 'ListenDirectiveException.cpp' \
+											! -name 'LocationConfigException.cpp' \
+											! -name 'RouteException.cpp' \
+											! -name 'ServerConfigException.cpp' \
+											! -name 'UploadConfigException.cpp' \
+											! -name 'Route.cpp' \
+											! -name 'ListenDirective.cpp' \
+											! -name 'CgiConfig.cpp' \
+											! -name 'UploadConfig.cpp' \
 											! -path '*/presentation/cli/*' \
 											! -name 'RegexPattern.cpp' \
 											! -name 'RegexPatternException.cpp' \

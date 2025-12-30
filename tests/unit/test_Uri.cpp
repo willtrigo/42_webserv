@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/29 12:52:32 by umeneses          #+#    #+#             */
-/*   Updated: 2025/12/29 13:43:24 by umeneses         ###   ########.fr       */
+/*   Updated: 2025/12/29 21:54:06 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -577,4 +577,320 @@ TEST_F(UriTest, HasComponents) {
     EXPECT_TRUE(minimal.hasPath());
     EXPECT_FALSE(minimal.hasQuery());
     EXPECT_FALSE(minimal.hasFragment());
+}
+
+// ============================================================================
+// Internal Validation Tests (through public API)
+// ============================================================================
+
+TEST_F(UriTest, ValidateShouldRejectNullBytes) {
+  std::string uriWithNull = "http://example.com";
+  uriWithNull += '\0';
+  uriWithNull += "/path";
+  Uri* u = NULL;
+  EXPECT_THROW(u = new Uri(uriWithNull), domain::http::exceptions::UriException);
+  if (u) delete u;
+}
+
+TEST_F(UriTest, ValidateShouldRejectUriExceedingMaxLength) {
+  std::string longPath(5000, 'a');
+  std::string longUri = "http://example.com/" + longPath;
+  Uri* u = NULL;
+  EXPECT_THROW(u = new Uri(longUri), domain::http::exceptions::UriException);
+  if (u) delete u;
+}
+
+TEST_F(UriTest, ValidateShouldRejectEmptyUri) {
+  EXPECT_THROW(Uri(""), domain::http::exceptions::UriException);
+}
+
+TEST_F(UriTest, ValidateShouldRejectWhitespaceOnly) {
+  EXPECT_THROW(Uri("   "), domain::http::exceptions::UriException);
+  EXPECT_THROW(Uri("\t"), domain::http::exceptions::UriException);
+}
+
+// parseUri() and parseScheme() - scheme validation
+TEST_F(UriTest, ParseSchemeShouldAcceptValidSchemes) {
+  EXPECT_NO_THROW(Uri("http://example.com"));
+  EXPECT_NO_THROW(Uri("https://example.com"));
+  EXPECT_NO_THROW(Uri("ftp://example.com"));
+  EXPECT_NO_THROW(Uri("file:///path"));
+}
+
+TEST_F(UriTest, ParseSchemeShouldHandleSchemeCaseSensitivity) {
+  // Schemes should be case-insensitive
+  Uri uri1("HTTP://example.com");
+  Uri uri2("http://example.com");
+  // Both should be valid and normalize to lowercase
+  EXPECT_EQ("http", uri1.getScheme());
+  EXPECT_EQ("http", uri2.getScheme());
+}
+
+TEST_F(UriTest, ParseSchemeShouldRejectNumericScheme) {
+  EXPECT_THROW(Uri("123://example.com"), domain::http::exceptions::UriException);
+}
+
+TEST_F(UriTest, ParseSchemeShouldRejectSchemeStartingWithNumber) {
+  EXPECT_THROW(Uri("1http://example.com"), domain::http::exceptions::UriException);
+}
+
+TEST_F(UriTest, ParseSchemeShouldRejectSchemeWithSpaces) {
+  EXPECT_THROW(Uri("ht tp://example.com"), domain::http::exceptions::UriException);
+}
+
+TEST_F(UriTest, ParseSchemeShouldRejectSchemeWithSpecialChars) {
+  EXPECT_THROW(Uri("http!://example.com"), domain::http::exceptions::UriException);
+  EXPECT_THROW(Uri("http@://example.com"), domain::http::exceptions::UriException);
+}
+
+TEST_F(UriTest, ParseSchemeShouldRejectMissingColon) {
+  EXPECT_THROW(Uri("http//example.com"), domain::http::exceptions::UriException);
+}
+
+TEST_F(UriTest, ParseSchemeShouldRejectMissingSlashes) {
+  EXPECT_THROW(Uri("http:example.com"), domain::http::exceptions::UriException);
+}
+
+// parseAuthority() and extractHost() - host extraction
+TEST_F(UriTest, ParseAuthorityShouldExtractDomainHost) {
+  Uri uri("http://www.example.com/path");
+  EXPECT_EQ("www.example.com", uri.getHost());
+}
+
+TEST_F(UriTest, ParseAuthorityShouldExtractIPv4Host) {
+  Uri uri("http://192.168.1.1/path");
+  EXPECT_EQ("192.168.1.1", uri.getHost());
+}
+
+TEST_F(UriTest, ParseAuthorityShouldExtractIPv6Host) {
+  Uri uri("http://[::1]/path");
+  EXPECT_EQ("[::1]", uri.getHost());
+}
+
+TEST_F(UriTest, ParseAuthorityShouldExtractIPv6FullAddress) {
+  Uri uri("http://[2001:0db8:85a3:0000:0000:8a2e:0370:7334]/path");
+  EXPECT_EQ("[2001:0db8:85a3:0000:0000:8a2e:0370:7334]", uri.getHost());
+}
+
+TEST_F(UriTest, ParseAuthorityShouldExtractLocalhostHost) {
+  Uri uri("http://localhost/path");
+  EXPECT_EQ("localhost", uri.getHost());
+}
+
+TEST_F(UriTest, ParseAuthorityShouldRejectEmptyHost) {
+  EXPECT_THROW(Uri("http:///path"), domain::http::exceptions::UriException);
+}
+
+TEST_F(UriTest, ParseAuthorityShouldRejectMalformedIPv4) {
+  EXPECT_THROW(Uri("http://256.256.256.256/path"), domain::http::exceptions::UriException);
+  EXPECT_THROW(Uri("http://192.168.1/path"), domain::http::exceptions::UriException);
+}
+
+TEST_F(UriTest, ParseAuthorityShouldRejectMalformedIPv6) {
+  EXPECT_THROW(Uri("http://[::gggg]/path"), domain::http::exceptions::UriException);
+  EXPECT_THROW(Uri("http://[::1/path"), domain::http::exceptions::UriException); // Missing closing bracket
+}
+
+// extractPort() - port extraction and validation
+TEST_F(UriTest, ExtractPortShouldHandleExplicitPort) {
+  Uri uri("http://example.com:8080/path");
+  EXPECT_EQ(8080, uri.getPort().getValue());
+}
+
+TEST_F(UriTest, ExtractPortShouldHandleImplicitHttpPort) {
+  Uri uri("http://example.com/path");
+  EXPECT_EQ(80, uri.getPort().getValue());
+}
+
+TEST_F(UriTest, ExtractPortShouldHandleImplicitHttpsPort) {
+  Uri uri("https://example.com/path");
+  EXPECT_EQ(443, uri.getPort().getValue());
+}
+
+TEST_F(UriTest, ExtractPortShouldHandleMinimumPort) {
+  Uri uri("http://example.com:1/path");
+  EXPECT_EQ(1, uri.getPort().getValue());
+}
+
+TEST_F(UriTest, ExtractPortShouldHandleMaximumPort) {
+  Uri uri("http://example.com:65535/path");
+  EXPECT_EQ(65535, uri.getPort().getValue());
+}
+
+TEST_F(UriTest, ExtractPortShouldRejectPortZero) {
+  EXPECT_THROW(Uri("http://example.com:0/path"), domain::http::exceptions::UriException);
+}
+
+TEST_F(UriTest, ExtractPortShouldRejectPortAboveMaximum) {
+  EXPECT_THROW(Uri("http://example.com:65536/path"), domain::http::exceptions::UriException);
+  EXPECT_THROW(Uri("http://example.com:99999/path"), domain::http::exceptions::UriException);
+}
+
+TEST_F(UriTest, ExtractPortShouldRejectNonNumericPort) {
+  EXPECT_THROW(Uri("http://example.com:abc/path"), domain::http::exceptions::UriException);
+}
+
+TEST_F(UriTest, ExtractPortShouldRejectNegativePort) {
+  EXPECT_THROW(Uri("http://example.com:-80/path"), domain::http::exceptions::UriException);
+}
+
+TEST_F(UriTest, ExtractPortShouldRejectEmptyPort) {
+  EXPECT_THROW(Uri("http://example.com:/path"), domain::http::exceptions::UriException);
+}
+
+// parsePath() - path extraction with special characters
+TEST_F(UriTest, ParsePathShouldExtractSimplePath) {
+  Uri uri("http://example.com/path/to/resource");
+  EXPECT_EQ("/path/to/resource", uri.getPath());
+}
+
+TEST_F(UriTest, ParsePathShouldExtractRootPath) {
+  Uri uri("http://example.com/");
+  EXPECT_EQ("/", uri.getPath());
+}
+
+TEST_F(UriTest, ParsePathShouldHandleEmptyPath) {
+  Uri uri("http://example.com");
+  EXPECT_EQ("", uri.getPath());
+}
+
+TEST_F(UriTest, ParsePathShouldHandlePathWithSpaces) {
+  Uri uri("http://example.com/path%20with%20spaces");
+  EXPECT_EQ("/path%20with%20spaces", uri.getPath());
+}
+
+TEST_F(UriTest, ParsePathShouldHandlePathWithSpecialChars) {
+  Uri uri("http://example.com/path/with/@special!chars");
+  EXPECT_EQ("/path/with/@special!chars", uri.getPath());
+}
+
+TEST_F(UriTest, ParsePathShouldHandlePathWithUnicode) {
+  Uri uri("http://example.com/path%E2%9C%93");
+  EXPECT_EQ("/path%E2%9C%93", uri.getPath());
+}
+
+TEST_F(UriTest, ParsePathShouldHandlePathWithDots) {
+  Uri uri("http://example.com/path/../other/./file");
+  EXPECT_EQ("/path/../other/./file", uri.getPath());
+}
+
+// parseQuery() - query string parsing
+TEST_F(UriTest, ParseQueryShouldExtractSimpleQuery) {
+  Uri uri("http://example.com/path?key=value");
+  EXPECT_EQ("key=value", uri.getQuery());
+}
+
+TEST_F(UriTest, ParseQueryShouldExtractMultipleParameters) {
+  Uri uri("http://example.com/path?key1=value1&key2=value2&key3=value3");
+  EXPECT_EQ("key1=value1&key2=value2&key3=value3", uri.getQuery());
+}
+
+TEST_F(UriTest, ParseQueryShouldHandleEmptyValue) {
+  Uri uri("http://example.com/path?key=");
+  EXPECT_EQ("key=", uri.getQuery());
+}
+
+TEST_F(UriTest, ParseQueryShouldHandleNoValue) {
+  Uri uri("http://example.com/path?key");
+  EXPECT_EQ("key", uri.getQuery());
+}
+
+TEST_F(UriTest, ParseQueryShouldHandleEmptyQuery) {
+  Uri uri("http://example.com/path?");
+  EXPECT_EQ("", uri.getQuery());
+}
+
+TEST_F(UriTest, ParseQueryShouldHandleMultipleQuestionMarks) {
+  // Only first ? is query separator, rest are part of query value
+  Uri uri("http://example.com/path?key=value?extra");
+  EXPECT_EQ("key=value?extra", uri.getQuery());
+}
+
+TEST_F(UriTest, ParseQueryShouldHandleSpecialCharacters) {
+  Uri uri("http://example.com/path?key=%20value%21");
+  EXPECT_EQ("key=%20value%21", uri.getQuery());
+}
+
+// parseFragment() - fragment handling
+TEST_F(UriTest, ParseFragmentShouldExtractSimpleFragment) {
+  Uri uri("http://example.com/path#section");
+  EXPECT_EQ("section", uri.getFragment());
+}
+
+TEST_F(UriTest, ParseFragmentShouldExtractFragmentWithSpecialChars) {
+  Uri uri("http://example.com/path#section-1.2");
+  EXPECT_EQ("section-1.2", uri.getFragment());
+}
+
+TEST_F(UriTest, ParseFragmentShouldHandleEmptyFragment) {
+  Uri uri("http://example.com/path#");
+  EXPECT_EQ("", uri.getFragment());
+}
+
+TEST_F(UriTest, ParseFragmentShouldHandleFragmentWithQuery) {
+  Uri uri("http://example.com/path?query=value#fragment");
+  EXPECT_EQ("fragment", uri.getFragment());
+  EXPECT_EQ("query=value", uri.getQuery());
+}
+
+TEST_F(UriTest, ParseFragmentShouldHandleMultipleHashes) {
+  // Only first # is fragment separator
+  Uri uri("http://example.com/path#section#subsection");
+  EXPECT_EQ("section#subsection", uri.getFragment());
+}
+
+// findAuthorityEnd() - authority boundary detection
+TEST_F(UriTest, FindAuthorityEndWithPath) {
+  Uri uri("http://example.com/path");
+  EXPECT_TRUE(uri.hasHost());
+  EXPECT_TRUE(uri.hasPath());
+}
+
+TEST_F(UriTest, FindAuthorityEndWithQuery) {
+  Uri uri("http://example.com?query");
+  EXPECT_TRUE(uri.hasHost());
+  EXPECT_TRUE(uri.hasQuery());
+}
+
+TEST_F(UriTest, FindAuthorityEndWithFragment) {
+  Uri uri("http://example.com#fragment");
+  EXPECT_TRUE(uri.hasHost());
+  EXPECT_TRUE(uri.hasFragment());
+}
+
+TEST_F(UriTest, FindAuthorityEndWithAll) {
+  Uri uri("http://example.com/path?query#fragment");
+  EXPECT_TRUE(uri.hasHost());
+  EXPECT_TRUE(uri.hasPath());
+  EXPECT_TRUE(uri.hasQuery());
+  EXPECT_TRUE(uri.hasFragment());
+}
+
+// URI parsing with missing components
+TEST_F(UriTest, ParseUriWithNoPath) {
+  Uri uri("http://example.com");
+  EXPECT_TRUE(uri.hasScheme());
+  EXPECT_TRUE(uri.hasHost());
+  EXPECT_FALSE(uri.hasPath());
+}
+
+TEST_F(UriTest, ParseUriWithNoQuery) {
+  Uri uri("http://example.com/path");
+  EXPECT_TRUE(uri.hasPath());
+  EXPECT_FALSE(uri.hasQuery());
+}
+
+TEST_F(UriTest, ParseUriWithNoFragment) {
+  Uri uri("http://example.com/path?query");
+  EXPECT_TRUE(uri.hasQuery());
+  EXPECT_FALSE(uri.hasFragment());
+}
+
+TEST_F(UriTest, ParseUriWithOnlySchemeAndHost) {
+  Uri uri("http://example.com");
+  EXPECT_TRUE(uri.hasScheme());
+  EXPECT_TRUE(uri.hasHost());
+  EXPECT_FALSE(uri.hasPath());
+  EXPECT_FALSE(uri.hasQuery());
+  EXPECT_FALSE(uri.hasFragment());
 }

@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/27 15:28:27 by umeneses          #+#    #+#             */
-/*   Updated: 2025/12/27 21:17:20 by umeneses         ###   ########.fr       */
+/*   Updated: 2025/12/29 21:41:37 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -439,4 +439,195 @@ TEST_F(ErrorCodeTest, AllCommonStatusCodesShouldHaveDescriptions) {
   // 5xx Server Errors
   EXPECT_FALSE(ErrorCode::internalServerError().getDescription().empty());
   EXPECT_FALSE(ErrorCode::serviceUnavailable().getDescription().empty());
+}
+
+// ============================================================================
+// Internal Validation Tests (through public API)
+// ============================================================================
+
+TEST_F(ErrorCodeTest, ValidateShouldRejectCodeBelow100) {
+  EXPECT_THROW(ErrorCode(99), domain::shared::exceptions::ErrorCodeException);
+  EXPECT_THROW(ErrorCode(0), domain::shared::exceptions::ErrorCodeException);
+  EXPECT_THROW(ErrorCode(-1), domain::shared::exceptions::ErrorCodeException);
+}
+
+TEST_F(ErrorCodeTest, ValidateShouldAcceptCode100) {
+  EXPECT_NO_THROW(ErrorCode(100));
+  ErrorCode code(100);
+  EXPECT_EQ(100, code.getValue());
+}
+
+TEST_F(ErrorCodeTest, ValidateShouldAcceptCode599) {
+  EXPECT_NO_THROW(ErrorCode(599));
+  ErrorCode code(599);
+  EXPECT_EQ(599, code.getValue());
+}
+
+TEST_F(ErrorCodeTest, ValidateShouldRejectCode600AndAbove) {
+  EXPECT_THROW(ErrorCode(600), domain::shared::exceptions::ErrorCodeException);
+  EXPECT_THROW(ErrorCode(1000), domain::shared::exceptions::ErrorCodeException);
+  EXPECT_THROW(ErrorCode(9999), domain::shared::exceptions::ErrorCodeException);
+}
+
+// parseCodeString() and isAllDigits() testing through string constructor
+TEST_F(ErrorCodeTest, ParseCodeStringShouldRejectNonNumeric) {
+  EXPECT_THROW(ErrorCode("abc"), domain::shared::exceptions::ErrorCodeException);
+  EXPECT_THROW(ErrorCode("12abc"), domain::shared::exceptions::ErrorCodeException);
+  EXPECT_THROW(ErrorCode("ab12"), domain::shared::exceptions::ErrorCodeException);
+}
+
+TEST_F(ErrorCodeTest, ParseCodeStringShouldRejectFloatNotation) {
+  EXPECT_THROW(ErrorCode("12.34"), domain::shared::exceptions::ErrorCodeException);
+  EXPECT_THROW(ErrorCode("200.0"), domain::shared::exceptions::ErrorCodeException);
+  EXPECT_THROW(ErrorCode("4.04"), domain::shared::exceptions::ErrorCodeException);
+}
+
+TEST_F(ErrorCodeTest, ParseCodeStringShouldRejectEmptyString) {
+  EXPECT_THROW(ErrorCode(""), domain::shared::exceptions::ErrorCodeException);
+}
+
+TEST_F(ErrorCodeTest, ParseCodeStringShouldRejectWhitespaceOnly) {
+  EXPECT_THROW(ErrorCode("   "), domain::shared::exceptions::ErrorCodeException);
+  EXPECT_THROW(ErrorCode("\t"), domain::shared::exceptions::ErrorCodeException);
+  EXPECT_THROW(ErrorCode("\n"), domain::shared::exceptions::ErrorCodeException);
+}
+
+TEST_F(ErrorCodeTest, ParseCodeStringShouldRejectLeadingWhitespace) {
+  EXPECT_THROW(ErrorCode("  200"), domain::shared::exceptions::ErrorCodeException);
+  EXPECT_THROW(ErrorCode("\t404"), domain::shared::exceptions::ErrorCodeException);
+}
+
+TEST_F(ErrorCodeTest, ParseCodeStringShouldRejectTrailingWhitespace) {
+  EXPECT_THROW(ErrorCode("200  "), domain::shared::exceptions::ErrorCodeException);
+  EXPECT_THROW(ErrorCode("404\n"), domain::shared::exceptions::ErrorCodeException);
+}
+
+TEST_F(ErrorCodeTest, ParseCodeStringShouldRejectSurroundedByWhitespace) {
+  EXPECT_THROW(ErrorCode("  200  "), domain::shared::exceptions::ErrorCodeException);
+}
+
+TEST_F(ErrorCodeTest, ParseCodeStringShouldRejectAlphanumericMix) {
+  EXPECT_THROW(ErrorCode("200x"), domain::shared::exceptions::ErrorCodeException);
+  EXPECT_THROW(ErrorCode("x200"), domain::shared::exceptions::ErrorCodeException);
+  EXPECT_THROW(ErrorCode("2x00"), domain::shared::exceptions::ErrorCodeException);
+}
+
+TEST_F(ErrorCodeTest, ParseCodeStringShouldRejectSpecialCharacters) {
+  EXPECT_THROW(ErrorCode("200!"), domain::shared::exceptions::ErrorCodeException);
+  EXPECT_THROW(ErrorCode("200@"), domain::shared::exceptions::ErrorCodeException);
+  EXPECT_THROW(ErrorCode("200#"), domain::shared::exceptions::ErrorCodeException);
+  EXPECT_THROW(ErrorCode("200$"), domain::shared::exceptions::ErrorCodeException);
+}
+
+TEST_F(ErrorCodeTest, ParseCodeStringShouldHandleLeadingZeros) {
+  // Leading zeros should either be accepted (and parsed correctly) or rejected
+  // Testing current behavior - adjust expectation based on implementation
+  ErrorCode code("0200");
+  EXPECT_EQ(200, code.getValue());
+}
+
+TEST_F(ErrorCodeTest, ParseCodeStringShouldRejectNegativeSign) {
+  EXPECT_THROW(ErrorCode("-200"), domain::shared::exceptions::ErrorCodeException);
+  EXPECT_THROW(ErrorCode("-404"), domain::shared::exceptions::ErrorCodeException);
+}
+
+TEST_F(ErrorCodeTest, ParseCodeStringShouldRejectPlusSign) {
+  EXPECT_THROW(ErrorCode("+200"), domain::shared::exceptions::ErrorCodeException);
+}
+
+TEST_F(ErrorCodeTest, IsAllDigitsShouldAcceptValidNumericStrings) {
+  // Testing through successful string construction
+  EXPECT_NO_THROW(ErrorCode("200"));
+  EXPECT_NO_THROW(ErrorCode("404"));
+  EXPECT_NO_THROW(ErrorCode("500"));
+}
+
+// getDescription() comprehensive testing for all status codes
+TEST_F(ErrorCodeTest, GetDescriptionShouldReturnNonEmptyFor1xxCodes) {
+  ErrorCode code100(100);
+  ErrorCode code101(101);
+  
+  EXPECT_FALSE(code100.getDescription().empty());
+  EXPECT_FALSE(code101.getDescription().empty());
+}
+
+TEST_F(ErrorCodeTest, GetDescriptionShouldReturnNonEmptyFor2xxCodes) {
+  EXPECT_FALSE(ErrorCode(200).getDescription().empty());
+  EXPECT_FALSE(ErrorCode(201).getDescription().empty());
+  EXPECT_FALSE(ErrorCode(204).getDescription().empty());
+}
+
+TEST_F(ErrorCodeTest, GetDescriptionShouldReturnNonEmptyFor3xxCodes) {
+  EXPECT_FALSE(ErrorCode(301).getDescription().empty());
+  EXPECT_FALSE(ErrorCode(302).getDescription().empty());
+  EXPECT_FALSE(ErrorCode(304).getDescription().empty());
+}
+
+TEST_F(ErrorCodeTest, GetDescriptionShouldReturnNonEmptyFor4xxCodes) {
+  EXPECT_FALSE(ErrorCode(400).getDescription().empty());
+  EXPECT_FALSE(ErrorCode(401).getDescription().empty());
+  EXPECT_FALSE(ErrorCode(403).getDescription().empty());
+  EXPECT_FALSE(ErrorCode(404).getDescription().empty());
+  EXPECT_FALSE(ErrorCode(405).getDescription().empty());
+  EXPECT_FALSE(ErrorCode(409).getDescription().empty());
+  EXPECT_FALSE(ErrorCode(413).getDescription().empty());
+}
+
+TEST_F(ErrorCodeTest, GetDescriptionShouldReturnNonEmptyFor5xxCodes) {
+  EXPECT_FALSE(ErrorCode(500).getDescription().empty());
+  EXPECT_FALSE(ErrorCode(503).getDescription().empty());
+}
+
+// Status code categorization boundary testing
+TEST_F(ErrorCodeTest, CategoryBoundaryShouldDistinguish199And200) {
+  ErrorCode code199(199);
+  ErrorCode code200(200);
+  
+  EXPECT_TRUE(code199.isInformational());
+  EXPECT_FALSE(code199.isSuccess());
+  
+  EXPECT_FALSE(code200.isInformational());
+  EXPECT_TRUE(code200.isSuccess());
+}
+
+TEST_F(ErrorCodeTest, CategoryBoundaryShouldDistinguish299And300) {
+  ErrorCode code299(299);
+  ErrorCode code300(300);
+  
+  EXPECT_TRUE(code299.isSuccess());
+  EXPECT_FALSE(code299.isRedirection());
+  
+  EXPECT_FALSE(code300.isSuccess());
+  EXPECT_TRUE(code300.isRedirection());
+}
+
+TEST_F(ErrorCodeTest, CategoryBoundaryShouldDistinguish399And400) {
+  ErrorCode code399(399);
+  ErrorCode code400(400);
+  
+  EXPECT_TRUE(code399.isRedirection());
+  EXPECT_FALSE(code399.isClientError());
+  
+  EXPECT_FALSE(code400.isRedirection());
+  EXPECT_TRUE(code400.isClientError());
+}
+
+TEST_F(ErrorCodeTest, CategoryBoundaryShouldDistinguish499And500) {
+  ErrorCode code499(499);
+  ErrorCode code500(500);
+  
+  EXPECT_TRUE(code499.isClientError());
+  EXPECT_FALSE(code499.isServerError());
+  
+  EXPECT_FALSE(code500.isClientError());
+  EXPECT_TRUE(code500.isServerError());
+}
+
+TEST_F(ErrorCodeTest, CategoryBoundaryShouldDistinguish599And600) {
+  ErrorCode code599(599);
+  
+  EXPECT_TRUE(code599.isServerError());
+  
+  // 600 should be invalid
+  EXPECT_THROW(ErrorCode(600), domain::shared::exceptions::ErrorCodeException);
 }

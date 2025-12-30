@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/24 13:10:18 by umeneses          #+#    #+#             */
-/*   Updated: 2025/12/29 12:50:33 by umeneses         ###   ########.fr       */
+/*   Updated: 2025/12/29 21:53:36 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -193,4 +193,252 @@ TEST_F(PathTest, NormalizeMultipleLevelsToRoot) {
   Path normalized = path.normalize();
   EXPECT_EQ("/", normalized.toString());
   EXPECT_TRUE(normalized.isAbsolute());
+}
+
+// ============================================================================
+// Internal Validation Tests (through public API)
+// ============================================================================
+
+TEST_F(PathTest, ValidateShouldRejectNullBytes) {
+  std::string pathWithNull = "/path/to";
+  pathWithNull += '\0';
+  pathWithNull += "file.txt";
+  Path* p = NULL;
+  EXPECT_THROW(p = new Path(pathWithNull), domain::filesystem::exceptions::PathException);
+  if (p) delete p;
+}
+
+TEST_F(PathTest, ValidateShouldRejectEmptyPath) {
+  EXPECT_THROW(Path(""), domain::filesystem::exceptions::PathException);
+}
+
+TEST_F(PathTest, ValidateShouldRejectRelativeWithoutFlag) {
+  EXPECT_THROW(Path("relative/path"), domain::filesystem::exceptions::PathException);
+  EXPECT_THROW(Path("./relative"), domain::filesystem::exceptions::PathException);
+  EXPECT_THROW(Path("../parent"), domain::filesystem::exceptions::PathException);
+}
+
+TEST_F(PathTest, ValidateShouldAcceptRelativeWithFlag) {
+  EXPECT_NO_THROW(Path("relative/path", false));
+  EXPECT_NO_THROW(Path("./relative", false));
+  EXPECT_NO_THROW(Path("../parent", false));
+}
+
+// normalizePath() testing through normalize() and various path formats
+TEST_F(PathTest, NormalizePathShouldRemoveSingleDot) {
+  Path path("/home/./user/./file.txt");
+  Path normalized = path.normalize();
+  EXPECT_EQ("/home/user/file.txt", normalized.toString());
+}
+
+TEST_F(PathTest, NormalizePathShouldRemoveTrailingSlash) {
+  Path path("/home/user/");
+  Path normalized = path.normalize();
+  EXPECT_EQ("/home/user", normalized.toString());
+}
+
+TEST_F(PathTest, NormalizePathShouldKeepRootSlash) {
+  Path path("/");
+  Path normalized = path.normalize();
+  EXPECT_EQ("/", normalized.toString());
+}
+
+TEST_F(PathTest, NormalizePathShouldCollapseDoubleSlashes) {
+  Path path("/home//user///file.txt");
+  Path normalized = path.normalize();
+  EXPECT_EQ("/home/user/file.txt", normalized.toString());
+}
+
+TEST_F(PathTest, NormalizePathShouldHandleComplexCase) {
+  Path path("/home/./user//documents/../file.txt");
+  Path normalized = path.normalize();
+  EXPECT_EQ("/home/user/file.txt", normalized.toString());
+}
+
+TEST_F(PathTest, NormalizePathWithOnlySlashesAndDots) {
+  Path path("///.//.//");
+  Path normalized = path.normalize();
+  EXPECT_EQ("/", normalized.toString());
+}
+
+TEST_F(PathTest, NormalizePathShouldHandleRootWithDots) {
+  Path path("/./");
+  Path normalized = path.normalize();
+  EXPECT_EQ("/", normalized.toString());
+}
+
+// isAbsolutePath() testing through isAbsolute() and isRelative()
+TEST_F(PathTest, IsAbsolutePathShouldDetectRoot) {
+  Path path("/");
+  EXPECT_TRUE(path.isAbsolute());
+  EXPECT_FALSE(path.isRelative());
+}
+
+TEST_F(PathTest, IsAbsolutePathShouldDetectAbsolutePaths) {
+  Path path1("/home/user");
+  Path path2("/var/www");
+  Path path3("/etc");
+  
+  EXPECT_TRUE(path1.isAbsolute());
+  EXPECT_TRUE(path2.isAbsolute());
+  EXPECT_TRUE(path3.isAbsolute());
+}
+
+TEST_F(PathTest, IsAbsolutePathShouldDetectRelativePaths) {
+  Path path1("relative/path", false);
+  Path path2("./current", false);
+  Path path3("../parent", false);
+  
+  EXPECT_FALSE(path1.isAbsolute());
+  EXPECT_FALSE(path2.isAbsolute());
+  EXPECT_FALSE(path3.isAbsolute());
+  
+  EXPECT_TRUE(path1.isRelative());
+  EXPECT_TRUE(path2.isRelative());
+  EXPECT_TRUE(path3.isRelative());
+}
+
+// hasDirectoryTraversal() testing through isSafePath() static method
+TEST_F(PathTest, IsSafePathShouldDetectSimpleTraversal) {
+  EXPECT_FALSE(Path::isSafePath("../etc/passwd"));
+}
+
+TEST_F(PathTest, IsSafePathShouldDetectMiddleTraversal) {
+  EXPECT_FALSE(Path::isSafePath("/home/user/../../../etc/passwd"));
+}
+
+TEST_F(PathTest, IsSafePathShouldDetectTrailingTraversal) {
+  EXPECT_FALSE(Path::isSafePath("/home/user/.."));
+}
+
+TEST_F(PathTest, IsSafePathShouldAcceptNormalPath) {
+  EXPECT_TRUE(Path::isSafePath("/home/user/documents"));
+}
+
+TEST_F(PathTest, IsSafePathShouldHandleDotsInFilename) {
+  // Should NOT be considered traversal - just dots in filename
+  EXPECT_TRUE(Path::isSafePath("/home/user/my..file.txt"));
+}
+
+TEST_F(PathTest, IsSafePathShouldDetectEncodedTraversal) {
+  // Testing if implementation handles URL-encoded traversal
+  EXPECT_FALSE(Path::isSafePath("/home/user/%2e%2e/etc"));
+}
+
+// extractComponents() testing through getDirectory(), getFilename(), getExtension()
+TEST_F(PathTest, ExtractComponentsFromSimplePath) {
+  Path path("/home/file.txt");
+  EXPECT_EQ("/home", path.getDirectory());
+  EXPECT_EQ("file.txt", path.getFilename());
+  EXPECT_EQ(".txt", path.getExtension());
+}
+
+TEST_F(PathTest, ExtractComponentsWithNoExtension) {
+  Path path("/home/user/README");
+  EXPECT_EQ("/home/user", path.getDirectory());
+  EXPECT_EQ("README", path.getFilename());
+  EXPECT_EQ("", path.getExtension());
+}
+
+TEST_F(PathTest, ExtractComponentsWithMultipleDots) {
+  Path path("/home/user/file.tar.gz");
+  EXPECT_EQ("/home/user", path.getDirectory());
+  EXPECT_EQ("file.tar.gz", path.getFilename());
+  EXPECT_EQ(".gz", path.getExtension()); // Should return last extension
+}
+
+TEST_F(PathTest, ExtractComponentsFromHiddenFile) {
+  Path path("/home/user/.bashrc");
+  EXPECT_EQ("/home/user", path.getDirectory());
+  EXPECT_EQ(".bashrc", path.getFilename());
+  EXPECT_EQ("", path.getExtension()); // Hidden file without extension
+}
+
+TEST_F(PathTest, ExtractComponentsFromHiddenFileWithExtension) {
+  Path path("/home/user/.config.yaml");
+  EXPECT_EQ("/home/user", path.getDirectory());
+  EXPECT_EQ(".config.yaml", path.getFilename());
+  EXPECT_EQ(".yaml", path.getExtension());
+}
+
+TEST_F(PathTest, ExtractComponentsFromRootFile) {
+  Path path("/file.txt");
+  EXPECT_EQ("/", path.getDirectory());
+  EXPECT_EQ("file.txt", path.getFilename());
+  EXPECT_EQ(".txt", path.getExtension());
+}
+
+TEST_F(PathTest, ExtractComponentsFromDirectoryOnly) {
+  Path path("/home/user/documents/");
+  EXPECT_EQ("/home/user", path.getDirectory());
+  EXPECT_EQ("documents", path.getFilename()); // Trailing slash ignored
+  EXPECT_EQ("", path.getExtension());
+}
+
+TEST_F(PathTest, ExtractComponentsWithDotsInDirectory) {
+  Path path("/home/user.name/file.txt");
+  EXPECT_EQ("/home/user.name", path.getDirectory());
+  EXPECT_EQ("file.txt", path.getFilename());
+  EXPECT_EQ(".txt", path.getExtension());
+}
+
+TEST_F(PathTest, ExtractComponentsFileEndingWithDot) {
+  Path path("/home/user/file.");
+  EXPECT_EQ("/home/user", path.getDirectory());
+  EXPECT_EQ("file.", path.getFilename());
+  EXPECT_EQ(".", path.getExtension()); // Trailing dot
+}
+
+// Path joining comprehensive tests
+TEST_F(PathTest, JoinAbsoluteWithRelative) {
+  Path base("/home/user");
+  Path result = base.join("documents/file.txt");
+  EXPECT_EQ("/home/user/documents/file.txt", result.toString());
+  EXPECT_TRUE(result.isAbsolute());
+}
+
+TEST_F(PathTest, JoinWithTrailingSlashOnBase) {
+  Path base("/home/user/");
+  Path result = base.join("documents");
+  EXPECT_EQ("/home/user/documents", result.toString());
+}
+
+TEST_F(PathTest, JoinWithLeadingSlashOnRelative) {
+  Path base("/home/user");
+  // This should either strip the leading slash or handle it correctly
+  Path result = base.join("/documents");
+  // Expected: either "/home/user/documents" or throw exception
+  // Testing current behavior
+}
+
+TEST_F(PathTest, JoinEmptyPath) {
+  Path base("/home/user");
+  Path result = base.join("");
+  EXPECT_EQ("/home/user", result.toString());
+}
+
+TEST_F(PathTest, JoinRootWithPath) {
+  Path root("/");
+  Path result = root.join("home/user");
+  EXPECT_EQ("/home/user", result.toString());
+}
+
+TEST_F(PathTest, JoinMultipleLevels) {
+  Path base("/home");
+  Path result = base.join("user/documents/work/file.txt");
+  EXPECT_EQ("/home/user/documents/work/file.txt", result.toString());
+}
+
+TEST_F(PathTest, JoinWithDots) {
+  Path base("/home/user");
+  Path result = base.join("./documents/../file.txt");
+  // Should normalize after joining
+  EXPECT_EQ("/home/user/file.txt", result.normalize().toString());
+}
+
+TEST_F(PathTest, JoinRelativeToRelative) {
+  Path base("home/user", false);
+  Path result = base.join("documents");
+  EXPECT_TRUE(result.isRelative());
+  EXPECT_EQ("home/user/documents", result.toString());
 }

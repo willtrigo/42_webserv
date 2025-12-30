@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/29 14:21:59 by umeneses          #+#    #+#             */
-/*   Updated: 2025/12/29 15:18:04 by umeneses         ###   ########.fr       */
+/*   Updated: 2025/12/29 21:36:10 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -376,3 +376,45 @@ TEST_F(QueryStringBuilderTest, ParseEmpty) {
   EXPECT_EQ(0, builder.getParameterCount());
   EXPECT_TRUE(builder.isEmpty());
 }
+
+// ============================================================================
+// TODO: Internal Validation Tests (through public API)
+// ============================================================================
+// NOTE: QueryStringBuilder has a segfault bug - fix before adding these tests
+//
+// Private methods to test through public API:
+// - validate() → Test through constructor with invalid URLs
+// - parseUrl() → Test through various URL formats
+// - parseQueryString() → Test through query parsing edge cases
+// - encodeParameter() → Test through special character handling
+// - decodeParameter() → Test through URL decoding
+// - isValidUrl() → Test through URL validation edge cases
+// - validateParameterKey() → Test through invalid keys
+// - validateParameterValue() → Test through invalid values
+//
+// Example test structure (commented out until segfault is fixed):
+/*
+TEST_F(QueryStringBuilderTest, ValidateUrlFormat) {
+  EXPECT_THROW(QueryStringBuilder("not-a-url"), domain::http::exceptions::QueryStringBuilderException);
+  EXPECT_THROW(QueryStringBuilder("http://"), domain::http::exceptions::QueryStringBuilderException);
+  EXPECT_NO_THROW(QueryStringBuilder("http://example.com"));
+}
+
+TEST_F(QueryStringBuilderTest, ParseUrlWithComplexQuery) {
+  QueryStringBuilder builder("http://example.com?key1=value1&key2=value%202&key3=");
+  EXPECT_EQ(3, builder.getParameterCount());
+  EXPECT_EQ("value1", builder.getParameter("key1"));
+  EXPECT_EQ("value 2", builder.getParameter("key2"));
+  EXPECT_EQ("", builder.getParameter("key3"));
+}
+
+TEST_F(QueryStringBuilderTest, EncodeSpecialCharacters) {
+  QueryStringBuilder builder("http://example.com");
+  builder.addParameter("special", "a b+c&d=e");
+  std::string url = builder.build();
+  EXPECT_TRUE(url.find("a+b") != std::string::npos || url.find("a%20b") != std::string::npos);
+  EXPECT_TRUE(url.find("%2B") != std::string::npos);
+  EXPECT_TRUE(url.find("%26") != std::string::npos);
+  EXPECT_TRUE(url.find("%3D") != std::string::npos);
+}
+*/
