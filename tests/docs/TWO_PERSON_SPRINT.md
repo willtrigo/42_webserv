@@ -926,8 +926,48 @@ make clean && make
 #### Bira's Tasks (6 hours)
 
 **Morning (3h):** ErrorPage Testing
-- [ ] Create `tests/unit/test_ErrorPage.cpp`  
-- [ ] **Total: 12 tests** (construction, validation, operations)
+- [x] Create `tests/unit/test_ErrorPage.cpp`  
+- [x] **Total: 56 tests** (construction, validation, operations)
+- [x] **Result: 53/56 passing - DESIGN ISSUE FOUND** ⚠️
+
+**🚨 DESIGN ISSUE DISCOVERED - ErrorPage Default Constructor:**
+
+**Problem:** Default constructor creates invalid state that violates class invariants
+
+```cpp
+// ❌ CURRENT BROKEN IMPLEMENTATION:
+ErrorPage::ErrorPage() 
+    : m_errorCode(500), m_hasContent(false) 
+{ 
+  // No content generation, no validate() call
+  // Creates invalid state: empty page that would fail validate()
+}
+
+// ✅ CORRECT IMPLEMENTATION (like ErrorCode constructor):
+ErrorPage::ErrorPage() 
+    : m_errorCode(500) 
+{
+  m_content = generateDefaultContent(m_errorCode);
+  m_hasContent = true;
+  m_contentType = "text/html";
+  validate();  // Ensures consistency
+}
+```
+
+**Why this matters:**
+- ErrorCode constructor: Generates content + validates ✅
+- Default constructor: No content + no validation ❌
+- validate() method: Requires content or file (throws if neither)
+- **Result:** Default construction creates invalid object state
+
+**Fix required:** Update `src/domain/configuration/value_objects/ErrorPage.cpp`
+
+**Tests affected:**
+- DefaultConstructor (expects content, gets empty)
+- ConstructWithEmptyContent (expects throw, gets empty page)
+- ValidateThroughConstructorNoContent (expects throw, gets empty page)
+
+**Action:** Dande to fix implementation on Day 3 (5 minutes)
 
 **Afternoon (3h):** Test Documentation
 - [ ] Update `tests/README.md` with new test counts
