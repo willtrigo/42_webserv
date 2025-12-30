@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/24 09:42:14 by umeneses          #+#    #+#              #
-#    Updated: 2025/12/30 19:26:12 by umeneses         ###   ########.fr        #
+#    Updated: 2025/12/30 20:46:54 by umeneses         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -56,6 +56,13 @@ NAME                            := $(BIN_DIR)/test_runner
 # INFRASTRUCTURE/CONFIG (3 files):
 #   - ConfigParser.cpp, ConfigProvider.cpp, ConfigException.cpp
 #
+# INFRASTRUCTURE/CONFIG/PARSERS (3 files - depend on entities):
+#   - BlockParser.cpp, ParserContext.cpp, ParserState.cpp
+#
+# INFRASTRUCTURE/CONFIG/HANDLERS (4 files - depend on entities):
+#   - GlobalDirectiveHandler.cpp, ServerDirectivehandler.cpp
+#   - LocationDirectiveHandler.cpp, ADirectiveHandler.cpp
+#
 # INFRASTRUCTURE/FILESYSTEM/ADAPTERS (6 files):
 #   - FileHandler.cpp, DirectoryLister.cpp, PathResolver.cpp
 #   - FileSystemHelper.cpp, DirectoryEntryComparators.cpp
@@ -72,7 +79,7 @@ NAME                            := $(BIN_DIR)/test_runner
 # CONFIGURATION/VALUE_OBJECTS (2 files - depend on infrastructure):
 #   - UploadConfig.cpp, UploadConfigException.cpp
 #
-# Total: 25 files excluded + main.cpp
+# Total: 32 files excluded + main.cpp
 # ============================================================================
 
 PROJECT_SRCS                    := $(shell find $(SRC_DIR) -name '*.cpp' \
@@ -84,6 +91,13 @@ PROJECT_SRCS                    := $(shell find $(SRC_DIR) -name '*.cpp' \
 											! -name 'ConfigParser.cpp' \
 											! -name 'ConfigProvider.cpp' \
 											! -name 'ConfigException.cpp' \
+											! -name 'BlockParser.cpp' \
+											! -name 'ParserContext.cpp' \
+											! -name 'ParserState.cpp' \
+											! -name 'GlobalDirectiveHandler.cpp' \
+											! -name 'ServerDirectivehandler.cpp' \
+											! -name 'LocationDirectiveHandler.cpp' \
+											! -name 'ADirectiveHandler.cpp' \
 											! -name 'FileHandler.cpp' \
 											! -name 'DirectoryLister.cpp' \
 											! -name 'PathResolver.cpp' \
