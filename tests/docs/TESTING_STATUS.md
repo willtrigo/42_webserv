@@ -6,7 +6,7 @@ This document tracks implementation status aligned with the 10-day sprint plan. 
 
 **Current Date:** December 30, 2025  
 **Project Completion:** ~15% of mandatory requirements  
-**Test Coverage:** 694 tests, 644 passing (92.8% - excluding QueryStringBuilder segfault)  
+**Test Coverage:** 815 tests, 724 passing (88.8% - excluding QueryStringBuilder segfault)  
 **Evaluation Ready:** ❌ NO - Need working HTTP server
 
 **Current Sprint:** Day 1 - Foundation Testing (Value Objects)
@@ -30,14 +30,20 @@ See [TWO_PERSON_SPRINT.md](TWO_PERSON_SPRINT.md) for the complete 10-day impleme
 | Permission | 51 | 47 | 4 | ⚠️ 92.2% |
 | UploadAccess | 52 | 52 | 0 | ✅ 100% |
 | Host | 98 | 83 | 15 | ⚠️ 84.7% |
+| **ListenDirective** | **59** | **43** | **16** | ⚠️ **72.9% - NEW!** |
+| **Route** | **62** | **37** | **25** | ⚠️ **59.7% - NEW!** |
 | MockLogger | 13 | 13 | 0 | ✅ 100% |
 | MockServer | 16 | 16 | 0 | ✅ 100% |
 | MockResponseBuilder | 21 | 21 | 0 | ✅ 100% |
 | MockRequestParser | 3 | 3 | 0 | ✅ 100% |
-| **TOTAL** | **694** | **644** | **50** | **92.8%** |
+| **TOTAL** | **815** | **724** | **91** | **88.8%** |
 
-**🎯 December 30 Achievement:** Added 56 ErrorPage tests - 53/56 passing (DESIGN ISSUE found!)
-**🎯 HttpMethod Expansion:** Expanded from 5 to 39 comprehensive tests (+34 tests)
+**🎯 December 30 Achievement:** Added 177 new tests across 4 value objects!
+- ErrorPage: 56 tests, 53/56 passing (DESIGN ISSUE found!)
+- HttpMethod: Expanded 5→39 tests (+34 tests, all passing)
+- **ListenDirective: 59 tests, 43/59 passing (16 bugs found)**
+- **Route: 62 tests, 37/62 passing (25 bugs found)**
+
 **🎯 Internal Validation Achievement:** Added 210 comprehensive tests (Dec 29)
 - ErrorCode: +36 tests (boundary, parsing, validation)
 - Path: +52 tests (security, normalization, extraction)
@@ -45,7 +51,7 @@ See [TWO_PERSON_SPRINT.md](TWO_PERSON_SPRINT.md) for the complete 10-day impleme
 - Uri: +75 tests (scheme, authority, path, query, fragment parsing)
 - ErrorPage: +56 tests (construction, validation, response building)
 
-**📋 Bugs Found (Total: 78):**
+**📋 Bugs Found (Total: 119):**
 - **ErrorPage: 3 bugs (DESIGN ISSUE - default constructor creates invalid state) ⚠️**
 - Port: 5 bugs (default value, zero validation, leading zeros handling)
 - Path: 4 bugs (trailing slash, traversal detection, directory extraction)
@@ -54,37 +60,41 @@ See [TWO_PERSON_SPRINT.md](TWO_PERSON_SPRINT.md) for the complete 10-day impleme
 - Permission: 4 bugs (CLASS_ALL logic + symbolic validation)
 - UploadAccess: 5 static const ODR-use issues (C++98 linker)
 - Host: 15 bugs (IPv6 validation, hostname parsing, trailing dots)
+- **ListenDirective: 16 bugs (parsing, validation, state management) ⚠️ NEW!**
+- **Route: 25 bugs (constructor validation too strict, handler type configuration) ⚠️ NEW!**
 
 ---
 
 ## 🏆 Value Objects Test Coverage
 
-**Tested (11/16):**
+**Tested (13/16):**
 - ✅ ErrorCode (77 tests, 100%)
-- ⚠️ **ErrorPage (56 tests - 53 passing, 3 BUGS - DESIGN ISSUE - NEW!)**
-- ✅ **HttpMethod (39 tests, 100% - EXPANDED!)**
-- ⚠️ Path (62 tests, 93.5%, 4 bugs)
-- ✅ Size (44 tests)
-- ⚠️ Port (47 tests, 89.4%, 5 bugs)
-- ⚠️ Uri (115 tests, 59.1%, 47 bugs)
+- ⚠️ ErrorPage (56 tests, 3 bugs)
+- ✅ HttpMethod (39 tests, 100%)
+- ⚠️ Path (62 tests, 4 bugs)
+- ✅ Size (44 tests, 100%)
+- ⚠️ Port (47 tests, 5 bugs)
+- ⚠️ Uri (115 tests, 47 bugs)
 - ❌ QueryStringBuilder (36 tests, SEGFAULT + 6 bugs)
-- ⚠️ Permission (51 tests, 92.2%, 4 bugs)
+- ⚠️ Permission (51 tests, 4 bugs)
 - ✅ UploadAccess (52 tests, 100%)
-- ⚠️ Host (98 tests, 84.7%, 15 bugs)
+- ⚠️ Host (98 tests, 15 bugs)
+- ⚠️ ListenDirective (59 tests, 16 bugs)
+- ⚠️ Route (62 tests, 25 bugs)
 
-**Untested (5/16):**
+**Untested (3/16):**
 - ❌ RegexPattern (shared - has crash bug)
-- **➡️ ListenDirective (configuration - CAN BE TESTED! Only depends on Host + Port)**
 - ❌ UploadConfig (configuration - depends on DirectoryLister, FileHandler)
-- ❌ Route (configuration - complex dependencies)
 - ❌ CgiConfig (configuration - depends on RegexPattern with bug)
 
-**Progress:** 68.75% of value objects tested (11/16)
-**Total Tests:** 694 (excluding QueryStringBuilder segfault)
+**Progress:** 81.25% of value objects tested (13/16) 🎉
+**Total Tests:** 815 (excluding QueryStringBuilder segfault)
 **Internal Validation Tests Added:** 210 new tests (Dec 29)
 **ErrorPage Tests Added:** 56 comprehensive tests (53 passing - 3 BUGS from design issue)
 **HttpMethod Tests Expanded:** 5→39 tests (+34 tests - all sections covered)
-**Passing Rate:** 92.8% (644/694 tests passing, excluding segfault)
+**ListenDirective Tests Created:** 59 comprehensive tests (43 passing - 16 BUGS found) ✨
+**Route Tests Created:** 62 comprehensive tests (37 passing - 25 BUGS found) ✨
+**Passing Rate:** 88.8% (724/815 tests passing, excluding segfault)
 
 ---
 

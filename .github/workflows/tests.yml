@@ -41,13 +41,19 @@ jobs:
   unit-host:
     uses: ./.github/workflows/unit_Host.yml
   
+  unit-listendirective:
+    uses: ./.github/workflows/unit_ListenDirective.yml
+  
+  unit-route:
+    uses: ./.github/workflows/unit_Route.yml
+  
   unit-mocks:
     uses: ./.github/workflows/unit_Mocks.yml
   
   # Summary job that depends on all tests
   test-summary:
     runs-on: ubuntu-latest
-    needs: [unit-errorcode, unit-errorpage, unit-httpmethod, unit-path, unit-port, unit-size, unit-uri, unit-querystringbuilder, unit-permission, unit-uploadaccess, unit-host, unit-mocks]
+    needs: [unit-errorcode, unit-errorpage, unit-httpmethod, unit-path, unit-port, unit-size, unit-uri, unit-querystringbuilder, unit-permission, unit-uploadaccess, unit-host, unit-listendirective, unit-route, unit-mocks]
     if: always()
     
     steps:
@@ -126,6 +132,18 @@ jobs:
           echo "- ✅ Host tests" >> $GITHUB_STEP_SUMMARY
         else
           echo "- ❌ Host tests" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -d "test-results/test-results-listendirective" ]; then
+          echo "- ✅ ListenDirective tests" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ❌ ListenDirective tests" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -d "test-results/test-results-route" ]; then
+          echo "- ✅ Route tests" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ❌ Route tests" >> $GITHUB_STEP_SUMMARY
         fi
         
         if [ -d "test-results/test-results-mocks" ]; then
