@@ -32,17 +32,19 @@ See [TWO_PERSON_SPRINT.md](TWO_PERSON_SPRINT.md) for the complete 10-day impleme
 | Host | 98 | 83 | 15 | ⚠️ 84.7% |
 | **ListenDirective** | **59** | **43** | **16** | ⚠️ **72.9% - NEW!** |
 | **Route** | **62** | **37** | **25** | ⚠️ **59.7% - NEW!** |
+| **RegexPattern** | **50** | **40** | **10** | ⚠️ **80% - NEW!** |
 | MockLogger | 13 | 13 | 0 | ✅ 100% |
 | MockServer | 16 | 16 | 0 | ✅ 100% |
 | MockResponseBuilder | 21 | 21 | 0 | ✅ 100% |
 | MockRequestParser | 3 | 3 | 0 | ✅ 100% |
-| **TOTAL** | **815** | **724** | **91** | **88.8%** |
+| **TOTAL** | **865** | **764** | **101** | **88.3%** |
 
-**🎯 December 30 Achievement:** Added 177 new tests across 4 value objects!
+**🎯 December 30 Achievement:** Added 227 new tests across 5 value objects!
 - ErrorPage: 56 tests, 53/56 passing (DESIGN ISSUE found!)
 - HttpMethod: Expanded 5→39 tests (+34 tests, all passing)
 - **ListenDirective: 59 tests, 43/59 passing (16 bugs found)**
 - **Route: 62 tests, 37/62 passing (25 bugs found)**
+- **RegexPattern: 50 tests, 40/50 passing (10 bugs found) - NEW!**
 
 **🎯 Internal Validation Achievement:** Added 210 comprehensive tests (Dec 29)
 - ErrorCode: +36 tests (boundary, parsing, validation)
@@ -50,8 +52,6 @@ See [TWO_PERSON_SPRINT.md](TWO_PERSON_SPRINT.md) for the complete 10-day impleme
 - Port: +47 tests (string parsing, boundaries, validation)
 - Uri: +75 tests (scheme, authority, path, query, fragment parsing)
 - ErrorPage: +56 tests (construction, validation, response building)
-
-**📋 Bugs Found (Total: 119):**
 - **ErrorPage: 3 bugs (DESIGN ISSUE - default constructor creates invalid state) ⚠️**
 - Port: 5 bugs (default value, zero validation, leading zeros handling)
 - Path: 4 bugs (trailing slash, traversal detection, directory extraction)
@@ -60,14 +60,16 @@ See [TWO_PERSON_SPRINT.md](TWO_PERSON_SPRINT.md) for the complete 10-day impleme
 - Permission: 4 bugs (CLASS_ALL logic + symbolic validation)
 - UploadAccess: 5 static const ODR-use issues (C++98 linker)
 - Host: 15 bugs (IPv6 validation, hostname parsing, trailing dots)
-- **ListenDirective: 16 bugs (parsing, validation, state management) ⚠️ NEW!**
+- **ListenDirective: 16 bugs (parsing, validation, state management) ⚠️**
+- **Route: 25 bugs (constructor validation too strict, handler type configuration) ⚠️**
+- **RegexPattern: 10 bugs (empty pattern, length validation, pattern matching, factory methods
 - **Route: 25 bugs (constructor validation too strict, handler type configuration) ⚠️ NEW!**
 
 ---
 
 ## 🏆 Value Objects Test Coverage
 
-**Tested (13/16):**
+**Tested (14/16):**
 - ✅ ErrorCode (77 tests, 100%)
 - ⚠️ ErrorPage (56 tests, 3 bugs)
 - ✅ HttpMethod (39 tests, 100%)
@@ -81,20 +83,20 @@ See [TWO_PERSON_SPRINT.md](TWO_PERSON_SPRINT.md) for the complete 10-day impleme
 - ⚠️ Host (98 tests, 15 bugs)
 - ⚠️ ListenDirective (59 tests, 16 bugs)
 - ⚠️ Route (62 tests, 25 bugs)
+- ⚠️ RegexPattern (50 tests, 10 bugs)
 
-**Untested (3/16):**
-- ❌ RegexPattern (shared - has crash bug)
-- ❌ UploadConfig (configuration - depends on DirectoryLister, FileHandler)
+**Untested (2/16):**
+- ❌ UploadConfig (configuration - depends on DirectoryLister, FileHandler, RegexPattern)
 - ❌ CgiConfig (configuration - depends on RegexPattern with bug)
-
-**Progress:** 81.25% of value objects tested (13/16) 🎉
-**Total Tests:** 815 (excluding QueryStringBuilder segfault)
+**Progress:** 87.5% of value objects tested (14/16) 🎉
+**Total Tests:** 865 (excluding QueryStringBuilder segfault)
 **Internal Validation Tests Added:** 210 new tests (Dec 29)
 **ErrorPage Tests Added:** 56 comprehensive tests (53 passing - 3 BUGS from design issue)
 **HttpMethod Tests Expanded:** 5→39 tests (+34 tests - all sections covered)
-**ListenDirective Tests Created:** 59 comprehensive tests (43 passing - 16 BUGS found) ✨
-**Route Tests Created:** 62 comprehensive tests (37 passing - 25 BUGS found) ✨
-**Passing Rate:** 88.8% (724/815 tests passing, excluding segfault)
+**ListenDirective Tests Created:** 59 comprehensive tests (43 passing - 16 BUGS found)
+**Route Tests Created:** 62 comprehensive tests (37 passing - 25 BUGS found)
+**RegexPattern Tests Created:** 50 comprehensive tests (40 passing - 10 BUGS found)
+**Passing Rate:** 88.8% (724/865 tests passing, excluding segfault)
 
 ---
 
