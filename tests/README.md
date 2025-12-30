@@ -21,17 +21,24 @@ make
 
 ## 📊 Current Status
 
-| Component | Status | Tests | Notes |
-|-----------|--------|-------|-------|
-| HttpMethod | ✅ Working | 5/5 passing | Fully tested |
-| Port | ⚠️ Partial | 1/10 passing | Implementation mismatch |
-| Path | 🚧 Disabled | - | Not implemented yet |
-| ConfigParser | 🚧 Disabled | - | Not implemented yet |
-| FileHandler | 🚧 Disabled | - | Architecture blocker |
-| ErrorCode | 🚧 Excluded | - | Missing methods |
-| Route/Routing | 🚧 Excluded | - | Depends on ErrorCode |
+**Test Suite: 187 tests | 185 passing (98.93%) | 2 failing**
 
-**Last successful test run:** 5 tests passing (HttpMethodTest)
+| Component | Status | Tests | Coverage |
+|-----------|--------|-------|----------|
+| ErrorCode | ✅ Complete | 50/50 passing | 100% |
+| HttpMethod | ✅ Complete | 5/5 passing | 100% |
+| Path | ✅ Complete | 25/25 passing | 100% |
+| Size | ✅ Complete | 44/44 passing | 100% |
+| MockLogger | ✅ Complete | 13/13 passing | 100% |
+| MockServer | ✅ Complete | 16/16 passing | 100% |
+| MockResponseBuilder | ✅ Complete | 21/21 passing | 100% |
+| MockRequestParser | ✅ Complete | 3/3 passing | 100% |
+| Port | ⚠️ Nearly Complete | 8/10 passing | 80% - 2 test expectation issues |
+
+**Last test run:** December 29, 2025  
+**Known Issues:** 
+- PortTest.DefaultConstructor: Expected default port 80, got 0
+- PortTest.InvalidPortZero: Port(0) should throw exception but doesn't
 
 ## 📁 Structure
 
@@ -44,10 +51,12 @@ tests/
 ├── check_gtest.sh          # Version checker
 │
 ├── unit/                   # Unit tests
-│   ├── test_HttpMethod.cpp           ✅ Working
-│   ├── test_Port.cpp                  ⚠️ Needs updates
-│   ├── test_Path.cpp.disabled         🚧 Disabled
-│   └── test_ConfigParser.cpp.disabled 🚧 Disabled
+│   ├── test_ErrorCode.cpp             ✅ 50 tests passing
+│   ├── test_HttpMethod.cpp            ✅ 5 tests passing
+│   ├── test_Path.cpp                  ✅ 25 tests passing
+│   ├── test_Port.cpp                  ⚠️ 8/10 passing
+│   ├── test_Size.cpp                  ✅ 44 tests passing
+│   └── test_MockLogger.cpp            ✅ 13 tests passing
 │
 ├── integration/            # Integration tests
 │   └── test_FileHandler_Integration.cpp.disabled  🚧 Disabled
