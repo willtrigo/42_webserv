@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 13:53:39 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/28 16:56:44 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/31 02:26:24 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,9 @@
 #include "infrastructure/config/adapters/ConfigProvider.hpp"
 #include "infrastructure/config/exceptions/ConfigException.hpp"
 #include "infrastructure/config/parsers/ConfigParser.hpp"
+#include "infrastructure/config/exceptions/ParserException.hpp"
+#include "infrastructure/config/exceptions/SyntaxException.hpp"
+#include "infrastructure/config/exceptions/ValidationException.hpp"
 
 #include <sstream>
 #include <string>
@@ -38,20 +41,17 @@ void ConfigProvider::load(const std::string& configPath,
   this->m_serverPtrs.clear();
 
   try {
-    // Parse main configuration file
     domain::configuration::entities::HttpConfig* httpConfig =
         this->m_parser->parseFile(configPath);
 
-    // Merge includes if any
-    this->m_parser->mergeIncludes(*httpConfig, includePath);
+    if (includePath != configPath) {
+      this->m_parser->mergeIncludes(*httpConfig, includePath);
+    }
 
-    // Validate the complete configuration
     this->m_parser->validateConfiguration(*httpConfig);
 
-    // Take ownership
     this->m_httpConfig.reset(httpConfig);
 
-    // Update server pointers
     updateServerPointers();
 
     this->m_valid = true;
@@ -61,13 +61,8 @@ void ConfigProvider::load(const std::string& configPath,
         << this->m_serverPtrs.size() << " servers";
     this->m_logger.info(oss.str());
 
-  } catch (const exceptions::ConfigException& exception) {
-    this->m_logger.error("ConfigException: " + std::string(exception.what()));
-    throw;
   } catch (const std::exception& exception) {
-    this->m_logger.error("Exception: " + std::string(exception.what()));
     throw exceptions::ConfigException(
-        "Unexpected error during configuration load: " +
             std::string(exception.what()),
         exceptions::ConfigException::LOAD_UNEXPECTED);
   }
