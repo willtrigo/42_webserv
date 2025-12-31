@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/30 17:18:19 by dande-je         ###   ########.fr        #
+#    Updated: 2025/12/31 03:48:24 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -144,11 +144,12 @@ SRCS_FILES                      += $(addprefix $(SRCS_INFRASTRUCTURE_CONFIG_EXCE
 SRCS_FILES                      += $(addprefix $(SRCS_INFRASTRUCTURE_CONFIG_HANDLERS_DIR), ADirectiveHandler.cpp \
 																	 GlobalDirectiveHandler.cpp \
 																	 LocationDirectiveHandler.cpp \
-																	 ServerDirectivehandler.cpp)
+																	 ServerDirectiveHandler.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_INFRASTRUCTURE_CONFIG_LEXER_DIR), ConfigLexer.cpp \
 																	 Token.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_INFRASTRUCTURE_CONFIG_PARSERS_DIR), BlockParser.cpp \
 																	 ConfigParser.cpp \
+																	 IncludeProcessor.cpp \
 																	 ParserContext.cpp \
 																	 ParserState.cpp)
 

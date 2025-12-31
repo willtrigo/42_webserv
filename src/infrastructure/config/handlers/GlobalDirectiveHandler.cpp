@@ -6,13 +6,15 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 16:00:52 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/30 16:10:37 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/31 03:45:30 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "domain/shared/value_objects/ErrorCode.hpp"
+#include "infrastructure/config/exceptions/ConfigException.hpp"
 #include "infrastructure/config/exceptions/SyntaxException.hpp"
 #include "infrastructure/config/handlers/GlobalDirectiveHandler.hpp"
+#include "infrastructure/config/parsers/IncludeProcessor.hpp"
 
 #include <sstream>
 
@@ -187,17 +189,26 @@ void GlobalDirectiveHandler::handleInclude(const std::vector<std::string>& args,
                                            std::size_t lineNumber) {
   validateArgumentCount("include", args, 1, lineNumber);
 
-  // Log the include directive but don't process it yet
-  // TODO: make a full implementation, this would trigger recursive parsing
-  std::ostringstream oss;
-  oss << "Found include directive: '" << args[0] << "' at line " << lineNumber
-      << " (include processing not yet implemented)";
-  m_logger.info(oss.str());
+  try {
+    std::ostringstream oss;
+    oss << "Processing include directive: '" << args[0] << "' at line "
+        << lineNumber;
+    m_logger.info(oss.str());
 
-  // For now, just log a warning that includes aren't processed
-  m_logger.warn(
-      "Include directives are logged but not processed in current "
-      "implementation");
+    parsers::IncludeProcessor processor(m_logger);
+    processor.processIncludes(args[0], m_httpConfig, 1);
+
+    std::ostringstream successMsg;
+    successMsg << "Successfully processed include: '" << args[0] << "'";
+    m_logger.info(successMsg.str());
+
+  } catch (const exceptions::ConfigException& e) {
+    std::ostringstream oss;
+    oss << "Failed to process include '" << args[0] << "': " << e.what()
+        << " at line " << lineNumber;
+    throw exceptions::SyntaxException(
+        oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
+  }
 }
 
 }  // namespace handlers
