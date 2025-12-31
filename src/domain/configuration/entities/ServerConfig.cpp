@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 11:52:37 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/28 14:47:02 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/31 05:21:18 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,8 +28,6 @@ ServerConfig::ServerConfig()
       m_clientMaxBodySize(filesystem::value_objects::Size::fromMegabytes(
           DEFAULT_CLIENT_MAX_BODY_SIZE_MB)),
       m_returnCode(shared::value_objects::ErrorCode::ok()) {
-  m_listenDirectives.push_back(ListenDirective::createDefault());
-  m_indexFiles.push_back(DEFAULT_INDEX);
 }
 
 ServerConfig::ServerConfig(const ListenDirectives& listenDirectives)
@@ -38,7 +36,6 @@ ServerConfig::ServerConfig(const ListenDirectives& listenDirectives)
       m_clientMaxBodySize(filesystem::value_objects::Size::fromMegabytes(
           DEFAULT_CLIENT_MAX_BODY_SIZE_MB)),
       m_returnCode(shared::value_objects::ErrorCode::ok()) {
-  m_indexFiles.push_back(DEFAULT_INDEX);
 }
 
 ServerConfig::ServerConfig(const ServerConfig& other) { copyFrom(other); }
@@ -527,6 +524,22 @@ bool ServerConfig::hasListenDirective(
   return false;
 }
 
+void ServerConfig::setListenDirectives(const std::vector<std::string>& directives) {
+  m_listenDirectives.clear();
+  
+  for (std::size_t i = 0; i < directives.size(); ++i) {
+    addListenDirective(directives[i]);
+  }
+}
+
+void ServerConfig::setListenDirectives(const ListenDirectives& directives) {
+  m_listenDirectives.clear();
+  
+  for (std::size_t i = 0; i < directives.size(); ++i) {
+    addListenDirective(directives[i]);
+  }
+}
+
 void ServerConfig::clear() {
   m_listenDirectives.clear();
   m_serverNames.clear();
@@ -538,9 +551,6 @@ void ServerConfig::clear() {
       DEFAULT_CLIENT_MAX_BODY_SIZE_MB);
   m_returnRedirect.clear();
   m_returnCode = shared::value_objects::ErrorCode::ok();
-
-  m_listenDirectives.push_back(ListenDirective::createDefault());
-  m_indexFiles.push_back(DEFAULT_INDEX);
 }
 
 std::string ServerConfig::toString() const {

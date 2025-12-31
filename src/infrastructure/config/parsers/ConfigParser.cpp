@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/18 18:26:50 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/31 03:46:30 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/31 04:17:43 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,15 +81,12 @@ void ConfigParser::parseTokens(
     if (token.type == lexer::Token::STRING) {
       std::string tokenValue = token.value;
 
-      // Look ahead to determine if this is a block or directive
       if (context.currentIndex() + 1 < context.tokenCount()) {
         const lexer::Token& nextToken = context.peekToken();
 
         if (nextToken.type == lexer::Token::BLOCK_START) {
-          // This is a block declaration: "http {" or "server {"
           handleBlockDeclaration(context, httpConfig, tokenValue);
         } else {
-          // This is a directive
           handleSingleDirective(context, httpConfig);
         }
       } else {
@@ -126,11 +123,10 @@ void ConfigParser::handleBlockDeclaration(
     const std::string& blockName) {
   std::size_t lineNumber = context.currentToken().lineNumber;
 
-  context.advance();  // Move past the block name (e.g., "http" or "server")
+  context.advance();
 
-  // Now we should be at BLOCK_START "{"
   context.expect(lexer::Token::BLOCK_START, "block start");
-  context.advance();  // Move past the "{"
+  context.advance();
 
   if (blockName == "http") {
     context.pushState(parser::ParserState::HTTP, "http");
@@ -165,11 +161,10 @@ void ConfigParser::handleSingleDirective(
   std::string directive = directiveToken.value;
   std::size_t lineNumber = directiveToken.lineNumber;
 
-  context.advance();  // Move past the directive name
+  context.advance();
 
   std::vector<std::string> args;
 
-  // Collect arguments until we hit a semicolon
   while (context.hasMoreTokens()) {
     const lexer::Token& token = context.currentToken();
 
@@ -197,7 +192,6 @@ void ConfigParser::handleSingleDirective(
     }
   }
 
-  // Handle the directive using the appropriate handler
   handlers::GlobalDirectiveHandler handler(m_logger, httpConfig);
   handler.handle(directive, args, lineNumber);
 
@@ -228,7 +222,6 @@ void ConfigParser::mergeIncludes(
     m_logger.info(successMsg.str());
 
   } catch (const exceptions::ConfigException& e) {
-    // Log the error but don't throw - includes are optional
     std::ostringstream errorMsg;
     errorMsg << "Failed to merge includes from '" << includePath
              << "': " << e.what();

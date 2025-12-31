@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 03:21:29 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/31 04:11:46 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/31 04:51:29 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,7 +46,11 @@ ListenDirective::ListenDirective(const std::string& directiveString)
   std::string hostStr = normalizeHostString(parts.first);
   std::string portStr = normalizePortString(parts.second);
 
-  m_host = http::value_objects::Host::fromString(hostStr);
+  if (hostStr.empty()) {
+    m_host = http::value_objects::Host::wildcard();
+  } else {
+    m_host = http::value_objects::Host::fromString(hostStr);
+  }
 
   if (!portStr.empty()) {
     m_port = http::value_objects::Port::fromString(portStr);
@@ -330,7 +334,7 @@ void ListenDirective::validatePortRange() const {
 
 bool ListenDirective::isStandardPrivilegedPort() const {
   const unsigned int portValue = m_port.getValue();
-  
+
   return portValue == http::value_objects::Port::HTTP_PORT ||
          portValue == http::value_objects::Port::HTTPS_PORT ||
          portValue == http::value_objects::Port::FTP_PORT;

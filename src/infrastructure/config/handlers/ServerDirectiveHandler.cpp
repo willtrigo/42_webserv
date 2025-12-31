@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 16:29:22 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/31 03:29:02 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/31 04:58:50 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,7 +57,6 @@ void ServerDirectiveHandler::handleListen(const std::vector<std::string>& args,
 
   std::ostringstream log;
   log << args.size();
-  m_logger.warn("entrou aqui args size " + log.str());
 
   for (std::size_t i = 0; i < args.size(); ++i) {
     try {

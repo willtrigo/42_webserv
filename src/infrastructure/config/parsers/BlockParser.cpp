@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 16:35:11 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/30 20:38:45 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/31 05:23:24 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,15 +52,12 @@ void BlockParser::parseHttpBlock(
     if (token.type == lexer::Token::STRING) {
       std::string tokenValue = token.value;
 
-      // Look ahead to determine if this is a nested block or directive
       if (context.currentIndex() + 1 < context.tokenCount()) {
         const lexer::Token& nextToken = context.peekToken();
 
         if (nextToken.type == lexer::Token::BLOCK_START) {
-          // This is a nested block (e.g., "server {")
           handleNestedBlock(context, tokenValue, &httpConfig, NULL, NULL);
         } else {
-          // This is a directive
           handleDirective(context, token, &httpConfig, NULL, NULL);
         }
       } else {
@@ -123,10 +120,8 @@ void BlockParser::parseServerBlock(
           const lexer::Token& nextToken = context.peekToken();
 
           if (nextToken.type == lexer::Token::BLOCK_START) {
-            // Nested block (e.g., "location /path {")
             handleNestedBlock(context, tokenValue, NULL, server, NULL);
           } else {
-            // Server directive
             handleDirective(context, token, NULL, server, NULL);
           }
         } else {
@@ -161,17 +156,14 @@ void BlockParser::parseServerBlock(
 void BlockParser::parseLocationBlock(
     ParserContext& context,
     domain::configuration::entities::ServerConfig& server) {
-  // At this point, currentToken should be the location path
   const lexer::Token& pathToken = context.currentToken();
   std::string path = pathToken.value;
 
-  context.advance();  // Move past the path
+  context.advance();
 
-  // Now we should be at BLOCK_START "{"
   context.expect(lexer::Token::BLOCK_START, "location block start");
-  context.advance();  // Move past the "{"
+  context.advance();
 
-  // Parse match type from path prefix
   domain::configuration::entities::LocationConfig::LocationMatchType matchType;
   std::string cleanPath = path;
 
@@ -232,11 +224,9 @@ void BlockParser::parseLocationBlock(
           const lexer::Token& nextToken = context.peekToken();
 
           if (nextToken.type == lexer::Token::BLOCK_START) {
-            // Handle special case: limit_except block
             if (tokenValue == "limit_except") {
               handleLimitExceptBlock(context, *location);
             } else if (tokenValue == "location") {
-              // Nested location
               context.pushState(ParserState::LOCATION, "location");
               parseLocationBlock(context, server);
             } else {
@@ -248,7 +238,6 @@ void BlockParser::parseLocationBlock(
                   oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
             }
           } else {
-            // Location directive
             handleDirective(context, token, NULL, NULL, location);
           }
         } else {
@@ -295,9 +284,9 @@ void BlockParser::handleNestedBlock(
           exceptions::SyntaxException::UNEXPECTED_TOKEN);
     }
 
-    context.advance();  // Move past "server"
+    context.advance();
     context.expect(lexer::Token::BLOCK_START, "server block start");
-    context.advance();  // Move past "{"
+    context.advance();
 
     context.pushState(ParserState::SERVER, "server");
     parseServerBlock(context, *httpConfig);
@@ -310,7 +299,7 @@ void BlockParser::handleNestedBlock(
           exceptions::SyntaxException::UNEXPECTED_TOKEN);
     }
 
-    context.advance();  // Move past "location"
+    context.advance();
     context.pushState(ParserState::LOCATION, "location");
     parseLocationBlock(context, *server);
 
@@ -341,16 +330,15 @@ void BlockParser::handleDirective(
   std::string directive = directiveToken.value;
   std::size_t lineNumber = directiveToken.lineNumber;
 
-  context.advance();  // Move past the directive name
+  context.advance();
 
   std::vector<std::string> args;
 
-  // Collect arguments until we hit a semicolon
   while (context.hasMoreTokens()) {
     const lexer::Token& token = context.currentToken();
 
     if (token.type == lexer::Token::SEMICOLON) {
-      context.advance();  // Consume the semicolon
+      context.advance();
       break;
     }
     if (token.type == lexer::Token::STRING) {
@@ -366,7 +354,6 @@ void BlockParser::handleDirective(
     }
   }
 
-  // Dispatch to appropriate handler based on context
   ParserState currentState = context.currentState();
 
   try {
@@ -414,9 +401,8 @@ void BlockParser::handleLimitExceptBlock(
   const lexer::Token& limitExceptToken = context.currentToken();
   std::size_t lineNumber = limitExceptToken.lineNumber;
 
-  context.advance();  // Move past "limit_except"
+  context.advance();
 
-  // Collect HTTP methods
   std::vector<std::string> methods;
   while (context.hasMoreTokens()) {
     const lexer::Token& token = context.currentToken();
@@ -444,11 +430,9 @@ void BlockParser::handleLimitExceptBlock(
         oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
   }
 
-  // Now we should be at BLOCK_START
   context.expect(lexer::Token::BLOCK_START, "limit_except block start");
-  context.advance();  // Move past "{"
+  context.advance();
 
-  // Add allowed methods to location
   for (std::size_t i = 0; i < methods.size(); ++i) {
     try {
       domain::http::value_objects::HttpMethod method(methods[i]);
@@ -468,7 +452,6 @@ void BlockParser::handleLimitExceptBlock(
     }
   }
 
-  // Parse the block content (typically just "deny all;")
   while (context.hasMoreTokens()) {
     const lexer::Token& token = context.currentToken();
 
@@ -483,7 +466,6 @@ void BlockParser::handleLimitExceptBlock(
     }
 
     if (token.type == lexer::Token::STRING) {
-      // Typically "deny all;" - we just skip it
       std::string word = token.value;
       context.advance();
 
