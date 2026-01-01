@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 12:23:41 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/28 20:55:53 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/01 17:50:21 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -88,7 +88,8 @@ LocationConfig::LocationConfig(const LocationConfig& other)
       m_proxyPass(other.m_proxyPass),
       m_alias(other.m_alias),
       m_clientBodyBufferSize(other.m_clientBodyBufferSize),
-      m_clientBodyBufferSizeSet(other.m_clientBodyBufferSizeSet) {
+      m_clientBodyBufferSizeSet(other.m_clientBodyBufferSizeSet),
+      m_customHeaders(other.m_customHeaders) {
   m_regexPatternValid = false;
 }
 
@@ -115,6 +116,7 @@ LocationConfig& LocationConfig::operator=(const LocationConfig& other) {
     m_alias = other.m_alias;
     m_clientBodyBufferSize = other.m_clientBodyBufferSize;
     m_clientBodyBufferSizeSet = other.m_clientBodyBufferSizeSet;
+    m_customHeaders = other.m_customHeaders;
     m_regexPatternValid = false;
   }
   return *this;
@@ -743,6 +745,83 @@ void LocationConfig::validateClientBodyBufferSize() const {
   }
 }
 
+const LocationConfig::CustomHeaderMap& LocationConfig::getCustomHeaders() const {
+  return m_customHeaders;
+}
+
+bool LocationConfig::hasCustomHeaders() const {
+  return !m_customHeaders.empty();
+}
+
+void LocationConfig::addCustomHeader(const std::string& name,
+                                     const std::string& value) {
+  if (name.empty()) {
+    throw exceptions::LocationConfigException(
+        "Custom header name cannot be empty",
+        exceptions::LocationConfigException::INVALID_CUSTOM_HEADER);
+  }
+
+  if (value.empty()) {
+    throw exceptions::LocationConfigException(
+        "Custom header value cannot be empty for header '" + name + "'",
+        exceptions::LocationConfigException::INVALID_CUSTOM_HEADER);
+  }
+
+  // Validate header name format (RFC 7230)
+  for (std::size_t i = 0; i < name.length(); ++i) {
+    char c = name[i];
+    bool isValidChar = (c >= 'a' && c <= 'z') || 
+                       (c >= 'A' && c <= 'Z') || 
+                       (c >= '0' && c <= '9') || 
+                       c == '-' || c == '_';
+    
+    if (!isValidChar) {
+      std::ostringstream oss;
+      oss << "Invalid character in header name '" << name 
+          << "': only alphanumeric, hyphen, and underscore allowed";
+      throw exceptions::LocationConfigException(
+          oss.str(),
+          exceptions::LocationConfigException::INVALID_CUSTOM_HEADER);
+    }
+  }
+
+  // Check for reserved/dangerous headers
+  std::string lowerName = name;
+  for (std::size_t i = 0; i < lowerName.length(); ++i) {
+    if (lowerName[i] >= 'A' && lowerName[i] <= 'Z') {
+      lowerName[i] = lowerName[i] + ('a' - 'A');
+    }
+  }
+
+  if (lowerName == "content-length" || 
+      lowerName == "transfer-encoding" ||
+      lowerName == "connection" ||
+      lowerName == "host") {
+    std::ostringstream oss;
+    oss << "Cannot set reserved header: '" << name << "'";
+    throw exceptions::LocationConfigException(
+        oss.str(),
+        exceptions::LocationConfigException::RESERVED_HEADER);
+  }
+
+  m_customHeaders[name] = value;
+  
+  std::ostringstream oss;
+  oss << "Added custom header '" << name << "' with value '" << value << "'";
+  // If you have a logger, log here: m_logger.debug(oss.str());
+}
+
+void LocationConfig::removeCustomHeader(const std::string& name) {
+  CustomHeaderMap::iterator it = m_customHeaders.find(name);
+  if (it != m_customHeaders.end()) {
+    m_customHeaders.erase(it);
+  }
+}
+
+void LocationConfig::clearCustomHeaders() {
+  m_customHeaders.clear();
+}
+
 bool LocationConfig::matchesPath(const std::string& requestPath) const {
   switch (m_matchType) {
     case MATCH_EXACT:
@@ -901,6 +980,7 @@ void LocationConfig::clear() {
   m_clientBodyBufferSize = filesystem::value_objects::Size::fromKilobytes(
       DEFAULT_CLIENT_BODY_BUFFER_SIZE);
   m_clientBodyBufferSizeSet = false;
+  m_customHeaders.clear();
   m_regexPatternValid = false;
 
   m_indexFiles.push_back("index.html");

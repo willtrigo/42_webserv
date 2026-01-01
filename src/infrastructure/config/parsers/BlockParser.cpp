@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 16:35:11 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/31 05:23:24 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/01 17:32:46 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,7 @@ void BlockParser::parseHttpBlock(
     const lexer::Token& token = context.currentToken();
 
     if (token.type == lexer::Token::BLOCK_END) {
-      context.advance();  // Consume the '}'
+      context.advance();
       context.popState();
       m_logger.debug("End of http block");
       return;
@@ -93,7 +93,7 @@ void BlockParser::parseServerBlock(
       const lexer::Token& token = context.currentToken();
 
       if (token.type == lexer::Token::BLOCK_END) {
-        context.advance();  // Consume the '}'
+        context.advance();
         context.popState();
 
         server->validate();
@@ -116,7 +116,11 @@ void BlockParser::parseServerBlock(
       if (token.type == lexer::Token::STRING) {
         std::string tokenValue = token.value;
 
-        if (context.currentIndex() + 1 < context.tokenCount()) {
+        if (tokenValue == "location") {
+          context.advance();
+          context.pushState(ParserState::LOCATION, "location");
+          parseLocationBlock(context, *server);
+        } else if (context.currentIndex() + 1 < context.tokenCount()) {
           const lexer::Token& nextToken = context.peekToken();
 
           if (nextToken.type == lexer::Token::BLOCK_START) {
@@ -198,7 +202,7 @@ void BlockParser::parseLocationBlock(
       const lexer::Token& token = context.currentToken();
 
       if (token.type == lexer::Token::BLOCK_END) {
-        context.advance();  // Consume the '}'
+        context.advance();
         context.popState();
 
         location->validate();
@@ -220,23 +224,22 @@ void BlockParser::parseLocationBlock(
       if (token.type == lexer::Token::STRING) {
         std::string tokenValue = token.value;
 
-        if (context.currentIndex() + 1 < context.tokenCount()) {
+        if (tokenValue == "limit_except") {
+          handleLimitExceptBlock(context, *location);
+        } else if (tokenValue == "location") {
+          context.advance();
+          context.pushState(ParserState::LOCATION, "location");
+          parseLocationBlock(context, server);
+        } else if (context.currentIndex() + 1 < context.tokenCount()) {
           const lexer::Token& nextToken = context.peekToken();
 
           if (nextToken.type == lexer::Token::BLOCK_START) {
-            if (tokenValue == "limit_except") {
-              handleLimitExceptBlock(context, *location);
-            } else if (tokenValue == "location") {
-              context.pushState(ParserState::LOCATION, "location");
-              parseLocationBlock(context, server);
-            } else {
-              delete location;
-              std::ostringstream oss;
-              oss << "Unknown block '" << tokenValue
-                  << "' in location context at line " << token.lineNumber;
-              throw exceptions::SyntaxException(
-                  oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
-            }
+            delete location;
+            std::ostringstream oss;
+            oss << "Unknown block '" << tokenValue
+                << "' in location context at line " << token.lineNumber;
+            throw exceptions::SyntaxException(
+                oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
           } else {
             handleDirective(context, token, NULL, NULL, location);
           }
@@ -456,7 +459,7 @@ void BlockParser::handleLimitExceptBlock(
     const lexer::Token& token = context.currentToken();
 
     if (token.type == lexer::Token::BLOCK_END) {
-      context.advance();  // Consume the '}'
+      context.advance();
 
       std::ostringstream oss;
       oss << "Completed limit_except block with " << methods.size()
@@ -476,6 +479,12 @@ void BlockParser::handleLimitExceptBlock(
           context.advance();
           context.expect(lexer::Token::SEMICOLON, "deny all statement");
           context.advance();
+        } else {
+          std::ostringstream oss;
+          oss << "Expected 'all' after 'deny' in limit_except block at line "
+              << token.lineNumber;
+          throw exceptions::SyntaxException(
+              oss.str(), exceptions::SyntaxException::UNEXPECTED_TOKEN);
         }
       } else {
         std::ostringstream oss;

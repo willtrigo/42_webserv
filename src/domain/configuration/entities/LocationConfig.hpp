@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 12:21:54 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/28 17:37:42 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/01 17:39:31 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,6 +37,7 @@ class LocationConfig {
   typedef std::set<http::value_objects::HttpMethod> AllowedMethods;
   typedef std::vector<std::string> TryFiles;
   typedef std::map<shared::value_objects::ErrorCode, std::string> ErrorPageMap;
+  typedef std::map<std::string, std::string> CustomHeaderMap;
 
   enum LocationMatchType {
     MATCH_EXACT,
@@ -116,6 +117,12 @@ class LocationConfig {
   void setUploadMaxFileSize(const std::string& sizeString);
   void setUploadMaxTotalSize(const std::string& sizeString);
 
+  const CustomHeaderMap& getCustomHeaders() const;
+  bool hasCustomHeaders() const;
+  void addCustomHeader(const std::string& name, const std::string& value);
+  void removeCustomHeader(const std::string& name);
+  void clearCustomHeaders();
+
   bool isValid() const;
   void validate() const;
 
@@ -164,6 +171,7 @@ class LocationConfig {
   filesystem::value_objects::Path m_alias;
   filesystem::value_objects::Size m_clientBodyBufferSize;
   bool m_clientBodyBufferSizeSet;
+  CustomHeaderMap m_customHeaders;
 
   mutable shared::value_objects::RegexPattern m_regexPattern;
   mutable bool m_regexPatternValid;

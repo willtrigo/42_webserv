@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 16:13:59 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/30 16:26:29 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/01 17:33:58 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,10 +60,7 @@ void LocationDirectiveHandler::handle(const std::string& directive,
              directive == "upload_max_total_size") {
     handleUploadSizeLimits(directive, args, lineNumber);
   } else if (directive == "add_header") {
-    std::ostringstream oss;
-    oss << "Custom header directive (not yet implemented): " << directive
-        << " at line " << lineNumber;
-    m_logger.info(oss.str());
+    handleAddHeader(args, lineNumber);
   } else if (directive == "include") {
     std::ostringstream oss;
     oss << "Include directive in location context (not yet implemented): "
@@ -231,7 +228,7 @@ void LocationDirectiveHandler::handleTryFiles(
 
 void LocationDirectiveHandler::handleReturn(
     const std::vector<std::string>& args, std::size_t lineNumber) {
-  validateArgumentCount("return", args, 2, lineNumber);
+  validateMinimumArguments("return", args, 2, lineNumber);
 
   try {
     unsigned int code = parseUnsignedInt(args[0], "return code", lineNumber);
@@ -246,10 +243,16 @@ void LocationDirectiveHandler::handleReturn(
           oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
     }
 
-    m_location.setReturnRedirect(args[1], code);
+    std::string url;
+    for (std::size_t i = 1; i < args.size(); ++i) {
+      if (i > 1) url += " ";
+      url += args[i];
+    }
+
+    m_location.setReturnRedirect(url, code);
 
     std::ostringstream oss;
-    oss << "Set return " << code << " -> '" << args[1] << "' at line "
+    oss << "Set return " << code << " -> '" << url << "' at line "
         << lineNumber;
     m_logger.debug(oss.str());
 
@@ -308,23 +311,25 @@ void LocationDirectiveHandler::handleUploadPermissions(
 
 void LocationDirectiveHandler::handleUploadAccess(
     const std::vector<std::string>& args, std::size_t lineNumber) {
-  validateArgumentCount("upload_store_access", args, 1, lineNumber);
+  validateMinimumArguments("upload_store_access", args, 1, lineNumber);
 
   try {
-    domain::filesystem::value_objects::UploadAccess access =
-        domain::filesystem::value_objects::UploadAccess::fromString(args[0]);
+    for (std::size_t i = 0; i < args.size(); ++i) {
+      domain::filesystem::value_objects::UploadAccess access =
+          domain::filesystem::value_objects::UploadAccess::fromString(args[i]);
 
-    m_location.setUploadAccess(args[0]);
+      m_location.setUploadAccess(args[i]);
 
-    std::ostringstream oss;
-    oss << "Set upload_store_access to '" << args[0] << "' at line "
-        << lineNumber;
-    m_logger.debug(oss.str());
+      std::ostringstream oss;
+      oss << "Set upload_store_access component '" << args[i] << "' at line "
+          << lineNumber;
+      m_logger.debug(oss.str());
+    }
 
   } catch (const std::exception& e) {
     std::ostringstream oss;
-    oss << "Invalid upload_store_access '" << args[0] << "': " << e.what()
-        << " at line " << lineNumber;
+    oss << "Invalid upload_store_access: " << e.what() << " at line "
+        << lineNumber;
     throw exceptions::SyntaxException(
         oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
   }
@@ -456,6 +461,35 @@ void LocationDirectiveHandler::handleUploadSizeLimits(
     std::ostringstream oss;
     oss << "Invalid " << directive << " value '" << args[0] << "': " << e.what()
         << " at line " << lineNumber;
+    throw exceptions::SyntaxException(
+        oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
+  }
+}
+
+void LocationDirectiveHandler::handleAddHeader(
+    const std::vector<std::string>& args, std::size_t lineNumber) {
+  validateMinimumArguments("add_header", args, 2, lineNumber);
+
+  std::string headerName = args[0];
+  std::string headerValue;
+
+  for (std::size_t i = 1; i < args.size(); ++i) {
+    if (i > 1) headerValue += " ";
+    headerValue += args[i];
+  }
+
+  try {
+    m_location.addCustomHeader(headerName, headerValue);
+
+    std::ostringstream oss;
+    oss << "Added custom header '" << headerName << ": " << headerValue
+        << "' at line " << lineNumber;
+    m_logger.debug(oss.str());
+
+  } catch (const std::exception& e) {
+    std::ostringstream oss;
+    oss << "Invalid add_header directive: " << e.what() << " at line "
+        << lineNumber;
     throw exceptions::SyntaxException(
         oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
   }
