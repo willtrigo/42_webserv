@@ -49,7 +49,7 @@ jobs:
     - name: Run server with timeout
       run: |
         echo "🚀 Starting webserver with webserv.conf..."
-        timeout 10s ./bin/webserv ./webserv.conf || EXIT_CODE=$?
+        timeout 10s ./bin/webserv ./conf/webserv.conf || EXIT_CODE=$?
         
         if [ "${EXIT_CODE:-0}" -eq 124 ]; then
           echo "✅ Server ran for 10 seconds and was terminated (expected behavior)"
@@ -65,7 +65,7 @@ jobs:
     - name: Run server with Valgrind
       run: |
         echo "🔍 Running server with Valgrind memory leak detection..."
-        timeout 10s valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --log-file=valgrind-server.txt ./bin/webserv ./webserv.conf || EXIT_CODE=$?
+        timeout 10s valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --log-file=valgrind-server.txt ./bin/webserv ./conf/webserv.conf || EXIT_CODE=$?
         
         if [ "${EXIT_CODE:-0}" -eq 124 ]; then
           echo "✅ Valgrind test completed (timeout expected)"
