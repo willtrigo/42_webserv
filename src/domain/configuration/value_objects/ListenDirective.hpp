@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 03:21:07 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 04:18:57 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/31 04:12:03 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,7 +66,16 @@ class ListenDirective {
   http::value_objects::Port m_port;
 
   void validate() const;
+  void validateHostPortCombination() const;
+  void validateIpv6Specifics() const;
   static void validateDirectiveString(const std::string& directiveString);
+  void validateHostnameFormat() const;
+  static void validateHostnameColonPresence(const std::string& hostname);
+  static void validateHostnameBrackets(const std::string& hostname);
+  static void validateHostnameLength(const std::string& hostname);
+  static void validateHostnameDotsPattern(const std::string& hostname);
+  void validatePortRange() const;
+  bool isStandardPrivilegedPort() const;
   static std::string normalizeHostString(const std::string& hostString);
   static std::string normalizePortString(const std::string& portString);
   static bool hasPort(const std::string& directiveString);

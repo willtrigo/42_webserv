@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 16:13:59 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/30 16:26:29 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/02 02:01:45 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,10 +60,7 @@ void LocationDirectiveHandler::handle(const std::string& directive,
              directive == "upload_max_total_size") {
     handleUploadSizeLimits(directive, args, lineNumber);
   } else if (directive == "add_header") {
-    std::ostringstream oss;
-    oss << "Custom header directive (not yet implemented): " << directive
-        << " at line " << lineNumber;
-    m_logger.info(oss.str());
+    handleAddHeader(args, lineNumber);
   } else if (directive == "include") {
     std::ostringstream oss;
     oss << "Include directive in location context (not yet implemented): "
@@ -231,27 +228,72 @@ void LocationDirectiveHandler::handleTryFiles(
 
 void LocationDirectiveHandler::handleReturn(
     const std::vector<std::string>& args, std::size_t lineNumber) {
-  validateArgumentCount("return", args, 2, lineNumber);
+  validateMinimumArguments("return", args, 2, lineNumber);
 
   try {
     unsigned int code = parseUnsignedInt(args[0], "return code", lineNumber);
+    domain::shared::value_objects::ErrorCode errorCode(code);
 
-    if (code < domain::shared::value_objects::ErrorCode::REDIRECTION_MIN ||
-        code > domain::shared::value_objects::ErrorCode::REDIRECTION_MAX) {
+    // Validate HTTP status code range using ErrorCode constants
+    if (!domain::shared::value_objects::ErrorCode::isValidErrorCode(code)) {
       std::ostringstream oss;
-      oss << "return code " << code
-          << " is not a valid HTTP redirect code (300-399) at line "
+      oss << "return code " << code << " is not a valid HTTP status code ("
+          << domain::shared::value_objects::ErrorCode::MIN_CODE << "-"
+          << domain::shared::value_objects::ErrorCode::MAX_CODE << ") at line "
           << lineNumber;
       throw exceptions::SyntaxException(
           oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
     }
 
-    m_location.setReturnRedirect(args[1], code);
+    // For redirect codes (3xx), use setReturnRedirect
+    if (errorCode.isRedirection()) {
+      // Join all remaining arguments as the redirect URL
+      std::string redirectTarget;
+      for (std::size_t i = 1; i < args.size(); ++i) {
+        if (i > 1) redirectTarget += " ";
+        redirectTarget += args[i];
+      }
 
-    std::ostringstream oss;
-    oss << "Set return " << code << " -> '" << args[1] << "' at line "
-        << lineNumber;
-    m_logger.debug(oss.str());
+      m_location.setReturnRedirect(redirectTarget, code);
+
+      std::ostringstream oss;
+      oss << "Set return " << code << " -> '" << redirectTarget << "' at line "
+          << lineNumber;
+      m_logger.debug(oss.str());
+    }
+    // For success (2xx), client error (4xx), or server error (5xx) codes, use
+    // setReturnContent
+    else if (errorCode.isSuccess() || errorCode.isClientError() ||
+             errorCode.isServerError()) {
+      // Join all remaining arguments as the response content
+      std::string content;
+      for (std::size_t i = 1; i < args.size(); ++i) {
+        if (i > 1) content += " ";
+        content += args[i];
+      }
+
+      // Remove surrounding quotes if present
+      if (content.size() >= 2 && content[0] == '"' &&
+          content[content.size() - 1] == '"') {
+        content = content.substr(1, content.size() - 2);
+      }
+
+      m_location.setReturnContent(content, code);
+
+      std::ostringstream oss;
+      oss << "Set return content " << code << " -> '" << content << "' at line "
+          << lineNumber;
+      m_logger.debug(oss.str());
+    } else {
+      // This should not happen due to the range check above, but handle it
+      std::ostringstream oss;
+      oss << "return code " << code
+          << " is not a valid return code (must be 2xx, 3xx, 4xx, or 5xx) at "
+             "line "
+          << lineNumber;
+      throw exceptions::SyntaxException(
+          oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
+    }
 
   } catch (const std::exception& e) {
     std::ostringstream oss;
@@ -308,23 +350,25 @@ void LocationDirectiveHandler::handleUploadPermissions(
 
 void LocationDirectiveHandler::handleUploadAccess(
     const std::vector<std::string>& args, std::size_t lineNumber) {
-  validateArgumentCount("upload_store_access", args, 1, lineNumber);
+  validateMinimumArguments("upload_store_access", args, 1, lineNumber);
 
   try {
-    domain::filesystem::value_objects::UploadAccess access =
-        domain::filesystem::value_objects::UploadAccess::fromString(args[0]);
+    for (std::size_t i = 0; i < args.size(); ++i) {
+      domain::filesystem::value_objects::UploadAccess access =
+          domain::filesystem::value_objects::UploadAccess::fromString(args[i]);
 
-    m_location.setUploadAccess(args[0]);
+      m_location.setUploadAccess(args[i]);
 
-    std::ostringstream oss;
-    oss << "Set upload_store_access to '" << args[0] << "' at line "
-        << lineNumber;
-    m_logger.debug(oss.str());
+      std::ostringstream oss;
+      oss << "Set upload_store_access component '" << args[i] << "' at line "
+          << lineNumber;
+      m_logger.debug(oss.str());
+    }
 
   } catch (const std::exception& e) {
     std::ostringstream oss;
-    oss << "Invalid upload_store_access '" << args[0] << "': " << e.what()
-        << " at line " << lineNumber;
+    oss << "Invalid upload_store_access: " << e.what() << " at line "
+        << lineNumber;
     throw exceptions::SyntaxException(
         oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
   }
@@ -370,10 +414,10 @@ void LocationDirectiveHandler::handleCgiRoot(
     domain::configuration::value_objects::CgiConfig cgiConfig;
     try {
       cgiConfig = m_location.getCgiConfig();
-      domain::filesystem::value_objects::Path cgiRoot(args[0]);
+      domain::filesystem::value_objects::Path cgiRoot(args[0], false);
       cgiConfig.setCgiRoot(cgiRoot);
     } catch (...) {
-      domain::filesystem::value_objects::Path cgiRoot(args[0]);
+      domain::filesystem::value_objects::Path cgiRoot(args[0], false);
       domain::shared::value_objects::RegexPattern defaultPattern(
           "\\.(php|py|pl|cgi)$");
       cgiConfig = domain::configuration::value_objects::CgiConfig(
@@ -456,6 +500,35 @@ void LocationDirectiveHandler::handleUploadSizeLimits(
     std::ostringstream oss;
     oss << "Invalid " << directive << " value '" << args[0] << "': " << e.what()
         << " at line " << lineNumber;
+    throw exceptions::SyntaxException(
+        oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
+  }
+}
+
+void LocationDirectiveHandler::handleAddHeader(
+    const std::vector<std::string>& args, std::size_t lineNumber) {
+  validateMinimumArguments("add_header", args, 2, lineNumber);
+
+  std::string headerName = args[0];
+  std::string headerValue;
+
+  for (std::size_t i = 1; i < args.size(); ++i) {
+    if (i > 1) headerValue += " ";
+    headerValue += args[i];
+  }
+
+  try {
+    m_location.addCustomHeader(headerName, headerValue);
+
+    std::ostringstream oss;
+    oss << "Added custom header '" << headerName << ": " << headerValue
+        << "' at line " << lineNumber;
+    m_logger.debug(oss.str());
+
+  } catch (const std::exception& e) {
+    std::ostringstream oss;
+    oss << "Invalid add_header directive: " << e.what() << " at line "
+        << lineNumber;
     throw exceptions::SyntaxException(
         oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
   }

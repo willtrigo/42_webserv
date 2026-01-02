@@ -6,20 +6,20 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 11:50:30 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/28 14:40:24 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/01 19:00:39 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef SERVER_CONFIG_HPP
 #define SERVER_CONFIG_HPP
 
-#include "domain/configuration/value_objects/ListenDirective.hpp"
 #include "domain/configuration/entities/LocationConfig.hpp"
-#include "domain/shared/value_objects/ErrorCode.hpp"
-#include "domain/http/value_objects/Host.hpp"
+#include "domain/configuration/value_objects/ListenDirective.hpp"
 #include "domain/filesystem/value_objects/Path.hpp"
-#include "domain/http/value_objects/Port.hpp"
 #include "domain/filesystem/value_objects/Size.hpp"
+#include "domain/http/value_objects/Host.hpp"
+#include "domain/http/value_objects/Port.hpp"
+#include "domain/shared/value_objects/ErrorCode.hpp"
 
 #include <map>
 #include <string>
@@ -73,6 +73,12 @@ class ServerConfig {
   void setReturnRedirect(const std::string& redirect,
                          const shared::value_objects::ErrorCode& code);
   void setReturnRedirect(const std::string& redirect, unsigned int code);
+  void setReturnContent(const std::string& content,
+                        const shared::value_objects::ErrorCode& code);
+  void setReturnContent(const std::string& content, unsigned int code);
+  const std::string& getReturnContent() const;
+  bool hasReturnRedirect() const;
+  bool hasReturnContent() const;
 
   bool isValid() const;
   void validate() const;
@@ -84,6 +90,9 @@ class ServerConfig {
   bool hasListenDirective(const std::string& address, unsigned int port) const;
   bool hasListenDirective(const http::value_objects::Host& host,
                           const http::value_objects::Port& port) const;
+
+  void setListenDirectives(const std::vector<std::string>& directives);
+  void setListenDirectives(const ListenDirectives& directives);
 
   void clear();
   std::string toString() const;
@@ -98,6 +107,7 @@ class ServerConfig {
   filesystem::value_objects::Size m_clientMaxBodySize;
   std::string m_returnRedirect;
   shared::value_objects::ErrorCode m_returnCode;
+  std::string m_returnContent;
 
   void copyFrom(const ServerConfig& other);
   void clearLocations();

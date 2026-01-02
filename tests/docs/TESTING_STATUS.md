@@ -85,7 +85,7 @@ See [TWO_PERSON_SPRINT.md](TWO_PERSON_SPRINT.md) for the complete 10-day impleme
 
 ## 🏆 Value Objects Test Coverage
 
-**Tested (14/16):**
+**Tested (15/16):**
 - ✅ ErrorCode (77 tests, 100%)
 - ⚠️ ErrorPage (56 tests, 3 bugs)
 - ✅ HttpMethod (39 tests, 100%)

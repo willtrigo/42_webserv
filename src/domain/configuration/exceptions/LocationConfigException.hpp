@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 12:18:43 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 18:51:24 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/01 20:20:50 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,6 +43,9 @@ class LocationConfigException : public ::shared::exceptions::BaseException {
     EMPTY_PROXY_PASS,
     INVALID_PROXY_PASS,
     CONFLICTING_DIRECTIVES,
+    INVALID_CUSTOM_HEADER,
+    INVALID_RETURN_CODE,
+    RESERVED_HEADER,
     CODE_COUNT
   };
 

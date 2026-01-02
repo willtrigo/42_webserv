@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 11:08:29 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/30 16:09:07 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/01 18:41:39 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,8 +25,8 @@ class ErrorCode {
     MIN_CODE = 100,
     MAX_CODE = 599,
 
-    MIN_VALID_CODE = 400,
-    MAX_VALID_CODE = 599,
+    MIN_VALID_CODE = 400,  // TODO: refactor to have a better name
+    MAX_VALID_CODE = 599,  // TODO: refactor to have a better name
 
     INFORMATIONAL_MIN = 100,
     INFORMATIONAL_MAX = 199,

@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 16:35:11 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/30 20:38:45 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/02 03:00:16 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,7 @@ void BlockParser::parseHttpBlock(
     const lexer::Token& token = context.currentToken();
 
     if (token.type == lexer::Token::BLOCK_END) {
-      context.advance();  // Consume the '}'
+      context.advance();
       context.popState();
       m_logger.debug("End of http block");
       return;
@@ -52,15 +52,12 @@ void BlockParser::parseHttpBlock(
     if (token.type == lexer::Token::STRING) {
       std::string tokenValue = token.value;
 
-      // Look ahead to determine if this is a nested block or directive
       if (context.currentIndex() + 1 < context.tokenCount()) {
         const lexer::Token& nextToken = context.peekToken();
 
         if (nextToken.type == lexer::Token::BLOCK_START) {
-          // This is a nested block (e.g., "server {")
           handleNestedBlock(context, tokenValue, &httpConfig, NULL, NULL);
         } else {
-          // This is a directive
           handleDirective(context, token, &httpConfig, NULL, NULL);
         }
       } else {
@@ -96,7 +93,7 @@ void BlockParser::parseServerBlock(
       const lexer::Token& token = context.currentToken();
 
       if (token.type == lexer::Token::BLOCK_END) {
-        context.advance();  // Consume the '}'
+        context.advance();
         context.popState();
 
         server->validate();
@@ -119,14 +116,16 @@ void BlockParser::parseServerBlock(
       if (token.type == lexer::Token::STRING) {
         std::string tokenValue = token.value;
 
-        if (context.currentIndex() + 1 < context.tokenCount()) {
+        if (tokenValue == "location") {
+          context.advance();
+          context.pushState(ParserState::LOCATION, "location");
+          parseLocationBlock(context, *server);
+        } else if (context.currentIndex() + 1 < context.tokenCount()) {
           const lexer::Token& nextToken = context.peekToken();
 
           if (nextToken.type == lexer::Token::BLOCK_START) {
-            // Nested block (e.g., "location /path {")
             handleNestedBlock(context, tokenValue, NULL, server, NULL);
           } else {
-            // Server directive
             handleDirective(context, token, NULL, server, NULL);
           }
         } else {
@@ -161,59 +160,92 @@ void BlockParser::parseServerBlock(
 void BlockParser::parseLocationBlock(
     ParserContext& context,
     domain::configuration::entities::ServerConfig& server) {
-  // At this point, currentToken should be the location path
-  const lexer::Token& pathToken = context.currentToken();
-  std::string path = pathToken.value;
+  m_logger.debug("Parsing location block content");
 
-  context.advance();  // Move past the path
-
-  // Now we should be at BLOCK_START "{"
-  context.expect(lexer::Token::BLOCK_START, "location block start");
-  context.advance();  // Move past the "{"
-
-  // Parse match type from path prefix
+  // Parse location modifier and path
+  // Syntax: location [=|~|~*|^~] path { ... }
+  
+  const lexer::Token& firstToken = context.currentToken();
+  std::string firstArg = firstToken.value;
+  
+  std::string path;
   domain::configuration::entities::LocationConfig::LocationMatchType matchType;
-  std::string cleanPath = path;
-
-  if (path.empty()) {
-    matchType = domain::configuration::entities::LocationConfig::MATCH_PREFIX;
-  } else if (path[0] == '=') {
-    matchType = domain::configuration::entities::LocationConfig::MATCH_EXACT;
-    cleanPath = path.substr(1);
-  } else if (path[0] == '~') {
-    if (path.size() > 1 && path[1] == '*') {
-      matchType = domain::configuration::entities::LocationConfig::
-          MATCH_REGEX_CASE_INSENSITIVE;
-      cleanPath = path.substr(2);
-    } else {
-      matchType = domain::configuration::entities::LocationConfig::
-          MATCH_REGEX_CASE_SENSITIVE;
-      cleanPath = path.substr(1);
+  
+  // Check if first argument is a modifier
+  if (firstArg == "=" || firstArg == "~" || firstArg == "~*" || firstArg == "^~") {
+    // Has modifier - next token should be the path
+    context.advance();
+    
+    if (!context.hasMoreTokens() || context.currentToken().type != lexer::Token::STRING) {
+      std::ostringstream oss;
+      oss << "Expected path after location modifier '" << firstArg 
+          << "' at line " << firstToken.lineNumber;
+      throw exceptions::SyntaxException(
+          oss.str(), exceptions::SyntaxException::UNEXPECTED_TOKEN);
     }
+    
+    path = context.currentToken().value;
+    
+    // Determine match type from modifier
+    if (firstArg == "=") {
+      matchType = domain::configuration::entities::LocationConfig::MATCH_EXACT;
+    } else if (firstArg == "~") {
+      matchType = domain::configuration::entities::LocationConfig::MATCH_REGEX_CASE_SENSITIVE;
+    } else if (firstArg == "~*") {
+      matchType = domain::configuration::entities::LocationConfig::MATCH_REGEX_CASE_INSENSITIVE;
+    } else { // ^~
+      matchType = domain::configuration::entities::LocationConfig::MATCH_PREFIX;
+    }
+    
+    context.advance();
   } else {
-    matchType = domain::configuration::entities::LocationConfig::MATCH_PREFIX;
+    // No modifier - first argument is the path
+    path = firstArg;
+    
+    // Determine match type from path prefix (legacy support)
+    if (path.empty()) {
+      matchType = domain::configuration::entities::LocationConfig::MATCH_PREFIX;
+    } else if (path[0] == '=') {
+      matchType = domain::configuration::entities::LocationConfig::MATCH_EXACT;
+      path = path.substr(1);
+    } else if (path[0] == '~') {
+      if (path.size() > 1 && path[1] == '*') {
+        matchType = domain::configuration::entities::LocationConfig::MATCH_REGEX_CASE_INSENSITIVE;
+        path = path.substr(2);
+      } else {
+        matchType = domain::configuration::entities::LocationConfig::MATCH_REGEX_CASE_SENSITIVE;
+        path = path.substr(1);
+      }
+    } else {
+      matchType = domain::configuration::entities::LocationConfig::MATCH_PREFIX;
+    }
+    
+    context.advance();
   }
+
+  context.expect(lexer::Token::BLOCK_START, "location block start");
+  context.advance();
 
   std::ostringstream logMsg;
   logMsg << "Parsing location block for path: " << path;
   m_logger.debug(logMsg.str());
 
   domain::configuration::entities::LocationConfig* location =
-      new domain::configuration::entities::LocationConfig(cleanPath, matchType);
+      new domain::configuration::entities::LocationConfig(path, matchType);
 
   try {
     while (context.hasMoreTokens()) {
       const lexer::Token& token = context.currentToken();
 
       if (token.type == lexer::Token::BLOCK_END) {
-        context.advance();  // Consume the '}'
+        context.advance();
         context.popState();
 
         location->validate();
         server.addLocation(location);
 
         std::ostringstream oss;
-        oss << "End of location block, added location for path: " << cleanPath;
+        oss << "End of location block, added location for path: " << path;
         m_logger.debug(oss.str());
         return;
       }
@@ -228,27 +260,23 @@ void BlockParser::parseLocationBlock(
       if (token.type == lexer::Token::STRING) {
         std::string tokenValue = token.value;
 
-        if (context.currentIndex() + 1 < context.tokenCount()) {
+        if (tokenValue == "limit_except") {
+          handleLimitExceptBlock(context, *location);
+        } else if (tokenValue == "location") {
+          context.advance();
+          context.pushState(ParserState::LOCATION, "location");
+          parseLocationBlock(context, server);
+        } else if (context.currentIndex() + 1 < context.tokenCount()) {
           const lexer::Token& nextToken = context.peekToken();
 
           if (nextToken.type == lexer::Token::BLOCK_START) {
-            // Handle special case: limit_except block
-            if (tokenValue == "limit_except") {
-              handleLimitExceptBlock(context, *location);
-            } else if (tokenValue == "location") {
-              // Nested location
-              context.pushState(ParserState::LOCATION, "location");
-              parseLocationBlock(context, server);
-            } else {
-              delete location;
-              std::ostringstream oss;
-              oss << "Unknown block '" << tokenValue
-                  << "' in location context at line " << token.lineNumber;
-              throw exceptions::SyntaxException(
-                  oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
-            }
+            delete location;
+            std::ostringstream oss;
+            oss << "Unknown block '" << tokenValue
+                << "' in location context at line " << token.lineNumber;
+            throw exceptions::SyntaxException(
+                oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
           } else {
-            // Location directive
             handleDirective(context, token, NULL, NULL, location);
           }
         } else {
@@ -295,9 +323,9 @@ void BlockParser::handleNestedBlock(
           exceptions::SyntaxException::UNEXPECTED_TOKEN);
     }
 
-    context.advance();  // Move past "server"
+    context.advance();
     context.expect(lexer::Token::BLOCK_START, "server block start");
-    context.advance();  // Move past "{"
+    context.advance();
 
     context.pushState(ParserState::SERVER, "server");
     parseServerBlock(context, *httpConfig);
@@ -310,7 +338,7 @@ void BlockParser::handleNestedBlock(
           exceptions::SyntaxException::UNEXPECTED_TOKEN);
     }
 
-    context.advance();  // Move past "location"
+    context.advance();
     context.pushState(ParserState::LOCATION, "location");
     parseLocationBlock(context, *server);
 
@@ -341,16 +369,15 @@ void BlockParser::handleDirective(
   std::string directive = directiveToken.value;
   std::size_t lineNumber = directiveToken.lineNumber;
 
-  context.advance();  // Move past the directive name
+  context.advance();
 
   std::vector<std::string> args;
 
-  // Collect arguments until we hit a semicolon
   while (context.hasMoreTokens()) {
     const lexer::Token& token = context.currentToken();
 
     if (token.type == lexer::Token::SEMICOLON) {
-      context.advance();  // Consume the semicolon
+      context.advance();
       break;
     }
     if (token.type == lexer::Token::STRING) {
@@ -366,7 +393,6 @@ void BlockParser::handleDirective(
     }
   }
 
-  // Dispatch to appropriate handler based on context
   ParserState currentState = context.currentState();
 
   try {
@@ -414,9 +440,8 @@ void BlockParser::handleLimitExceptBlock(
   const lexer::Token& limitExceptToken = context.currentToken();
   std::size_t lineNumber = limitExceptToken.lineNumber;
 
-  context.advance();  // Move past "limit_except"
+  context.advance();
 
-  // Collect HTTP methods
   std::vector<std::string> methods;
   while (context.hasMoreTokens()) {
     const lexer::Token& token = context.currentToken();
@@ -444,11 +469,9 @@ void BlockParser::handleLimitExceptBlock(
         oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
   }
 
-  // Now we should be at BLOCK_START
   context.expect(lexer::Token::BLOCK_START, "limit_except block start");
-  context.advance();  // Move past "{"
+  context.advance();
 
-  // Add allowed methods to location
   for (std::size_t i = 0; i < methods.size(); ++i) {
     try {
       domain::http::value_objects::HttpMethod method(methods[i]);
@@ -468,12 +491,11 @@ void BlockParser::handleLimitExceptBlock(
     }
   }
 
-  // Parse the block content (typically just "deny all;")
   while (context.hasMoreTokens()) {
     const lexer::Token& token = context.currentToken();
 
     if (token.type == lexer::Token::BLOCK_END) {
-      context.advance();  // Consume the '}'
+      context.advance();
 
       std::ostringstream oss;
       oss << "Completed limit_except block with " << methods.size()
@@ -483,7 +505,6 @@ void BlockParser::handleLimitExceptBlock(
     }
 
     if (token.type == lexer::Token::STRING) {
-      // Typically "deny all;" - we just skip it
       std::string word = token.value;
       context.advance();
 
@@ -494,6 +515,12 @@ void BlockParser::handleLimitExceptBlock(
           context.advance();
           context.expect(lexer::Token::SEMICOLON, "deny all statement");
           context.advance();
+        } else {
+          std::ostringstream oss;
+          oss << "Expected 'all' after 'deny' in limit_except block at line "
+              << token.lineNumber;
+          throw exceptions::SyntaxException(
+              oss.str(), exceptions::SyntaxException::UNEXPECTED_TOKEN);
         }
       } else {
         std::ostringstream oss;

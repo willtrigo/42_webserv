@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 03:21:29 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 04:23:55 by dande-je         ###   ########.fr       */
+/*   Updated: 2025/12/31 04:51:29 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,7 +46,11 @@ ListenDirective::ListenDirective(const std::string& directiveString)
   std::string hostStr = normalizeHostString(parts.first);
   std::string portStr = normalizePortString(parts.second);
 
-  m_host = http::value_objects::Host::fromString(hostStr);
+  if (hostStr.empty()) {
+    m_host = http::value_objects::Host::wildcard();
+  } else {
+    m_host = http::value_objects::Host::fromString(hostStr);
+  }
 
   if (!portStr.empty()) {
     m_port = http::value_objects::Port::fromString(portStr);
@@ -229,149 +233,112 @@ std::pair<std::string, std::string> ListenDirective::splitDirective(
 }
 
 void ListenDirective::validate() const {
-  // Validation is done in constructors, but we can add additional checks here
+  validateHostPortCombination();
+  validateIpv6Specifics();
+  validateHostnameFormat();
+  validatePortRange();
 }
-/* TODO: implement validate
-void ListenDirective::validate() const {
-  // Additional consistency checks beyond basic constructor validation
 
-  // 1. Check for invalid host/port combinations
+void ListenDirective::validateHostPortCombination() const {
   if (m_host.isWildcard() && m_port.getValue() == 0) {
-    // Port 0 is a special case that means "any available port"
-    // This is usually not valid for server listening directives
-    throw shared::exceptions::ListenDirectiveException(
+    throw exceptions::ListenDirectiveException(
         "Wildcard host with port 0 is not valid for server listening",
-        shared::exceptions::ListenDirectiveException::INVALID_FORMAT);
+        exceptions::ListenDirectiveException::INVALID_FORMAT);
+  }
+}
+
+void ListenDirective::validateIpv6Specifics() const {
+  if (!m_host.isIpv6()) {
+    return;
   }
 
-  // 2. Check for IPv6-specific validations
-  if (m_host.isIpv6() && m_host.getValue().empty()) {
-    throw shared::exceptions::ListenDirectiveException(
+  if (m_host.getValue().empty()) {
+    throw exceptions::ListenDirectiveException(
         "IPv6 address cannot be empty",
-        shared::exceptions::ListenDirectiveException::INVALID_HOST);
-  }
-
-  // 3. Check for localhost with non-standard ports (warning in logs, not
-exception)
-  // This would typically be logged rather than throwing
-  if (m_host.isLocalhost() && !m_port.isWellKnown()) {
-    // Log a warning: "Listening on localhost with non-standard port X"
-  }
-
-  // 4. Validate that hostname doesn't contain port-like patterns
-  if (m_host.isHostname()) {
-    const std::string& hostname = m_host.getValue();
-
-    // Check for common mistakes like "hostname:80" in host part
-    if (hostname.find(':') != std::string::npos) {
-      throw shared::exceptions::ListenDirectiveException(
-          "Hostname contains colon character: " + hostname,
-          shared::exceptions::ListenDirectiveException::INVALID_HOST);
-    }
-
-    // Check for brackets in hostname (IPv6 syntax mistake)
-    if (hostname.find('[') != std::string::npos ||
-        hostname.find(']') != std::string::npos) {
-      throw shared::exceptions::ListenDirectiveException(
-          "Hostname contains IPv6 brackets: " + hostname,
-          shared::exceptions::ListenDirectiveException::INVALID_HOST);
-    }
-  }
-
-  // 5. Check for reserved ports requiring special permissions
-  if (m_port.isWellKnown() && m_port.getValue() < 1024) {
-    // Ports below 1024 require root privileges on Unix-like systems
-    // This is a validation that might be important for your server
-    if (m_port.getValue() != Port::HTTP_PORT &&
-        m_port.getValue() != Port::HTTPS_PORT &&
-        m_port.getValue() != Port::FTP_PORT) {
-      // Log a warning: "Port X requires root privileges"
-    }
-  }
-
-  // 6. Validate against system-specific limitations
-  // For example, check if port is already in use (though this is runtime, not
-compile-time)
-  // This would typically be done elsewhere, but could be noted here
-
-  // 7. Check for duplicate host:port combinations if this is part of a
-collection
-  // This would require context, so might be better in ServerConfig
-
-  // 8. Validate hostname length and format more strictly
-  if (m_host.isHostname()) {
-    const std::string& hostname = m_host.getValue();
-
-    // Check total length (RFC 1035)
-    if (hostname.length() > 253) {
-      throw shared::exceptions::ListenDirectiveException(
-          "Hostname too long (max 253 chars): " + hostname,
-          shared::exceptions::ListenDirectiveException::INVALID_HOST);
-    }
-
-    // Check for consecutive dots
-    if (hostname.find("..") != std::string::npos) {
-      throw shared::exceptions::ListenDirectiveException(
-          "Hostname contains consecutive dots: " + hostname,
-          shared::exceptions::ListenDirectiveException::INVALID_HOST);
-    }
-
-    // Check for leading or trailing dots
-    if (!hostname.empty() &&
-        (hostname[0] == '.' || hostname[hostname.length() - 1] == '.')) {
-      throw shared::exceptions::ListenDirectiveException(
-          "Hostname cannot start or end with dot: " + hostname,
-          shared::exceptions::ListenDirectiveException::INVALID_HOST);
-    }
-  }
-
-  // 9. Check for IPv4-mapped IPv6 addresses if you want to normalize them
-  if (m_host.isIpv6()) {
-    const std::string& ipv6 = m_host.getValue();
-
-    // Check for IPv4-mapped IPv6 format (::ffff:192.168.1.1)
-    if (ipv6.find("::ffff:") == 0) {
-      // Could optionally normalize to IPv4
-      // This is more of a note than a validation error
-    }
-  }
-
-  // 10. Ensure port is within valid range (though Port class should handle
-this)
-  // Double-check for consistency
-  if (!Port::isValidPort(m_port.getValue())) {
-    throw shared::exceptions::ListenDirectiveException(
-        "Port value is invalid: " + m_port.toString(),
-        shared::exceptions::ListenDirectiveException::INVALID_PORT);
+        exceptions::ListenDirectiveException::INVALID_HOST);
   }
 }
 
-maybe implement add a separate method for warnings vs errors
-std::vector<std::string> ListenDirective::getWarnings() const {
-  std::vector<std::string> warnings;
-
-  // Localhost with non-standard port
-  if (m_host.isLocalhost() && !m_port.isWellKnown()) {
-    warnings.push_back("Listening on localhost with non-standard port " +
-                       m_port.toString() +
-                       " - may not be accessible from other machines");
+void ListenDirective::validateHostnameFormat() const {
+  if (!m_host.isHostname()) {
+    return;
   }
 
-  // Port requiring root privileges
-  if (m_port.isWellKnown() && m_port.getValue() < 1024) {
-    warnings.push_back("Port " + m_port.toString() +
-                       " requires root privileges on Unix-like systems");
-  }
+  const std::string& hostname = m_host.getValue();
 
-  // IPv6 address (some clients might not support it)
-  if (m_host.isIpv6()) {
-    warnings.push_back("IPv6 address " + m_host.getValue() +
-                       " may not be supported by all clients");
-  }
-
-  return warnings;
+  validateHostnameColonPresence(hostname);
+  validateHostnameBrackets(hostname);
+  validateHostnameLength(hostname);
+  validateHostnameDotsPattern(hostname);
 }
-*/
+
+void ListenDirective::validateHostnameColonPresence(
+    const std::string& hostname) {
+  if (hostname.find(':') != std::string::npos) {
+    throw exceptions::ListenDirectiveException(
+        "Hostname contains colon character: " + hostname,
+        exceptions::ListenDirectiveException::INVALID_HOST);
+  }
+}
+
+void ListenDirective::validateHostnameBrackets(const std::string& hostname) {
+  const bool hasBracketOpen = hostname.find('[') != std::string::npos;
+  const bool hasBracketClose = hostname.find(']') != std::string::npos;
+
+  if (hasBracketOpen || hasBracketClose) {
+    throw exceptions::ListenDirectiveException(
+        "Hostname contains IPv6 brackets: " + hostname,
+        exceptions::ListenDirectiveException::INVALID_HOST);
+  }
+}
+
+void ListenDirective::validateHostnameLength(const std::string& hostname) {
+  static const std::size_t MAX_HOSTNAME_LENGTH = 253;
+
+  if (hostname.length() > MAX_HOSTNAME_LENGTH) {
+    throw exceptions::ListenDirectiveException(
+        "Hostname too long (max 253 chars): " + hostname,
+        exceptions::ListenDirectiveException::INVALID_HOST);
+  }
+}
+
+void ListenDirective::validateHostnameDotsPattern(const std::string& hostname) {
+  if (hostname.find("..") != std::string::npos) {
+    throw exceptions::ListenDirectiveException(
+        "Hostname contains consecutive dots: " + hostname,
+        exceptions::ListenDirectiveException::INVALID_HOST);
+  }
+
+  if (hostname.empty()) {
+    return;
+  }
+
+  const bool startsWithDot = hostname[0] == '.';
+  const bool endsWithDot = hostname[hostname.length() - 1] == '.';
+
+  if (startsWithDot || endsWithDot) {
+    throw exceptions::ListenDirectiveException(
+        "Hostname cannot start or end with dot: " + hostname,
+        exceptions::ListenDirectiveException::INVALID_HOST);
+  }
+}
+
+void ListenDirective::validatePortRange() const {
+  if (!http::value_objects::Port::isValidPort(m_port.getValue())) {
+    std::ostringstream oss;
+    oss << "Port value is invalid: " << m_port.getValue();
+    throw exceptions::ListenDirectiveException(
+        oss.str(), exceptions::ListenDirectiveException::INVALID_PORT);
+  }
+}
+
+bool ListenDirective::isStandardPrivilegedPort() const {
+  const unsigned int portValue = m_port.getValue();
+
+  return portValue == http::value_objects::Port::HTTP_PORT ||
+         portValue == http::value_objects::Port::HTTPS_PORT ||
+         portValue == http::value_objects::Port::FTP_PORT;
+}
 
 void ListenDirective::validateDirectiveString(
     const std::string& directiveString) {

@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 12:55:02 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/30 20:36:05 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/01 17:32:01 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,6 +36,9 @@ class BlockParser {
 
  private:
   application::ports::ILogger& m_logger;
+
+  BlockParser(const BlockParser&);
+  BlockParser& operator=(const BlockParser&);
 
   void handleNestedBlock(
       ParserContext& context, const std::string& blockName,
