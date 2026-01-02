@@ -38,9 +38,9 @@ jobs:
     
     - name: Verify config file exists
       run: |
-        if [ -f webserv.conf ]; then
+        if [ -f conf/webserv.conf ]; then
           echo "✅ Config file found"
-          cat webserv.conf
+          cat conf/webserv.conf
         else
           echo "❌ Config file not found"
           exit 1
