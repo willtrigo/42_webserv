@@ -843,14 +843,14 @@ make clean && make
 
 **Morning (9:00 AM - 11:00 AM): Update Documentation - 2h**
 
-- [ ] Update `TESTING_STATUS.md` with Day 1 results:
-  - [ ] 245/247 tests passing (98.8%)
-  - [ ] 11/15 value objects tested
-  - [ ] HTTP value objects: Uri, Host, QueryStringBuilder, Port ✅
-  - [ ] Filesystem value objects: Permission, UploadAccess ✅
-- [ ] Update test count in all README files
-- [ ] Create summary of Day 1 achievements
-- [ ] Document any bugs found during testing
+- [x] Update `TESTING_STATUS.md` with Day 1 results:
+  - [x] 245/247 tests passing (98.8%)
+  - [x] 11/15 value objects tested
+  - [x] HTTP value objects: Uri, Host, QueryStringBuilder, Port ✅
+  - [x] Filesystem value objects: Permission, UploadAccess ✅
+- [x] Update test count in all README files
+- [x] Create summary of Day 1 achievements
+- [x] Document any bugs found during testing
 
 **Afternoon (1:00 PM - 4:00 PM): Code Review & Cleanup - 3h**
 
@@ -884,13 +884,13 @@ make clean && make
 #### Dande's Tasks (7 hours)
 
 **Morning (3h):** ListenDirective Testing
-- [ ] Create `tests/unit/test_ListenDirective.cpp`
-- [ ] **Test Categories:**
-  - [ ] Construction (4 tests)
-  - [ ] Parsing "host:port" (5 tests)
-  - [ ] Validation (3 tests)
-  - [ ] Operations (3 tests)
-- [ ] **Total: 15 tests**
+- [x] Create `tests/unit/test_ListenDirective.cpp`
+- [x] **Test Categories:**
+  - [x] Construction (4 tests)
+  - [x] Parsing "host:port" (5 tests)
+  - [x] Validation (3 tests)
+  - [x] Operations (3 tests)
+- [x] **Total: 15 tests**
 
 **Afternoon (4h):** Fix RegexPattern (CRITICAL)
 - [ ] **Current Issue:** Crashes on empty pattern
@@ -980,14 +980,14 @@ ErrorPage::ErrorPage()
 #### Dande's Tasks (6 hours)
 
 **Morning (5h):** Route Testing (Complex!)
-- [ ] Create `tests/unit/test_Route.cpp`
-- [ ] **Test Categories:**
-  - [ ] Construction (5 tests)
-  - [ ] Pattern matching (8 tests)
-  - [ ] HTTP method validation (5 tests)
-  - [ ] Parameter extraction (4 tests)
-  - [ ] Operations (3 tests)
-- [ ] **Total: 25 tests**
+- [x] Create `tests/unit/test_Route.cpp`
+- [x] **Test Categories:**
+  - [x] Construction (5 tests)
+  - [x] Pattern matching (8 tests)
+  - [x] HTTP method validation (5 tests)
+  - [x] Parameter extraction (4 tests)
+  - [x] Operations (3 tests)
+- [x] **Total: 25 tests**
 
 **Afternoon (1h):** Review Bira's PRs
 - [ ] Code review all value object tests
