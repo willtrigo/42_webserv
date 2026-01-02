@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/24 09:42:14 by umeneses          #+#    #+#              #
-#    Updated: 2026/01/02 10:34:19 by umeneses         ###   ########.fr        #
+#    Updated: 2026/01/02 12:06:24 by umeneses         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -41,49 +41,20 @@ MOCKS_DIR                       := mocks
 NAME                            := $(BIN_DIR)/test_runner
 
 # ============================================================================
-# SOURCE FILE EXCLUSIONS
+# SOURCE FILE EXCLUSIONS (Static Initialization & Dependency Issues)
 # ============================================================================
-# Explicitly exclude files that cannot be compiled in test environment.
-# Files are excluded when they depend on infrastructure not yet implemented
-# or when they're part of the main application (not library code).
-#
-# INFRASTRUCTURE/NETWORK (2 files):
-#   - RouteMatcher.cpp, RouteMatcherException.cpp
-#
-# INFRASTRUCTURE/HTTP (2 files):
-#   - RequestParser.cpp, RequestParserException.cpp
-#
-# INFRASTRUCTURE/CONFIG (3 files):
-#   - ConfigParser.cpp, ConfigProvider.cpp, ConfigException.cpp
-#
-# INFRASTRUCTURE/CONFIG/PARSERS (3 files - depend on entities):
-#   - BlockParser.cpp, ParserContext.cpp, ParserState.cpp
-#
-# INFRASTRUCTURE/CONFIG/HANDLERS (4 files - depend on entities):
-#   - GlobalDirectiveHandler.cpp, ServerDirectivehandler.cpp
-#   - LocationDirectiveHandler.cpp, ADirectiveHandler.cpp
-#
-# INFRASTRUCTURE/FILESYSTEM/ADAPTERS (6 files):
-#   - FileHandler.cpp, DirectoryLister.cpp, PathResolver.cpp
-#   - FileSystemHelper.cpp, DirectoryEntryComparators.cpp
-#   - RouteConfigAdapter.cpp
-#
-# PRESENTATION/CLI (2 files):
-#   - CliController.cpp, CliView.cpp
-#
-# CONFIGURATION/ENTITIES (6 files - depend on infrastructure):
-#   - HttpConfig.cpp, HttpConfigException.cpp
-#   - ServerConfig.cpp, ServerConfigException.cpp
-#   - LocationConfig.cpp, LocationConfigException.cpp
-#
-# CONFIGURATION/VALUE_OBJECTS (2 files - depend on infrastructure):
-#   - UploadConfig.cpp, UploadConfigException.cpp
-#
-# Total: 32 files excluded + main.cpp
+# Files excluded due to:
+#  1. Static initialization order fiasco (DirectoryLister + RegexPattern)
+#  2. Deep dependency chains not yet tested (Config entities/handlers)
+#  3. Main entry point conflicts (main.cpp)
+#  4. CLI presentation layer (CliController, CliView)
+#  5. Unimplemented features (RouteMatcher, RequestParser)
 # ============================================================================
 
 PROJECT_SRCS                    := $(shell find $(SRC_DIR) -name '*.cpp' \
 											! -name 'main.cpp' \
+											! -name 'CliController.cpp' \
+											! -name 'CliView.cpp' \
 											! -name 'RouteMatcher.cpp' \
 											! -name 'RouteMatcherException.cpp' \
 											! -name 'RequestParser.cpp' \
@@ -94,18 +65,17 @@ PROJECT_SRCS                    := $(shell find $(SRC_DIR) -name '*.cpp' \
 											! -name 'BlockParser.cpp' \
 											! -name 'ParserContext.cpp' \
 											! -name 'ParserState.cpp' \
+											! -name 'IncludeProcessor.cpp' \
 											! -name 'GlobalDirectiveHandler.cpp' \
-											! -name 'ServerDirectivehandler.cpp' \
+											! -name 'ServerDirectiveHandler.cpp' \
 											! -name 'LocationDirectiveHandler.cpp' \
 											! -name 'ADirectiveHandler.cpp' \
-											! -name 'FileHandler.cpp' \
 											! -name 'DirectoryLister.cpp' \
+											! -name 'FileHandler.cpp' \
 											! -name 'PathResolver.cpp' \
 											! -name 'FileSystemHelper.cpp' \
 											! -name 'DirectoryEntryComparators.cpp' \
 											! -name 'RouteConfigAdapter.cpp' \
-											! -name 'CliController.cpp' \
-											! -name 'CliView.cpp' \
 											! -name 'HttpConfig.cpp' \
 											! -name 'HttpConfigException.cpp' \
 											! -name 'ServerConfig.cpp' \
