@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/12 16:08:17 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/02 03:05:01 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/02 13:13:05 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,12 +44,12 @@ bool CliController::run(int argc, char** argv) {
     const std::string configPath =
         ((argv[K_LITERAL_ARGUMENT_INDEX] != 0)
              ? std::string(argv[K_LITERAL_ARGUMENT_INDEX])
-             : "./conf/default.conf");
+             : "conf/default.conf");
 
     std::auto_ptr<application::ports::IConfigProvider> configProvider(
         new infrastructure::config::adapters::ConfigProvider(
             this->m_view.getLogger()));
-    configProvider->load(configPath, "./conf/default.conf");
+    configProvider->load(configPath, "conf/default.conf");
     if (configProvider->isValid()) {
       const domain::configuration::entities::HttpConfig& config =
           configProvider->getConfiguration();
