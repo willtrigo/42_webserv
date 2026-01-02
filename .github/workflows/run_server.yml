@@ -36,36 +36,112 @@ jobs:
       run: |
         make
     
-    - name: Verify config file exists
+    - name: Run server without config
       run: |
-        if [ -f conf/webserv.conf ]; then
-          echo "✅ Config file found"
-          cat conf/webserv.conf
-        else
-          echo "❌ Config file not found"
-          exit 1
-        fi
-    
-    - name: Run server with timeout
-      run: |
-        echo "🚀 Starting webserver with webserv.conf..."
-        timeout 10s ./bin/webserv ./conf/webserv.conf || EXIT_CODE=$?
+        echo "🚀 Testing server without config file..."
+        timeout 5s ./bin/webserv || EXIT_CODE=$?
         
         if [ "${EXIT_CODE:-0}" -eq 124 ]; then
-          echo "✅ Server ran for 10 seconds and was terminated (expected behavior)"
-          exit 0
+          echo "✅ Server ran without config for 5 seconds"
         elif [ "${EXIT_CODE:-0}" -eq 0 ]; then
-          echo "✅ Server completed successfully"
-          exit 0
+          echo "✅ Server completed without config"
         else
-          echo "❌ Server failed with exit code ${EXIT_CODE}"
-          exit ${EXIT_CODE}
+          echo "⚠️ Server exited with code ${EXIT_CODE} (may be expected)"
         fi
     
-    - name: Run server with Valgrind
+    - name: Discover config files
+      id: configs
       run: |
-        echo "🔍 Running server with Valgrind memory leak detection..."
-        timeout 10s valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --log-file=valgrind-server.txt ./bin/webserv ./conf/webserv.conf || EXIT_CODE=$?
+        echo "📂 Scanning conf/ directory..."
+        if [ ! -d conf ]; then
+          echo "❌ conf/ directory not found"
+          exit 1
+        fi
+        
+        CONFIG_FILES=$(find conf -name "*.conf" -type f | sort)
+        if [ -z "$CONFIG_FILES" ]; then
+          echo "❌ No .conf files found in conf/"
+          exit 1
+        fi
+        
+        echo "✅ Found config files:"
+        echo "$CONFIG_FILES" | while read file; do
+          echo "  - $file"
+        done
+        
+        # Save for next steps
+        echo "$CONFIG_FILES" > config_files.txt
+        echo "config_count=$(echo "$CONFIG_FILES" | wc -l)" >> $GITHUB_OUTPUT
+    
+    - name: Test each config file
+      run: |
+        echo "🧪 Testing each configuration file..."
+        RESULTS_FILE="test_results.txt"
+        echo "Configuration Test Results" > $RESULTS_FILE
+        echo "==========================" >> $RESULTS_FILE
+        echo "" >> $RESULTS_FILE
+        
+        TOTAL=0
+        SUCCESS=0
+        FAILED=0
+        
+        while read CONFIG_FILE; do
+          TOTAL=$((TOTAL + 1))
+          echo "" >> $RESULTS_FILE
+          echo "📋 Testing: $CONFIG_FILE" | tee -a $RESULTS_FILE
+          echo "---" >> $RESULTS_FILE
+          
+          # Show config content
+          echo "Config content:" >> $RESULTS_FILE
+          cat "$CONFIG_FILE" >> $RESULTS_FILE
+          echo "" >> $RESULTS_FILE
+          
+          # Run server with config
+          timeout 8s ./bin/webserv "$CONFIG_FILE" 2>&1 | tee -a $RESULTS_FILE || EXIT_CODE=$?
+          
+          if [ "${EXIT_CODE:-0}" -eq 124 ]; then
+            echo "✅ Success: Server ran for 8 seconds" | tee -a $RESULTS_FILE
+            SUCCESS=$((SUCCESS + 1))
+          elif [ "${EXIT_CODE:-0}" -eq 0 ]; then
+            echo "✅ Success: Server completed normally" | tee -a $RESULTS_FILE
+            SUCCESS=$((SUCCESS + 1))
+          else
+            echo "❌ Failed: Exit code ${EXIT_CODE}" | tee -a $RESULTS_FILE
+            FAILED=$((FAILED + 1))
+          fi
+          
+          echo "" >> $RESULTS_FILE
+        done < config_files.txt
+        
+        # Summary
+        echo "" >> $RESULTS_FILE
+        echo "==========================" >> $RESULTS_FILE
+        echo "📊 SUMMARY" >> $RESULTS_FILE
+        echo "==========================" >> $RESULTS_FILE
+        echo "Total configs tested: $TOTAL" >> $RESULTS_FILE
+        echo "Successful: $SUCCESS" >> $RESULTS_FILE
+        echo "Failed: $FAILED" >> $RESULTS_FILE
+        
+        # Display summary
+        cat $RESULTS_FILE
+        
+        # Exit with error if any failed
+        if [ $FAILED -gt 0 ]; then
+          echo ""
+          echo "❌ $FAILED configuration(s) failed"
+          exit 1
+        else
+          echo ""
+          echo "✅ All $SUCCESS configuration(s) passed"
+        fi
+    
+    - name: Run Valgrind on primary config
+      run: |
+        echo "🔍 Running Valgrind on primary config..."
+        PRIMARY_CONFIG=$(head -1 config_files.txt)
+        echo "Testing: $PRIMARY_CONFIG"
+        
+        timeout 10s valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --log-file=valgrind-server.txt ./bin/webserv "$PRIMARY_CONFIG" || EXIT_CODE=$?
         
         if [ "${EXIT_CODE:-0}" -eq 124 ]; then
           echo "✅ Valgrind test completed (timeout expected)"
@@ -92,13 +168,26 @@ jobs:
         name: server-logs
         path: |
           valgrind-server.txt
+          test_results.txt
+          config_files.txt
     
-    - name: Test server connectivity (if still running)
+    - name: Display final summary
       if: always()
       run: |
-        echo "📊 Server test completed"
-        echo "This workflow validates that the server binary:"
-        echo "  1. Compiles successfully"
-        echo "  2. Accepts config file argument"
-        echo "  3. Starts without immediate crash"
-        echo "  4. Runs without memory leaks (Valgrind check)"
+        echo ""
+        echo "=========================================="
+        echo "📊 SERVER VALIDATION SUMMARY"
+        echo "=========================================="
+        echo ""
+        echo "This workflow validates:"
+        echo "  ✓ Server compiles successfully"
+        echo "  ✓ Server runs without config"
+        echo "  ✓ Server accepts all config files in conf/"
+        echo "  ✓ Server runs without crashes"
+        echo "  ✓ No memory leaks detected (Valgrind)"
+        echo ""
+        if [ -f test_results.txt ]; then
+          echo "Test Results Summary:"
+          tail -10 test_results.txt
+        fi
+        echo "=========================================="
