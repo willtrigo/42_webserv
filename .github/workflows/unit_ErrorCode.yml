@@ -38,16 +38,31 @@ jobs:
         cd tests/
         sudo ./install_gtest.sh
     
-    - name: Cache build artifacts
+    - name: Cache project build (webserver)
       uses: actions/cache@v5
       with:
         path: |
           build
           bin
-          tests/build
-        key: build-${{ runner.os }}-${{ hashFiles('src/**/*.cpp', 'src/**/*.hpp', 'Makefile') }}
+        key: project-${{ runner.os }}-${{ hashFiles('src/**/*.cpp', 'src/**/*.hpp', 'Makefile') }}
         restore-keys: |
-          build-${{ runner.os }}-
+          project-${{ runner.os }}-
+    
+    - name: Cache test build
+      uses: actions/cache@v5
+      with:
+        path: tests/build
+        key: tests-${{ runner.os }}-${{ hashFiles('tests/**/*.cpp', 'tests/**/*.hpp', 'tests/Makefile', 'src/**/*.hpp') }}
+        restore-keys: |
+          tests-${{ runner.os }}-
+    
+    - name: Cache test build
+      uses: actions/cache@v5
+      with:
+        path: tests/build
+        key: tests-${{ runner.os }}-${{ hashFiles('tests/**/*.cpp', 'tests/**/*.hpp', 'tests/Makefile', 'src/**/*.hpp') }}
+        restore-keys: |
+          tests-${{ runner.os }}-
     
     - name: Build project and tests
       run: |

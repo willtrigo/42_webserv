@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/24 09:42:14 by umeneses          #+#    #+#              #
-#    Updated: 2025/12/30 16:11:54 by umeneses         ###   ########.fr        #
+#    Updated: 2026/01/02 10:34:19 by umeneses         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -126,12 +126,12 @@ failing-tests: $(NAME)
 	@printf "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)\n"
 	@grep -E "Running [0-9]+ tests" /tmp/test_output_safe.txt | sed 's/\[=*\] /  📝 /' || echo "  ⚠️  Could not determine total tests"
 	@PASSED=$$(grep -c "^\[       OK \]" /tmp/test_output_safe.txt 2>/dev/null || echo "0"); \
-	FAILED=$$(grep -c "^\[  FAILED  \]" /tmp/test_output_safe.txt 2>/dev/null | head -1 || echo "0"); \
+	FAILED=$$(grep "^\[  FAILED  \]" /tmp/test_output_safe.txt | grep -c "([0-9]* ms)" 2>/dev/null || echo "0"); \
 	printf "  ✅ PASSED %d tests\n" $$PASSED; \
 	printf "  ❌ FAILED %d tests\n" $$FAILED
 	@printf "\n$(RED)❌ FAILED TESTS BY SUITE$(RESET)\n"
 	@printf "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)\n"
-	@grep "^\[  FAILED  \]" /tmp/test_output_safe.txt 2>/dev/null | awk '{ \
+	@grep "^\[  FAILED  \]" /tmp/test_output_safe.txt | grep "([0-9]* ms)" 2>/dev/null | awk '{ \
 		gsub(/\[  FAILED  \] /, ""); \
 		gsub(/\(.*\)$$/, ""); \
 		gsub(/^ +| +$$/, ""); \

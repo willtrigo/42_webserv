@@ -20,52 +20,54 @@ See [TWO_PERSON_SPRINT.md](TWO_PERSON_SPRINT.md) for the complete 10-day impleme
 | Test Suite | Tests | Passing | Bugs Found | Status |
 |------------|-------|---------|------------|--------|
 | ErrorCode | 77 | 77 | 0 | ✅ 100% |
-| **ErrorPage** | **56** | **53** | **3** | ⚠️ **94.6% - DESIGN ISSUE** |
-| **HttpMethod** | **39** | **39** | **0** | ✅ **100% - EXPANDED!** |
+| ErrorPage | 56 | 53 | 3 | ⚠️ 94.6% - DESIGN ISSUE |
+| HttpMethod | 39 | 39 | 0 | ✅ 100% |
 | Path | 62 | 58 | 4 | ⚠️ 93.5% |
 | Size | 44 | 44 | 0 | ✅ 100% |
 | Port | 47 | 42 | 5 | ⚠️ 89.4% |
 | Uri | 115 | 68 | 47 | ⚠️ 59.1% |
-| **QueryStringBuilder** | **36** | **SEGFAULT** | **6+** | ❌ **BLOCKED** |
+| QueryStringBuilder | 36 | SEGFAULT | 6+ | ❌ BLOCKED |
 | Permission | 51 | 47 | 4 | ⚠️ 92.2% |
 | UploadAccess | 52 | 52 | 0 | ✅ 100% |
 | Host | 98 | 83 | 15 | ⚠️ 84.7% |
-| **ListenDirective** | **59** | **43** | **16** | ⚠️ **72.9% - NEW!** |
-| **Route** | **62** | **37** | **25** | ⚠️ **59.7% - NEW!** |
-| **RegexPattern** | **50** | **40** | **10** | ⚠️ **80% - NEW!** |
+| ListenDirective | 59 | 43 | 16 | ⚠️ 72.9% |
+| Route | 62 | 37 | 25 | ⚠️ 59.7% |
+| RegexPattern | 50 | 40 | 10 | ⚠️ 80% |
+| CgiConfig | 63 | 51 | 12 | ⚠️ 81% |
 | MockLogger | 13 | 13 | 0 | ✅ 100% |
 | MockFileHandler | 29 | 29 | 0 | ✅ 100% |
-| **MockDirectoryLister** | **21** | **21** | **0** | ✅ **100% - NEW!** |
-| **MockPathResolver** | **27** | **27** | **0** | ✅ **100% - NEW!** |
+| MockDirectoryLister | 21 | 21 | 0 | ✅ 100% |
+| MockPathResolver | 27 | 27 | 0 | ✅ 100% |
 | MockServer | 16 | 16 | 0 | ✅ 100% |
 | MockResponseBuilder | 21 | 21 | 0 | ✅ 100% |
 | MockRequestParser | 3 | 3 | 0 | ✅ 100% |
-| **TOTAL** | **1005** | **892** | **113** | **88.8%** |
+| TOTAL | 1005 | 892 | 113 | 88.8% |
 
-**🎯 December 30 Achievement:** Added 227 new tests across 5 value objects!
+🎯 December 30 Achievement: Added 227 new tests across 5 value objects!
 - ErrorPage: 56 tests, 53/56 passing (DESIGN ISSUE found!)
 - HttpMethod: Expanded 5→39 tests (+34 tests, all passing)
-- **ListenDirective: 59 tests, 43/59 passing (16 bugs found)**
-- **Route: 62 tests, 37/62 passing (25 bugs found)**
-- **RegexPattern: 50 tests, 40/50 passing (10 bugs found) - NEW!**
+- ListenDirective: 59 tests, 43/59 passing (16 bugs found)
+- Route: 62 tests, 37/62 passing (25 bugs found)
+- RegexPattern: 50 tests, 40/50 passing (10 bugs found)
+- CgiConfig: 63 tests, 51/63 passing (12 bugs found)
 
-**🎯 January 1 Achievement:** Added MockFileHandler infrastructure!
-- **MockFileHandler: 29 tests, 29/29 passing (100%) - NEW!**
-- **MockDirectoryLister: 21 tests, 21/21 passing (100%) - NEW!**
-- **MockPathResolver: 27 tests, 27/27 passing (100%) - NEW!**
+🎯 January 1 Achievement: Added MockFileHandler infrastructure!
+- MockFileHandler: 29 tests, 29/29 passing (100%)
+- MockDirectoryLister: 21 tests, 21/21 passing (100%)
+- MockPathResolver: 27 tests, 27/27 passing (100%)
 - Supports UploadConfig test scenarios from test_UploadConfig.cpp
 - Provides file I/O, directory listing, and path resolution operations
 - Includes: Write/Read operations, MIME detection, File metadata, Call tracking
 - Directory operations: listing, validation, HTML generation, sorting
 - Path operations: resolution, security validation, normalization
 
-**🎯 Internal Validation Achievement:** Added 210 comprehensive tests (Dec 29)
+🎯 Internal Validation Achievement: Added 210 comprehensive tests (Dec 29)
 - ErrorCode: +36 tests (boundary, parsing, validation)
 - Path: +52 tests (security, normalization, extraction)
 - Port: +47 tests (string parsing, boundaries, validation)
 - Uri: +75 tests (scheme, authority, path, query, fragment parsing)
 - ErrorPage: +56 tests (construction, validation, response building)
-- **ErrorPage: 3 bugs (DESIGN ISSUE - default constructor creates invalid state) ⚠️**
+- ErrorPage: 3 bugs (DESIGN ISSUE - default constructor creates invalid state) ⚠️
 - Port: 5 bugs (default value, zero validation, leading zeros handling)
 - Path: 4 bugs (trailing slash, traversal detection, directory extraction)
 - Uri: 47 bugs (port handling, scheme validation, authority parsing, path handling)
@@ -73,10 +75,11 @@ See [TWO_PERSON_SPRINT.md](TWO_PERSON_SPRINT.md) for the complete 10-day impleme
 - Permission: 4 bugs (CLASS_ALL logic + symbolic validation)
 - UploadAccess: 5 static const ODR-use issues (C++98 linker)
 - Host: 15 bugs (IPv6 validation, hostname parsing, trailing dots)
-- **ListenDirective: 16 bugs (parsing, validation, state management) ⚠️**
-- **Route: 25 bugs (constructor validation too strict, handler type configuration) ⚠️**
-- **RegexPattern: 10 bugs (empty pattern, length validation, pattern matching, factory methods
-- **Route: 25 bugs (constructor validation too strict, handler type configuration) ⚠️ NEW!**
+- ListenDirective: 16 bugs (parsing, validation, state management) ⚠️
+- Route: 25 bugs (constructor validation too strict, handler type configuration) ⚠️
+- RegexPattern: 10 bugs (empty pattern, length validation, pattern matching, factory methods
+- Route: 25 bugs (constructor validation too strict, handler type configuration) ⚠️
+- CgiConfig: 12 bugs (6 from RegexPattern dependency, 3 exception handling, 3 test design)
 
 ---
 
@@ -97,6 +100,7 @@ See [TWO_PERSON_SPRINT.md](TWO_PERSON_SPRINT.md) for the complete 10-day impleme
 - ⚠️ ListenDirective (59 tests, 16 bugs)
 - ⚠️ Route (62 tests, 25 bugs)
 - ⚠️ RegexPattern (50 tests, 10 bugs)
+- CgiConfig: 63 tests, 51/63 passing (12 bugs found)
 
 **Untested (1/16):**
 - ❌ UploadConfig (configuration - depends on DirectoryLister, FileHandler, PathResolver)
