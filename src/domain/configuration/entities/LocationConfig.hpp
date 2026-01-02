@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 12:21:54 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/01 17:39:31 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/01 20:11:44 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -90,6 +90,11 @@ class LocationConfig {
   void setReturnRedirect(const http::value_objects::Uri& redirect,
                          const shared::value_objects::ErrorCode& code);
   void setReturnRedirect(const std::string& redirect, unsigned int code);
+  void setReturnContent(const std::string& content,
+                        const shared::value_objects::ErrorCode& code);
+  void setReturnContent(const std::string& content, unsigned int code);
+  const std::string& getReturnContent() const;
+  bool hasReturnContent() const;
   void setUploadConfig(const value_objects::UploadConfig& config);
   void enableUpload(const filesystem::value_objects::Path& uploadDirectory);
   void enableUpload(const filesystem::value_objects::Path& uploadDirectory,
@@ -162,6 +167,8 @@ class LocationConfig {
   TryFiles m_tryFiles;
   http::value_objects::Uri m_returnRedirect;
   shared::value_objects::ErrorCode m_returnCode;
+  std::string m_returnContent;
+  bool m_hasReturnContent;
   value_objects::UploadConfig m_uploadConfig;
   bool m_hasUploadConfig;
   value_objects::CgiConfig m_cgiConfig;

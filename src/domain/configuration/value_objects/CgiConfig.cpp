@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 13:12:24 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 18:41:16 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/02 02:36:03 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -124,12 +124,6 @@ void CgiConfig::setCgiRoot(const filesystem::value_objects::Path& cgiRoot) {
         exceptions::CgiConfigException::EMPTY_CGI_ROOT);
   }
 
-  if (!cgiRoot.isAbsolute()) {
-    throw exceptions::CgiConfigException(
-        "CGI root directory must be absolute",
-        exceptions::CgiConfigException::INVALID_CGI_ROOT);
-  }
-
   m_cgiRoot = cgiRoot;
 }
 
@@ -161,11 +155,15 @@ void CgiConfig::addParameter(const std::string& name,
         oss.str(), exceptions::CgiConfigException::INVALID_CGI_PARAM);
   }
 
-  if (m_parameters.find(name) != m_parameters.end()) {
-    std::ostringstream oss;
-    oss << "Duplicate CGI parameter: '" << name << "'";
-    throw exceptions::CgiConfigException(
-        oss.str(), exceptions::CgiConfigException::DUPLICATE_CGI_PARAM);
+  ParameterMap::iterator it = m_parameters.find(name);
+  if (it != m_parameters.end()) {
+    // Allow overwriting if current value is empty
+    if (!it->second.empty()) {
+      std::ostringstream oss;
+      oss << "Duplicate CGI parameter: '" << name << "'";
+      throw exceptions::CgiConfigException(
+          oss.str(), exceptions::CgiConfigException::DUPLICATE_CGI_PARAM);
+    }
   }
 
   m_parameters[name] = value;
@@ -244,31 +242,38 @@ bool CgiConfig::isValid() const {
 }
 
 void CgiConfig::validate() const {
-  validateScriptPath();
-  validateCgiRoot();
+  if (!m_scriptPath.empty()) {
+    validateScriptPath();
+  }
+
+  if (!m_cgiRoot.isEmpty()) {
+    validateCgiRoot();
+  }
+
   validateExtensionPattern();
   validateParameters();
 
-  static const std::string REQUIRED_PARAMS[] = {
-      DEFAULT_SCRIPT_FILENAME, DEFAULT_REQUEST_METHOD, DEFAULT_SERVER_PROTOCOL,
-      DEFAULT_GATEWAY_INTERFACE};
-  static const std::size_t REQUIRED_PARAMS_COUNT = 4;
+  // Only check required params if script path is set (fully configured)
+  if (!m_scriptPath.empty()) {
+    static const std::string REQUIRED_PARAMS[] = {
+        DEFAULT_SCRIPT_FILENAME, DEFAULT_REQUEST_METHOD,
+        DEFAULT_SERVER_PROTOCOL, DEFAULT_GATEWAY_INTERFACE};
+    static const std::size_t REQUIRED_PARAMS_COUNT = 4;
 
-  for (std::size_t i = 0; i < REQUIRED_PARAMS_COUNT; ++i) {
-    if (!hasParameter(REQUIRED_PARAMS[i])) {
-      std::ostringstream oss;
-      oss << "Missing required CGI parameter: " << REQUIRED_PARAMS[i];
-      throw exceptions::CgiConfigException(
-          oss.str(), exceptions::CgiConfigException::MISSING_REQUIRED_PARAMS);
+    for (std::size_t i = 0; i < REQUIRED_PARAMS_COUNT; ++i) {
+      if (!hasParameter(REQUIRED_PARAMS[i])) {
+        std::ostringstream oss;
+        oss << "Missing required CGI parameter: " << REQUIRED_PARAMS[i];
+        throw exceptions::CgiConfigException(
+            oss.str(), exceptions::CgiConfigException::MISSING_REQUIRED_PARAMS);
+      }
     }
   }
 }
 
 void CgiConfig::validateScriptPath() const {
   if (m_scriptPath.empty()) {
-    throw exceptions::CgiConfigException(
-        "CGI script path cannot be empty",
-        exceptions::CgiConfigException::EMPTY_SCRIPT_PATH);
+    return;
   }
 
   if (!isAbsolutePath(m_scriptPath)) {
@@ -283,12 +288,6 @@ void CgiConfig::validateCgiRoot() const {
     throw exceptions::CgiConfigException(
         "CGI root directory cannot be empty",
         exceptions::CgiConfigException::EMPTY_CGI_ROOT);
-  }
-
-  if (!m_cgiRoot.isAbsolute()) {
-    throw exceptions::CgiConfigException(
-        "CGI root directory must be absolute",
-        exceptions::CgiConfigException::INVALID_CGI_ROOT);
   }
 }
 

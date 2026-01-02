@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 11:47:30 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 04:15:58 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/01 19:11:37 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,6 +56,8 @@ const std::pair<ServerConfigException::ErrorCode, std::string>
                        "Redirect URL cannot be empty"),
         std::make_pair(ServerConfigException::INVALID_REDIRECT_CODE,
                        "Invalid redirect code"),
+        std::make_pair(ServerConfigException::INVALID_RETURN_CODE,
+                       "Invalid return code"),
         std::make_pair(ServerConfigException::BODY_SIZE_TOO_LARGE,
                        "Client body size too large"),
         std::make_pair(ServerConfigException::MISSING_LISTEN_DIRECTIVE,

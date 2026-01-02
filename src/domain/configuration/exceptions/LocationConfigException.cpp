@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 12:19:31 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/01 17:49:22 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/01 20:20:39 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,6 +64,8 @@ const std::pair<LocationConfigException::ErrorCode, std::string>
                        "Conflicting directives in location configuration"),
         std::make_pair(LocationConfigException::INVALID_CUSTOM_HEADER,
                        "Invalid custom header"),
+        std::make_pair(LocationConfigException::INVALID_RETURN_CODE,
+                       "Invalid return code"),
         std::make_pair(LocationConfigException::RESERVED_HEADER,
                        "Cannot set reserved HTTP header")};
 

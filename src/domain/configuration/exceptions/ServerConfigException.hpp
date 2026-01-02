@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 11:46:58 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 18:49:52 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/01 19:11:04 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,7 @@ class ServerConfigException : public ::shared::exceptions::BaseException {
     DUPLICATE_LOCATION_PATH,
     EMPTY_REDIRECT_URL,
     INVALID_REDIRECT_CODE,
+    INVALID_RETURN_CODE,
     BODY_SIZE_TOO_LARGE,
     MISSING_LISTEN_DIRECTIVE,
     MULTIPLE_DEFAULT_SERVERS,

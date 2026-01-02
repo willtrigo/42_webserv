@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 16:13:59 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/01 17:33:58 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/02 02:01:45 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -232,29 +232,68 @@ void LocationDirectiveHandler::handleReturn(
 
   try {
     unsigned int code = parseUnsignedInt(args[0], "return code", lineNumber);
+    domain::shared::value_objects::ErrorCode errorCode(code);
 
-    if (code < domain::shared::value_objects::ErrorCode::REDIRECTION_MIN ||
-        code > domain::shared::value_objects::ErrorCode::REDIRECTION_MAX) {
+    // Validate HTTP status code range using ErrorCode constants
+    if (!domain::shared::value_objects::ErrorCode::isValidErrorCode(code)) {
       std::ostringstream oss;
-      oss << "return code " << code
-          << " is not a valid HTTP redirect code (300-399) at line "
+      oss << "return code " << code << " is not a valid HTTP status code ("
+          << domain::shared::value_objects::ErrorCode::MIN_CODE << "-"
+          << domain::shared::value_objects::ErrorCode::MAX_CODE << ") at line "
           << lineNumber;
       throw exceptions::SyntaxException(
           oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
     }
 
-    std::string url;
-    for (std::size_t i = 1; i < args.size(); ++i) {
-      if (i > 1) url += " ";
-      url += args[i];
+    // For redirect codes (3xx), use setReturnRedirect
+    if (errorCode.isRedirection()) {
+      // Join all remaining arguments as the redirect URL
+      std::string redirectTarget;
+      for (std::size_t i = 1; i < args.size(); ++i) {
+        if (i > 1) redirectTarget += " ";
+        redirectTarget += args[i];
+      }
+
+      m_location.setReturnRedirect(redirectTarget, code);
+
+      std::ostringstream oss;
+      oss << "Set return " << code << " -> '" << redirectTarget << "' at line "
+          << lineNumber;
+      m_logger.debug(oss.str());
     }
+    // For success (2xx), client error (4xx), or server error (5xx) codes, use
+    // setReturnContent
+    else if (errorCode.isSuccess() || errorCode.isClientError() ||
+             errorCode.isServerError()) {
+      // Join all remaining arguments as the response content
+      std::string content;
+      for (std::size_t i = 1; i < args.size(); ++i) {
+        if (i > 1) content += " ";
+        content += args[i];
+      }
 
-    m_location.setReturnRedirect(url, code);
+      // Remove surrounding quotes if present
+      if (content.size() >= 2 && content[0] == '"' &&
+          content[content.size() - 1] == '"') {
+        content = content.substr(1, content.size() - 2);
+      }
 
-    std::ostringstream oss;
-    oss << "Set return " << code << " -> '" << url << "' at line "
-        << lineNumber;
-    m_logger.debug(oss.str());
+      m_location.setReturnContent(content, code);
+
+      std::ostringstream oss;
+      oss << "Set return content " << code << " -> '" << content << "' at line "
+          << lineNumber;
+      m_logger.debug(oss.str());
+    } else {
+      // This should not happen due to the range check above, but handle it
+      std::ostringstream oss;
+      oss << "return code " << code
+          << " is not a valid return code (must be 2xx, 3xx, 4xx, or 5xx) at "
+             "line "
+          << lineNumber;
+      throw exceptions::SyntaxException(
+          oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
+    }
 
   } catch (const std::exception& e) {
     std::ostringstream oss;
@@ -375,10 +414,10 @@ void LocationDirectiveHandler::handleCgiRoot(
     domain::configuration::value_objects::CgiConfig cgiConfig;
     try {
       cgiConfig = m_location.getCgiConfig();
-      domain::filesystem::value_objects::Path cgiRoot(args[0]);
+      domain::filesystem::value_objects::Path cgiRoot(args[0], false);
       cgiConfig.setCgiRoot(cgiRoot);
     } catch (...) {
-      domain::filesystem::value_objects::Path cgiRoot(args[0]);
+      domain::filesystem::value_objects::Path cgiRoot(args[0], false);
       domain::shared::value_objects::RegexPattern defaultPattern(
           "\\.(php|py|pl|cgi)$");
       cgiConfig = domain::configuration::value_objects::CgiConfig(

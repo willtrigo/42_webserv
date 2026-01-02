@@ -6,15 +6,17 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 12:23:41 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/01 17:50:21 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/02 02:36:51 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "domain/configuration/entities/LocationConfig.hpp"
 #include "domain/configuration/exceptions/LocationConfigException.hpp"
+#include "domain/shared/utils/StringUtils.hpp"
 
 #include <cctype>
 #include <cstring>
+#include <iostream>
 #include <sstream>
 
 namespace domain {
@@ -27,6 +29,7 @@ LocationConfig::LocationConfig()
       m_root(filesystem::value_objects::Path::rootDirectory()),
       m_autoIndex(false),
       m_returnCode(shared::value_objects::ErrorCode::movedPermanently()),
+      m_hasReturnContent(false),
       m_uploadConfig(filesystem::value_objects::Path("/tmp/uploads")),
       m_hasUploadConfig(false),
       m_clientMaxBodySize(filesystem::value_objects::Size::fromMegabytes(
@@ -51,6 +54,7 @@ LocationConfig::LocationConfig(const std::string& path,
       m_root(filesystem::value_objects::Path::rootDirectory()),
       m_autoIndex(false),
       m_returnCode(shared::value_objects::ErrorCode::movedPermanently()),
+      m_hasReturnContent(false),
       m_uploadConfig(filesystem::value_objects::Path("/tmp/uploads")),
       m_hasUploadConfig(false),
       m_clientMaxBodySize(filesystem::value_objects::Size::fromMegabytes(
@@ -80,6 +84,8 @@ LocationConfig::LocationConfig(const LocationConfig& other)
       m_tryFiles(other.m_tryFiles),
       m_returnRedirect(other.m_returnRedirect),
       m_returnCode(other.m_returnCode),
+      m_returnContent(other.m_returnContent),
+      m_hasReturnContent(other.m_hasReturnContent),
       m_uploadConfig(other.m_uploadConfig),
       m_hasUploadConfig(other.m_hasUploadConfig),
       m_cgiConfig(other.m_cgiConfig),
@@ -107,6 +113,8 @@ LocationConfig& LocationConfig::operator=(const LocationConfig& other) {
     m_tryFiles = other.m_tryFiles;
     m_returnRedirect = other.m_returnRedirect;
     m_returnCode = other.m_returnCode;
+    m_returnContent = other.m_returnContent;
+    m_hasReturnContent = other.m_hasReturnContent;
     m_uploadConfig = other.m_uploadConfig;
     m_hasUploadConfig = other.m_hasUploadConfig;
     m_cgiConfig = other.m_cgiConfig;
@@ -215,7 +223,7 @@ void LocationConfig::setRoot(const filesystem::value_objects::Path& root) {
 
 void LocationConfig::setRoot(const std::string& root) {
   try {
-    m_root = filesystem::value_objects::Path::fromString(root, true);
+    m_root = filesystem::value_objects::Path::fromString(root, false);
   } catch (const std::exception& e) {
     std::ostringstream oss;
     oss << "Invalid root path: " << e.what();
@@ -258,8 +266,16 @@ void LocationConfig::removeAllowedMethod(
 void LocationConfig::setAutoIndex(bool autoIndex) { m_autoIndex = autoIndex; }
 
 void LocationConfig::setTryFiles(const TryFiles& tryFiles) {
+  if (!tryFiles.empty()) {
+    for (std::size_t i = 0; i < tryFiles.size(); ++i) {
+      if (tryFiles[i].empty()) {
+        throw exceptions::LocationConfigException(
+            "Try files entry cannot be empty",
+            exceptions::LocationConfigException::EMPTY_TRY_FILE);
+      }
+    }
+  }
   m_tryFiles = tryFiles;
-  validateTryFiles();
 }
 
 void LocationConfig::addTryFile(const std::string& tryFile) {
@@ -304,6 +320,58 @@ void LocationConfig::setReturnRedirect(const std::string& redirect,
     throw exceptions::LocationConfigException(
         oss.str(), exceptions::LocationConfigException::INVALID_REDIRECT_CODE);
   }
+}
+
+void LocationConfig::setReturnContent(
+    const std::string& content, const shared::value_objects::ErrorCode& code) {
+  std::string trimmedContent = shared::utils::StringUtils::trim(content);
+
+  // Validate code is NOT a redirect code (should be 2xx, 4xx, or 5xx)
+  if (code.isRedirection()) {
+    std::ostringstream oss;
+    oss << "Return content code cannot be a redirect code: " << code.getValue()
+        << " (must be 2xx, 4xx, or 5xx)";
+    throw exceptions::LocationConfigException(
+        oss.str(), exceptions::LocationConfigException::INVALID_REDIRECT_CODE);
+  }
+
+  // Validate it's a valid return code (2xx, 4xx, or 5xx)
+  if (!code.isSuccess() && !code.isClientError() && !code.isServerError()) {
+    std::ostringstream oss;
+    oss << "Invalid return content code: " << code.getValue()
+        << " (must be 2xx, 4xx, or 5xx)";
+    throw exceptions::LocationConfigException(
+        oss.str(), exceptions::LocationConfigException::INVALID_REDIRECT_CODE);
+  }
+
+  m_returnContent = trimmedContent;
+  m_returnCode = code;
+  m_hasReturnContent = true;
+  m_returnRedirect = http::value_objects::Uri();  // Clear any redirect
+}
+
+void LocationConfig::setReturnContent(const std::string& content,
+                                      unsigned int code) {
+  try {
+    std::string trimmedContent = shared::utils::StringUtils::trim(content);
+    shared::value_objects::ErrorCode errorCode(code);
+    setReturnContent(trimmedContent, errorCode);
+  } catch (const std::exception& e) {
+    std::ostringstream oss;
+    oss << "Invalid return content: " << e.what();
+    throw exceptions::LocationConfigException(
+        oss.str(), exceptions::LocationConfigException::INVALID_REDIRECT_CODE);
+  }
+}
+
+const std::string& LocationConfig::getReturnContent() const {
+  return m_returnContent;
+}
+
+bool LocationConfig::hasReturnContent() const {
+  return m_hasReturnContent &&
+         (m_returnCode.isSuccess() || m_returnCode.isClientError() ||
+          m_returnCode.isServerError());
 }
 
 void LocationConfig::setUploadConfig(
@@ -457,7 +525,7 @@ void LocationConfig::setAlias(const filesystem::value_objects::Path& alias) {
 void LocationConfig::setAlias(const std::string& alias) {
   try {
     filesystem::value_objects::Path path =
-        filesystem::value_objects::Path::fromString(alias, true);
+        filesystem::value_objects::Path::fromString(alias, false);
     setAlias(path);
   } catch (const std::exception& e) {
     std::ostringstream oss;
@@ -487,7 +555,7 @@ void LocationConfig::setClientBodyBufferSize(const std::string& sizeString) {
 }
 
 void LocationConfig::setUploadDirectory(const std::string& directory) {
-  domain::filesystem::value_objects::Path uploadDir(directory);
+  domain::filesystem::value_objects::Path uploadDir(directory, false);
 
   if (!m_hasUploadConfig) {
     // Create new UploadConfig with directory
@@ -583,13 +651,14 @@ void LocationConfig::validate() const {
         exceptions::LocationConfigException::CONFLICTING_DIRECTIVES);
   }
 
-  if (hasReturnRedirect() &&
-      (isUploadEnabled() || hasCgiConfig() || hasProxyPass())) {
-    throw exceptions::LocationConfigException(
-        "Return redirect cannot be combined with upload, CGI, or proxy pass "
-        "directives",
-        exceptions::LocationConfigException::CONFLICTING_DIRECTIVES);
-  }
+  // TODO: may need this validation
+  // if (hasReturnRedirect() &&
+  //     (isUploadEnabled() || hasCgiConfig() || hasProxyPass())) {
+  //   throw exceptions::LocationConfigException(
+  //       "Return redirect cannot be combined with upload, CGI, or proxy pass "
+  //       "directives",
+  //       exceptions::LocationConfigException::CONFLICTING_DIRECTIVES);
+  // }
 
   if (hasAlias() && !m_root.isEmpty()) {
     throw exceptions::LocationConfigException(
@@ -609,6 +678,38 @@ void LocationConfig::validatePath() const {
     throw exceptions::LocationConfigException(
         "Location path cannot be empty",
         exceptions::LocationConfigException::EMPTY_PATH);
+  }
+
+  if (m_path[0] == '@') {
+    // Validate named location format
+    if (m_path.length() == 1) {
+      throw exceptions::LocationConfigException(
+          "Named location cannot be just '@'",
+          exceptions::LocationConfigException::INVALID_PATH_FORMAT);
+    }
+
+    // Named locations can only have alphanumeric characters and underscores
+    for (std::size_t i = 1; i < m_path.length(); ++i) {
+      char c = m_path[i];
+      if ((std::isalnum(static_cast<unsigned char>(c)) == 0) && c != '_') {
+        std::ostringstream oss;
+        oss << "Invalid character in named location '" << m_path
+            << "': only alphanumeric and underscore allowed";
+        throw exceptions::LocationConfigException(
+            oss.str(),
+            exceptions::LocationConfigException::INVALID_PATH_FORMAT);
+      }
+    }
+
+    // Named locations must use MATCH_EXACT match type
+    if (m_matchType != MATCH_EXACT) {
+      std::ostringstream oss;
+      oss << "Named location '" << m_path << "' must use exact match type";
+      throw exceptions::LocationConfigException(
+          oss.str(), exceptions::LocationConfigException::INVALID_PATH_FORMAT);
+    }
+
+    return;  // Skip further validation for named locations
   }
 
   if (m_matchType == MATCH_REGEX_CASE_SENSITIVE ||
@@ -668,10 +769,15 @@ void LocationConfig::validateReturnRedirect() const {
 }
 
 void LocationConfig::validateUploadConfig() const {
-  if (m_hasUploadConfig && !m_uploadConfig.validateUploadDirectory()) {
-    throw exceptions::LocationConfigException(
-        "Invalid upload directory",
-        exceptions::LocationConfigException::INVALID_UPLOAD_CONFIG);
+  if (m_hasUploadConfig) {
+    const filesystem::value_objects::Path& uploadDir =
+        m_uploadConfig.getUploadDirectory();
+
+    if (uploadDir.isEmpty()) {
+      throw exceptions::LocationConfigException(
+          "Upload directory path cannot be empty",
+          exceptions::LocationConfigException::INVALID_UPLOAD_CONFIG);
+    }
   }
 }
 
@@ -745,7 +851,8 @@ void LocationConfig::validateClientBodyBufferSize() const {
   }
 }
 
-const LocationConfig::CustomHeaderMap& LocationConfig::getCustomHeaders() const {
+const LocationConfig::CustomHeaderMap& LocationConfig::getCustomHeaders()
+    const {
   return m_customHeaders;
 }
 
@@ -770,14 +877,12 @@ void LocationConfig::addCustomHeader(const std::string& name,
   // Validate header name format (RFC 7230)
   for (std::size_t i = 0; i < name.length(); ++i) {
     char c = name[i];
-    bool isValidChar = (c >= 'a' && c <= 'z') || 
-                       (c >= 'A' && c <= 'Z') || 
-                       (c >= '0' && c <= '9') || 
-                       c == '-' || c == '_';
-    
+    bool isValidChar = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+                       (c >= '0' && c <= '9') || c == '-' || c == '_';
+
     if (!isValidChar) {
       std::ostringstream oss;
-      oss << "Invalid character in header name '" << name 
+      oss << "Invalid character in header name '" << name
           << "': only alphanumeric, hyphen, and underscore allowed";
       throw exceptions::LocationConfigException(
           oss.str(),
@@ -793,19 +898,16 @@ void LocationConfig::addCustomHeader(const std::string& name,
     }
   }
 
-  if (lowerName == "content-length" || 
-      lowerName == "transfer-encoding" ||
-      lowerName == "connection" ||
-      lowerName == "host") {
+  if (lowerName == "content-length" || lowerName == "transfer-encoding" ||
+      lowerName == "connection" || lowerName == "host") {
     std::ostringstream oss;
     oss << "Cannot set reserved header: '" << name << "'";
     throw exceptions::LocationConfigException(
-        oss.str(),
-        exceptions::LocationConfigException::RESERVED_HEADER);
+        oss.str(), exceptions::LocationConfigException::RESERVED_HEADER);
   }
 
   m_customHeaders[name] = value;
-  
+
   std::ostringstream oss;
   oss << "Added custom header '" << name << "' with value '" << value << "'";
   // If you have a logger, log here: m_logger.debug(oss.str());
@@ -818,9 +920,7 @@ void LocationConfig::removeCustomHeader(const std::string& name) {
   }
 }
 
-void LocationConfig::clearCustomHeaders() {
-  m_customHeaders.clear();
-}
+void LocationConfig::clearCustomHeaders() { m_customHeaders.clear(); }
 
 bool LocationConfig::matchesPath(const std::string& requestPath) const {
   switch (m_matchType) {
@@ -1020,6 +1120,10 @@ LocationConfig::LocationMatchType LocationConfig::parseMatchType(
     return MATCH_PREFIX;
   }
 
+  if (path[0] == '@') {
+    return MATCH_EXACT;
+  }
+
   if (path[0] == '=') {
     return MATCH_EXACT;
   }
@@ -1041,6 +1145,9 @@ std::string LocationConfig::stripMatchPrefix(const std::string& path) {
 
   switch (type) {
     case MATCH_EXACT:
+      if (path[0] == '@') {
+        return path;  // Keep the @
+      }
       return path.substr(1);
 
     case MATCH_REGEX_CASE_SENSITIVE:

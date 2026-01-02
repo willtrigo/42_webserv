@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 16:35:11 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/01 17:32:46 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/02 03:00:16 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -160,42 +160,78 @@ void BlockParser::parseServerBlock(
 void BlockParser::parseLocationBlock(
     ParserContext& context,
     domain::configuration::entities::ServerConfig& server) {
-  const lexer::Token& pathToken = context.currentToken();
-  std::string path = pathToken.value;
+  m_logger.debug("Parsing location block content");
 
-  context.advance();
+  // Parse location modifier and path
+  // Syntax: location [=|~|~*|^~] path { ... }
+  
+  const lexer::Token& firstToken = context.currentToken();
+  std::string firstArg = firstToken.value;
+  
+  std::string path;
+  domain::configuration::entities::LocationConfig::LocationMatchType matchType;
+  
+  // Check if first argument is a modifier
+  if (firstArg == "=" || firstArg == "~" || firstArg == "~*" || firstArg == "^~") {
+    // Has modifier - next token should be the path
+    context.advance();
+    
+    if (!context.hasMoreTokens() || context.currentToken().type != lexer::Token::STRING) {
+      std::ostringstream oss;
+      oss << "Expected path after location modifier '" << firstArg 
+          << "' at line " << firstToken.lineNumber;
+      throw exceptions::SyntaxException(
+          oss.str(), exceptions::SyntaxException::UNEXPECTED_TOKEN);
+    }
+    
+    path = context.currentToken().value;
+    
+    // Determine match type from modifier
+    if (firstArg == "=") {
+      matchType = domain::configuration::entities::LocationConfig::MATCH_EXACT;
+    } else if (firstArg == "~") {
+      matchType = domain::configuration::entities::LocationConfig::MATCH_REGEX_CASE_SENSITIVE;
+    } else if (firstArg == "~*") {
+      matchType = domain::configuration::entities::LocationConfig::MATCH_REGEX_CASE_INSENSITIVE;
+    } else { // ^~
+      matchType = domain::configuration::entities::LocationConfig::MATCH_PREFIX;
+    }
+    
+    context.advance();
+  } else {
+    // No modifier - first argument is the path
+    path = firstArg;
+    
+    // Determine match type from path prefix (legacy support)
+    if (path.empty()) {
+      matchType = domain::configuration::entities::LocationConfig::MATCH_PREFIX;
+    } else if (path[0] == '=') {
+      matchType = domain::configuration::entities::LocationConfig::MATCH_EXACT;
+      path = path.substr(1);
+    } else if (path[0] == '~') {
+      if (path.size() > 1 && path[1] == '*') {
+        matchType = domain::configuration::entities::LocationConfig::MATCH_REGEX_CASE_INSENSITIVE;
+        path = path.substr(2);
+      } else {
+        matchType = domain::configuration::entities::LocationConfig::MATCH_REGEX_CASE_SENSITIVE;
+        path = path.substr(1);
+      }
+    } else {
+      matchType = domain::configuration::entities::LocationConfig::MATCH_PREFIX;
+    }
+    
+    context.advance();
+  }
 
   context.expect(lexer::Token::BLOCK_START, "location block start");
   context.advance();
-
-  domain::configuration::entities::LocationConfig::LocationMatchType matchType;
-  std::string cleanPath = path;
-
-  if (path.empty()) {
-    matchType = domain::configuration::entities::LocationConfig::MATCH_PREFIX;
-  } else if (path[0] == '=') {
-    matchType = domain::configuration::entities::LocationConfig::MATCH_EXACT;
-    cleanPath = path.substr(1);
-  } else if (path[0] == '~') {
-    if (path.size() > 1 && path[1] == '*') {
-      matchType = domain::configuration::entities::LocationConfig::
-          MATCH_REGEX_CASE_INSENSITIVE;
-      cleanPath = path.substr(2);
-    } else {
-      matchType = domain::configuration::entities::LocationConfig::
-          MATCH_REGEX_CASE_SENSITIVE;
-      cleanPath = path.substr(1);
-    }
-  } else {
-    matchType = domain::configuration::entities::LocationConfig::MATCH_PREFIX;
-  }
 
   std::ostringstream logMsg;
   logMsg << "Parsing location block for path: " << path;
   m_logger.debug(logMsg.str());
 
   domain::configuration::entities::LocationConfig* location =
-      new domain::configuration::entities::LocationConfig(cleanPath, matchType);
+      new domain::configuration::entities::LocationConfig(path, matchType);
 
   try {
     while (context.hasMoreTokens()) {
@@ -209,7 +245,7 @@ void BlockParser::parseLocationBlock(
         server.addLocation(location);
 
         std::ostringstream oss;
-        oss << "End of location block, added location for path: " << cleanPath;
+        oss << "End of location block, added location for path: " << path;
         m_logger.debug(oss.str());
         return;
       }

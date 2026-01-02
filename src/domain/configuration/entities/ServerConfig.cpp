@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 11:52:37 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/31 05:21:18 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/01 20:57:57 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -182,7 +182,7 @@ void ServerConfig::setRoot(const filesystem::value_objects::Path& root) {
 void ServerConfig::setRoot(const std::string& root) {
   try {
     std::string trimmedRoot = shared::utils::StringUtils::trim(root);
-    m_root = filesystem::value_objects::Path::fromString(trimmedRoot, true);
+    m_root = filesystem::value_objects::Path::fromString(trimmedRoot, false);
   } catch (const std::exception& e) {
     std::ostringstream oss;
     oss << "Invalid root path: " << e.what();
@@ -338,6 +338,60 @@ void ServerConfig::setReturnRedirect(const std::string& redirect,
     throw exceptions::ServerConfigException(
         oss.str(), exceptions::ServerConfigException::INVALID_REDIRECT_CODE);
   }
+}
+
+void ServerConfig::setReturnContent(
+    const std::string& content, const shared::value_objects::ErrorCode& code) {
+  std::string trimmedContent = shared::utils::StringUtils::trim(content);
+
+  // Validate code is NOT a redirect code
+  if (code.isRedirection()) {
+    std::ostringstream oss;
+    oss << "Return content code cannot be a redirect code: " << code.getValue()
+        << " (must be 2xx, 4xx, or 5xx)";
+    throw exceptions::ServerConfigException(
+        oss.str(), exceptions::ServerConfigException::INVALID_RETURN_CODE);
+  }
+
+  // Validate it's a valid return code (2xx, 4xx, or 5xx)
+  if (!code.isSuccess() && !code.isClientError() && !code.isServerError()) {
+    std::ostringstream oss;
+    oss << "Invalid return content code: " << code.getValue()
+        << " (must be 2xx, 4xx, or 5xx)";
+    throw exceptions::ServerConfigException(
+        oss.str(), exceptions::ServerConfigException::INVALID_RETURN_CODE);
+  }
+
+  m_returnContent = trimmedContent;
+  m_returnCode = code;
+}
+
+void ServerConfig::setReturnContent(const std::string& content,
+                                    unsigned int code) {
+  try {
+    std::string trimmedContent = shared::utils::StringUtils::trim(content);
+    shared::value_objects::ErrorCode errorCode(code);
+    setReturnContent(trimmedContent, errorCode);
+  } catch (const std::exception& e) {
+    std::ostringstream oss;
+    oss << "Invalid return content: " << e.what();
+    throw exceptions::ServerConfigException(
+        oss.str(), exceptions::ServerConfigException::INVALID_RETURN_CODE);
+  }
+}
+
+const std::string& ServerConfig::getReturnContent() const {
+  return m_returnContent;
+}
+
+bool ServerConfig::hasReturnRedirect() const {
+  return !m_returnRedirect.empty() && m_returnCode.isRedirection();
+}
+
+bool ServerConfig::hasReturnContent() const {
+  return !m_returnContent.empty() && 
+         (m_returnCode.isSuccess() || m_returnCode.isClientError() || 
+          m_returnCode.isServerError());
 }
 
 bool ServerConfig::isValid() const {
@@ -576,6 +630,13 @@ std::string ServerConfig::toString() const {
   }
   oss << "\n";
   oss << "  ClientMaxBodySize: " << m_clientMaxBodySize.toString() << "\n";
+if (hasReturnRedirect()) {
+    oss << "  ReturnRedirect: " << m_returnCode.getValue() << " -> '" 
+        << m_returnRedirect << "'\n";
+  } else if (hasReturnContent()) {
+    oss << "  ReturnContent: " << m_returnCode.getValue() << " -> '" 
+        << m_returnContent << "'\n";
+  }
   oss << "  Locations: " << m_locations.size() << "\n";
   oss << "}";
   return oss.str();

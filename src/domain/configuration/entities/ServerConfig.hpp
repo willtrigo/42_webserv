@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 11:50:30 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/31 05:02:07 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/01 19:00:39 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,6 +73,12 @@ class ServerConfig {
   void setReturnRedirect(const std::string& redirect,
                          const shared::value_objects::ErrorCode& code);
   void setReturnRedirect(const std::string& redirect, unsigned int code);
+  void setReturnContent(const std::string& content,
+                        const shared::value_objects::ErrorCode& code);
+  void setReturnContent(const std::string& content, unsigned int code);
+  const std::string& getReturnContent() const;
+  bool hasReturnRedirect() const;
+  bool hasReturnContent() const;
 
   bool isValid() const;
   void validate() const;
@@ -101,6 +107,7 @@ class ServerConfig {
   filesystem::value_objects::Size m_clientMaxBodySize;
   std::string m_returnRedirect;
   shared::value_objects::ErrorCode m_returnCode;
+  std::string m_returnContent;
 
   void copyFrom(const ServerConfig& other);
   void clearLocations();

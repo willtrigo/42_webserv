@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/21 12:50:29 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 20:09:54 by umeneses         ###   ########.fr       */
+/*   Updated: 2026/01/02 01:22:42 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -231,12 +231,17 @@ void Uri::validate() const {
     }
 
     validateUriComponent(m_scheme, "scheme");
-    validateUriComponent(m_host, "host");
+    bool hasVariables = containsVariablePlaceholders(m_host) ||
+                        containsVariablePlaceholders(m_path);
 
-    if (m_scheme != FILE_SCHEME && m_host.empty()) {
-      throw exceptions::UriException(
-          "URI with scheme '" + m_scheme + "' must have a host",
-          exceptions::UriException::MISSING_HOST);
+    if (!hasVariables) {
+      validateUriComponent(m_host, "host");
+
+      if (m_scheme != FILE_SCHEME && m_host.empty()) {
+        throw exceptions::UriException(
+            "URI with scheme '" + m_scheme + "' must have a host",
+            exceptions::UriException::MISSING_HOST);
+      }
     }
   }
 
@@ -626,6 +631,15 @@ void Uri::validateUriComponent(const std::string& component,
           exceptions::UriException::INVALID_FORMAT);
     }
   }
+}
+
+bool Uri::containsVariablePlaceholders(const std::string& str) {
+  for (std::size_t i = 0; i < str.length(); ++i) {
+    if (str[i] == '$') {
+      return true;
+    }
+  }
+  return false;
 }
 
 bool Uri::isValidScheme(const std::string& scheme) {

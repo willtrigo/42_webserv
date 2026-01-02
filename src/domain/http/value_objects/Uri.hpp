@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/21 12:45:08 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 02:26:14 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/02 01:20:33 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -143,6 +143,7 @@ class Uri {
   void validate() const;
   static void validateUriComponent(const std::string& component,
                                    const std::string& componentName);
+  static bool containsVariablePlaceholders(const std::string& str);
   static bool isValidScheme(const std::string& scheme);
   static bool isValidHost(const std::string& host);
   static bool isValidPath(const std::string& path);
