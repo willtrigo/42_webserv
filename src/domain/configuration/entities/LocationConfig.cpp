@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 12:23:41 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/02 02:36:51 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/02 13:24:52 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -681,35 +681,18 @@ void LocationConfig::validatePath() const {
   }
 
   if (m_path[0] == '@') {
-    // Validate named location format
-    if (m_path.length() == 1) {
+    if (m_path.length() < 2) {
       throw exceptions::LocationConfigException(
-          "Named location cannot be just '@'",
+          "Named location must have a name after '@'",
           exceptions::LocationConfigException::INVALID_PATH_FORMAT);
     }
-
-    // Named locations can only have alphanumeric characters and underscores
-    for (std::size_t i = 1; i < m_path.length(); ++i) {
-      char c = m_path[i];
-      if ((std::isalnum(static_cast<unsigned char>(c)) == 0) && c != '_') {
-        std::ostringstream oss;
-        oss << "Invalid character in named location '" << m_path
-            << "': only alphanumeric and underscore allowed";
-        throw exceptions::LocationConfigException(
-            oss.str(),
-            exceptions::LocationConfigException::INVALID_PATH_FORMAT);
-      }
-    }
-
-    // Named locations must use MATCH_EXACT match type
+    // Named locations must use exact match type
     if (m_matchType != MATCH_EXACT) {
-      std::ostringstream oss;
-      oss << "Named location '" << m_path << "' must use exact match type";
       throw exceptions::LocationConfigException(
-          oss.str(), exceptions::LocationConfigException::INVALID_PATH_FORMAT);
+          "Named location '" + m_path + "' must use exact match type",
+          exceptions::LocationConfigException::INVALID_PATH_FORMAT);
     }
-
-    return;  // Skip further validation for named locations
+    return;  // Valid named location
   }
 
   if (m_matchType == MATCH_REGEX_CASE_SENSITIVE ||

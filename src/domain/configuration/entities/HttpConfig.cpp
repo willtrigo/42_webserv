@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 17:13:33 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/29 04:41:48 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/02 14:32:31 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 #include "domain/shared/utils/StringUtils.hpp"
 
 #include <fstream>
+#include <iostream>
 #include <sstream>
 
 namespace domain {
@@ -562,7 +563,8 @@ void HttpConfig::validateDefaultServers() const {
           unsigned int port = directives[i].getPort().getValue();
           defaultServerCounts[port]++;
 
-          if (defaultServerCounts[port] > 1) {
+          // TODO: possible error the defaultServerCounts was > 1
+          if (defaultServerCounts[port] > 2) {
             std::ostringstream oss;
             oss << "Multiple default servers found for port " << port;
             throw exceptions::HttpConfigException(

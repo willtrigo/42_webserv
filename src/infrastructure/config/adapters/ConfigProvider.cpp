@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 13:53:39 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/31 02:26:24 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/02 13:39:19 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,10 +33,11 @@ ConfigProvider::ConfigProvider(application::ports::ILogger& logger)
 
 ConfigProvider::~ConfigProvider() {}
 
-void ConfigProvider::load(const std::string& configPath,
-                          const std::string& includePath) {
+void ConfigProvider::load(const std::string& configPath) {
+// void ConfigProvider::load(const std::string& configPath,
+//                           const std::string& includePath) {
   this->m_configPath = configPath;
-  this->m_includePath = includePath;
+  // this->m_includePath = includePath;
   this->m_valid = false;
   this->m_serverPtrs.clear();
 
@@ -44,9 +45,9 @@ void ConfigProvider::load(const std::string& configPath,
     domain::configuration::entities::HttpConfig* httpConfig =
         this->m_parser->parseFile(configPath);
 
-    if (includePath != configPath) {
-      this->m_parser->mergeIncludes(*httpConfig, includePath);
-    }
+    // if (includePath != configPath) {
+    //   this->m_parser->mergeIncludes(*httpConfig, includePath);
+    // }
 
     this->m_parser->validateConfiguration(*httpConfig);
 
@@ -103,7 +104,8 @@ void ConfigProvider::reload() {
         "Cannot reload: no configuration path stored",
         exceptions::ConfigException::INVALID_STATE);
   }
-  load(this->m_configPath, this->m_includePath);
+  load(this->m_configPath);
+  // load(this->m_configPath, this->m_includePath);
 }
 
 bool ConfigProvider::isValid() const {

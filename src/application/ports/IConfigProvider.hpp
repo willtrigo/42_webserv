@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 12:52:21 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/28 16:56:48 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/02 13:39:52 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,8 +26,9 @@ namespace ports {
 class IConfigProvider {
  public:
   virtual ~IConfigProvider() {}
-  virtual void load(const std::string& configPath,
-                    const std::string& includePath) = 0;
+  virtual void load(const std::string& configPath) = 0;
+  // virtual void load(const std::string& configPath,
+  //                   const std::string& includePath) = 0;
 
   virtual const domain::configuration::entities::HttpConfig& getConfiguration()
       const = 0;

@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 13:33:19 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/28 16:55:45 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/02 13:38:39 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,8 +31,9 @@ class ConfigProvider : public application::ports::IConfigProvider {
   explicit ConfigProvider(application::ports::ILogger& logger);
   virtual ~ConfigProvider();
 
-  virtual void load(const std::string& configPath,
-                    const std::string& includePath);
+  virtual void load(const std::string& configPath);
+  // virtual void load(const std::string& configPath,
+  //                   const std::string& includePath);
 
   virtual const domain::configuration::entities::HttpConfig& getConfiguration()
       const;
@@ -64,7 +65,7 @@ class ConfigProvider : public application::ports::IConfigProvider {
   bool m_valid;
 
   std::string m_configPath;
-  std::string m_includePath;
+  // std::string m_includePath;
 
   void updateServerPointers();
 };

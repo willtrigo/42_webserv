@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/12 16:08:17 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/02 13:13:05 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/02 13:40:19 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,7 +49,8 @@ bool CliController::run(int argc, char** argv) {
     std::auto_ptr<application::ports::IConfigProvider> configProvider(
         new infrastructure::config::adapters::ConfigProvider(
             this->m_view.getLogger()));
-    configProvider->load(configPath, "conf/default.conf");
+    configProvider->load(configPath);
+    // configProvider->load(configPath, "conf/default.conf");
     if (configProvider->isValid()) {
       const domain::configuration::entities::HttpConfig& config =
           configProvider->getConfiguration();
