@@ -135,6 +135,12 @@ jobs:
           echo "✅ All $SUCCESS configuration(s) passed"
         fi
     
+    - name: Rebuild for Valgrind (compatible instruction set)
+      run: |
+        echo "🔧 Rebuilding with Valgrind-compatible CPU flags..."
+        make clean
+        CXXFLAGS="-mno-avx512f -mno-avx2" make
+    
     - name: Run Valgrind on primary config
       run: |
         echo "🔍 Running Valgrind on primary config..."

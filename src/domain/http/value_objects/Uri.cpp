@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/21 12:50:29 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/02 01:22:42 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/03 14:18:10 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,9 +63,9 @@ Uri::UriParameters& Uri::UriParameters::withFragment(
   return *this;
 }
 
-Uri::Uri() : m_port(Port(0)), m_isAbsolute(false) {}
+Uri::Uri() : m_port(Port()), m_isAbsolute(false) {}
 
-Uri::Uri(const std::string& uriString) : m_port(Port(0)), m_isAbsolute(false) {
+Uri::Uri(const std::string& uriString) : m_port(Port()), m_isAbsolute(false) {
   parseUriString(uriString);
   validate();
 }
@@ -251,8 +251,8 @@ void Uri::validate() const {
 }
 
 bool Uri::isEmpty() const {
-  return m_scheme.empty() && m_host.empty() && m_port.getValue() == 0 &&
-         m_path.empty() && m_query.empty() && m_fragment.empty();
+  return m_scheme.empty() && m_host.empty() && m_path.empty() && 
+         m_query.empty() && m_fragment.empty();
 }
 
 bool Uri::isAbsolute() const { return m_isAbsolute; }
@@ -1044,7 +1044,7 @@ std::string Uri::parseAuthorityComponent(const std::string& authorityString,
 
   if (colonPos == std::string::npos) {
     host = authorityString;
-    port = Port(0);
+    port = Port();  // Use default port (80) when no port specified
     return "";
   }
 
