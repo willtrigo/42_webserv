@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Permission.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/21 00:12:32 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 03:55:26 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/03 16:28:38 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -340,17 +340,46 @@ bool Permission::hasSpecialBitsFormat(const std::string& symbolicString) {
 }
 
 unsigned int Permission::parseSpecialBits(const std::string& symbolicString) {
+  // Validate special bits format: "XYZ " where X,Y,Z are S/s/T/t/-
+  char setuidChar = symbolicString[0];
+  char setgidChar = symbolicString[1];
+  char stickyChar = symbolicString[2];
+  char spaceChar = symbolicString[3];
+  
+  // Validate each position
+  if (setuidChar != 'S' && setuidChar != 's' && setuidChar != '-') {
+    throw exceptions::PermissionException(
+        "Invalid setuid character: expected 'S', 's', or '-'",
+        exceptions::PermissionException::INVALID_FORMAT);
+  }
+  if (setgidChar != 'S' && setgidChar != 's' && setgidChar != '-') {
+    throw exceptions::PermissionException(
+        "Invalid setgid character: expected 'S', 's', or '-'",
+        exceptions::PermissionException::INVALID_FORMAT);
+  }
+  if (stickyChar != 'T' && stickyChar != 't' && stickyChar != '-') {
+    throw exceptions::PermissionException(
+        "Invalid sticky bit character: expected 'T', 't', or '-'",
+        exceptions::PermissionException::INVALID_FORMAT);
+  }
+  if (spaceChar != ' ') {
+    throw exceptions::PermissionException(
+        "Invalid special bits format: expected space after special bits",
+        exceptions::PermissionException::INVALID_FORMAT);
+  }
+  
+  // Build special bits
   unsigned int specialBits = 0;
 
-  if (symbolicString[0] == 'S' || symbolicString[0] == 's') {
+  if (setuidChar == 'S' || setuidChar == 's') {
     specialBits |= Permission::SETUID_BIT;
   }
 
-  if (symbolicString[1] == 'S' || symbolicString[1] == 's') {
+  if (setgidChar == 'S' || setgidChar == 's') {
     specialBits |= Permission::SETGID_BIT;
   }
 
-  if (symbolicString[2] == 'T' || symbolicString[2] == 't') {
+  if (stickyChar == 'T' || stickyChar == 't') {
     specialBits |= Permission::STICKY_BIT;
   }
 
@@ -359,40 +388,87 @@ unsigned int Permission::parseSpecialBits(const std::string& symbolicString) {
 
 unsigned int Permission::parseRegularPermissions(
     const std::string& symbolicString, std::size_t startIndex) {
+  // Extract all characters
+  char ownerRead = symbolicString[startIndex + OWNER_READ_POSITION];
+  char ownerWrite = symbolicString[startIndex + OWNER_WRITE_POSITION];
+  char ownerExecute = symbolicString[startIndex + OWNER_EXECUTE_POSITION];
+  char groupRead = symbolicString[startIndex + GROUP_READ_POSITION];
+  char groupWrite = symbolicString[startIndex + GROUP_WRITE_POSITION];
+  char groupExecute = symbolicString[startIndex + GROUP_EXECUTE_POSITION];
+  char otherRead = symbolicString[startIndex + OTHER_READ_POSITION];
+  char otherWrite = symbolicString[startIndex + OTHER_WRITE_POSITION];
+  char otherExecute = symbolicString[startIndex + OTHER_EXECUTE_POSITION];
+
+  // Validate all positions
+  if (ownerRead != 'r' && ownerRead != '-') {
+    throw exceptions::PermissionException(
+        "Invalid character in owner read position: expected 'r' or '-'",
+        exceptions::PermissionException::INVALID_FORMAT);
+  }
+  if (ownerWrite != 'w' && ownerWrite != '-') {
+    throw exceptions::PermissionException(
+        "Invalid character in owner write position: expected 'w' or '-'",
+        exceptions::PermissionException::INVALID_FORMAT);
+  }
+  if (ownerExecute != 'x' && ownerExecute != 's' && ownerExecute != 'S' && ownerExecute != '-') {
+    throw exceptions::PermissionException(
+        "Invalid character in owner execute position: expected 'x', 's', 'S', or '-'",
+        exceptions::PermissionException::INVALID_FORMAT);
+  }
+  if (groupRead != 'r' && groupRead != '-') {
+    throw exceptions::PermissionException(
+        "Invalid character in group read position: expected 'r' or '-'",
+        exceptions::PermissionException::INVALID_FORMAT);
+  }
+  if (groupWrite != 'w' && groupWrite != '-') {
+    throw exceptions::PermissionException(
+        "Invalid character in group write position: expected 'w' or '-'",
+        exceptions::PermissionException::INVALID_FORMAT);
+  }
+  if (groupExecute != 'x' && groupExecute != 's' && groupExecute != 'S' && groupExecute != '-') {
+    throw exceptions::PermissionException(
+        "Invalid character in group execute position: expected 'x', 's', 'S', or '-'",
+        exceptions::PermissionException::INVALID_FORMAT);
+  }
+  if (otherRead != 'r' && otherRead != '-') {
+    throw exceptions::PermissionException(
+        "Invalid character in other read position: expected 'r' or '-'",
+        exceptions::PermissionException::INVALID_FORMAT);
+  }
+  if (otherWrite != 'w' && otherWrite != '-') {
+    throw exceptions::PermissionException(
+        "Invalid character in other write position: expected 'w' or '-'",
+        exceptions::PermissionException::INVALID_FORMAT);
+  }
+  if (otherExecute != 'x' && otherExecute != 't' && otherExecute != 'T' && otherExecute != '-') {
+    throw exceptions::PermissionException(
+        "Invalid character in other execute position: expected 'x', 't', 'T', or '-'",
+        exceptions::PermissionException::INVALID_FORMAT);
+  }
+
+  // Build permission bits
   unsigned int permissions = 0;
-
-  if (symbolicString[startIndex + OWNER_READ_POSITION] == 'r') {
+  
+  if (ownerRead == 'r')
     permissions |= (READ_BIT << OWNER_PERMISSION_SHIFT);
-  }
-  if (symbolicString[startIndex + OWNER_WRITE_POSITION] == 'w') {
+  if (ownerWrite == 'w')
     permissions |= (WRITE_BIT << OWNER_PERMISSION_SHIFT);
-  }
-  if (symbolicString[startIndex + OWNER_EXECUTE_POSITION] == 'x' ||
-      symbolicString[startIndex + OWNER_EXECUTE_POSITION] == 's') {
+  if (ownerExecute == 'x' || ownerExecute == 's')
     permissions |= (EXECUTE_BIT << OWNER_PERMISSION_SHIFT);
-  }
-
-  if (symbolicString[startIndex + GROUP_READ_POSITION] == 'r') {
+    
+  if (groupRead == 'r')
     permissions |= (READ_BIT << GROUP_PERMISSION_SHIFT);
-  }
-  if (symbolicString[startIndex + GROUP_WRITE_POSITION] == 'w') {
+  if (groupWrite == 'w')
     permissions |= (WRITE_BIT << GROUP_PERMISSION_SHIFT);
-  }
-  if (symbolicString[startIndex + GROUP_EXECUTE_POSITION] == 'x' ||
-      symbolicString[startIndex + GROUP_EXECUTE_POSITION] == 's') {
+  if (groupExecute == 'x' || groupExecute == 's')
     permissions |= (EXECUTE_BIT << GROUP_PERMISSION_SHIFT);
-  }
-
-  if (symbolicString[startIndex + OTHER_READ_POSITION] == 'r') {
+    
+  if (otherRead == 'r')
     permissions |= READ_BIT;
-  }
-  if (symbolicString[startIndex + OTHER_WRITE_POSITION] == 'w') {
+  if (otherWrite == 'w')
     permissions |= WRITE_BIT;
-  }
-  if (symbolicString[startIndex + OTHER_EXECUTE_POSITION] == 'x' ||
-      symbolicString[startIndex + OTHER_EXECUTE_POSITION] == 't') {
+  if (otherExecute == 'x' || otherExecute == 't')
     permissions |= EXECUTE_BIT;
-  }
 
   return permissions;
 }

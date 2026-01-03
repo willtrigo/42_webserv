@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Permission.hpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/21 00:07:43 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 03:53:36 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/03 16:28:38 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,8 +52,8 @@ class Permission {
       0755;
 
   static const std::size_t SYMBOLIC_STRING_LENGTH = 9;
-  static const std::size_t SYMBOLIC_STRING_WITH_SPECIAL_LENGTH = 10;
-  static const std::size_t SPECIAL_BITS_START_INDEX = 3;
+  static const std::size_t SYMBOLIC_STRING_WITH_SPECIAL_LENGTH = 13;
+  static const std::size_t SPECIAL_BITS_START_INDEX = 4;  // After "SST "
   static const std::size_t OWNER_PERMISSION_SHIFT = 6;
   static const std::size_t GROUP_PERMISSION_SHIFT = 3;
   static const std::size_t OTHER_PERMISSION_SHIFT = 0;
