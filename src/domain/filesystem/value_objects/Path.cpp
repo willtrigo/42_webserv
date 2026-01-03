@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 01:10:52 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/29 00:34:55 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/03 15:47:53 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 #include "domain/shared/utils/StringUtils.hpp"
 
 #include <cctype>
+#include <cstdlib>
 #include <cstring>
 #include <sstream>
 
@@ -87,7 +88,14 @@ std::string Path::toString() const { return m_path; }
 std::string Path::getDirectory() const {
   if (m_path.empty()) return "";
 
-  std::size_t lastSlash = m_path.find_last_of(PATH_SEPARATOR);
+  // Remove trailing slash if present (directory paths)
+  std::string pathWithoutTrailing = m_path;
+  if (pathWithoutTrailing.length() > 1 && 
+      pathWithoutTrailing[pathWithoutTrailing.length() - 1] == PATH_SEPARATOR) {
+    pathWithoutTrailing = pathWithoutTrailing.substr(0, pathWithoutTrailing.length() - 1);
+  }
+
+  std::size_t lastSlash = pathWithoutTrailing.find_last_of(PATH_SEPARATOR);
   if (lastSlash == std::string::npos) {
     return "";
   }
@@ -95,18 +103,25 @@ std::string Path::getDirectory() const {
     return std::string(1, PATH_SEPARATOR);
   }
 
-  return m_path.substr(0, lastSlash);
+  return pathWithoutTrailing.substr(0, lastSlash);
 }
 
 std::string Path::getFilename() const {
   if (m_path.empty()) return "";
 
-  std::size_t lastSlash = m_path.find_last_of(PATH_SEPARATOR);
-  if (lastSlash == std::string::npos) {
-    return m_path;
+  // Remove trailing slash if present (directory paths)
+  std::string pathWithoutTrailing = m_path;
+  if (pathWithoutTrailing.length() > 1 && 
+      pathWithoutTrailing[pathWithoutTrailing.length() - 1] == PATH_SEPARATOR) {
+    pathWithoutTrailing = pathWithoutTrailing.substr(0, pathWithoutTrailing.length() - 1);
   }
 
-  return m_path.substr(lastSlash + 1);
+  std::size_t lastSlash = pathWithoutTrailing.find_last_of(PATH_SEPARATOR);
+  if (lastSlash == std::string::npos) {
+    return pathWithoutTrailing;
+  }
+
+  return pathWithoutTrailing.substr(lastSlash + 1);
 }
 
 std::string Path::getExtension() const {
@@ -171,11 +186,6 @@ Path Path::normalize() const {
 
   std::vector<std::string> components = splitComponents(m_path);
   std::string normalized = normalizeComponents(components);
-
-  if (isDirectory() && !normalized.empty() &&
-      normalized[normalized.size() - 1] != PATH_SEPARATOR) {
-    normalized += PATH_SEPARATOR;
-  }
 
   if (m_isAbsolute) {
     if (normalized.empty()) {
@@ -271,12 +281,8 @@ void Path::validatePathSecurity(const std::string& path) {
         "Path contains invalid characters: '" + path + "'",
         exceptions::PathException::INVALID_CHARACTER);
   }
-
-  if (hasDirectoryTraversal(path)) {
-    throw exceptions::PathException(
-        "Path contains directory traversal: '" + path + "'",
-        exceptions::PathException::TRAVERSAL_ATTEMPT);
-  }
+  // Note: Directory traversal (../) is allowed in paths
+  // Use isSafePath() to check for security concerns
 }
 
 void Path::validateFilenameProperties(const std::string& path) {
@@ -356,25 +362,43 @@ bool Path::isReservedFilename(const std::string& filename) {
   return false;
 }
 
-bool Path::hasDirectoryTraversal(const std::string& path) {
-  std::vector<std::string> components = splitComponents(path);
+std::string Path::urlDecode(const std::string& str) {
+  std::string result;
+  result.reserve(str.length());
+  
+  for (std::size_t i = 0; i < str.length(); ++i) {
+    if (str[i] == '%' && i + 2 < str.length()) {
+      // Try to decode hex sequence
+      char hex[3] = {str[i + 1], str[i + 2], '\0'};
+      char* endptr;
+      long value = std::strtol(hex, &endptr, 16);
+      
+      if (endptr == hex + 2) {  // Successfully decoded 2 hex digits
+        result += static_cast<char>(value);
+        i += 2;  // Skip the two hex digits
+        continue;
+      }
+    }
+    result += str[i];
+  }
+  
+  return result;
+}
 
-  bool isAbsolute = (!path.empty() && path[0] == PATH_SEPARATOR);
-  int depth = 0;
+bool Path::hasDirectoryTraversal(const std::string& path) {
+  // Decode URL-encoded characters first
+  std::string decodedPath = urlDecode(path);
+  
+  std::vector<std::string> components = splitComponents(decodedPath);
 
   for (std::size_t i = 0; i < components.size(); ++i) {
     if (components[i] == CURRENT_DIR) {
       continue;
     }
     if (components[i] == PARENT_DIR) {
-      if (depth == 0 && isAbsolute) {
-        return true;
-      }
-      if (depth > 0) {
-        --depth;
-      }
-    } else if (!components[i].empty()) {
-      ++depth;
+      // Any .. in path is considered traversal (even if safe mathematically)
+      // This is for security - we want to reject any path with ..
+      return true;
     }
   }
 

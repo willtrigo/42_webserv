@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Path.hpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 01:07:22 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/29 00:31:07 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/03 15:41:21 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -82,6 +82,7 @@ class Path {
   static bool isDangerousCharacter(char chr);
   static bool isReservedFilename(const std::string& filename);
   static bool hasDirectoryTraversal(const std::string& path);
+  static std::string urlDecode(const std::string& str);
 
   static std::vector<std::string> splitComponents(const std::string& path);
   static std::string joinComponents(const std::vector<std::string>& components);

@@ -50,10 +50,9 @@ run_test() {
     
     # Generate Markdown report (always)
     local diff_file="$TMP_DIR/diff_$(basename ${baseline_file%.txt}).md"
-    local diff_file_clean="${diff_file#original_}"
     
     # Create header for markdown
-    cat > "$diff_file_clean" << EOF
+    cat > "$diff_file" << EOF
 # 🔍 Regression Test Report
 
 **Test:** ${test_name}  
@@ -74,7 +73,7 @@ EOF
         echo -e "${GREEN}✅ PASS - No changes detected${NC}"
         
         # Append PASS status to markdown
-        cat >> "$diff_file_clean" << EOF
+        cat >> "$diff_file" << EOF
 ✅ PASS - No changes detected
 \`\`\`
 
@@ -90,7 +89,7 @@ EOF
         echo -e "${YELLOW}⚠️  DIFF - Changes detected${NC}"
         
         # Append DIFF status to markdown header
-        cat >> "$diff_file_clean" << EOF
+        cat >> "$diff_file" << EOF
 ⚠️  DIFF - Changes detected
 \`\`\`
 
@@ -147,9 +146,9 @@ EOF
             esac
         done || true
         
-        echo '```' >> "$diff_file_clean"
-        
-        cat >> "$diff_file_clean" << EOF
+echo '```' >> "$diff_file"
+
+        cat >> "$diff_file" << EOF
 
 ---
 
@@ -165,14 +164,14 @@ EOF
 
 - **Baseline:** \`$(realpath "$baseline_file")\`
 - **Current:** \`$(realpath "$tmp_output")\`
-- **This report:** \`$(realpath "$diff_file_clean")\`
+- **This report:** \`$(realpath "$diff_file")\`
 
 EOF
         
         # Show summary in terminal
         echo ""
         echo -e "${YELLOW}📝 Markdown diff generated:${NC}"
-        echo -e "   ${BLUE}$diff_file_clean${NC}"
+        echo -e "   ${BLUE}$diff_file${NC}"
         echo -e "${YELLOW}   Open in VSCode to view formatted diff${NC}"
         
         return 1
