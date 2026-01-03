@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/29 18:38:19 by umeneses          #+#    #+#             */
-/*   Updated: 2025/12/29 20:43:29 by umeneses         ###   ########.fr       */
+/*   Updated: 2026/01/03 18:16:28 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,11 +37,18 @@ TEST_F(HostTest, ConstructWithValidHost) {
     EXPECT_NO_THROW(Host("192.168.0.1"));
     EXPECT_NO_THROW(Host("localhost"));
     EXPECT_NO_THROW(Host("::1"));
+    EXPECT_NO_THROW(Host("2001:0db8:85a3::8a2e:0370:7334:1234"));
 }
 
 TEST_F(HostTest, ConstructWithInvalidHost) {
     EXPECT_THROW(Host(""), domain::http::exceptions::HostException);
-    EXPECT_THROW(Host("invalid-host"), domain::http::exceptions::HostException);
+    EXPECT_THROW(Host("-starts-with-dash.com"), domain::http::exceptions::HostException);
+    EXPECT_THROW(Host("ends-with-dash-.com"), domain::http::exceptions::HostException);
+    EXPECT_THROW(Host("has spaces.com"), domain::http::exceptions::HostException);
+    EXPECT_THROW(Host("123"), domain::http::exceptions::HostException);
+    EXPECT_THROW(Host("12<3"), domain::http::exceptions::HostException);
+    EXPECT_THROW(Host("1234567890123456789012345678901"), domain::http::exceptions::HostException);
+    EXPECT_THROW(Host("123.456.789.01234"), domain::http::exceptions::HostException);
 }
 
 TEST_F(HostTest, CopyConstructor) {
@@ -62,7 +69,6 @@ TEST_F(HostTest, ConstructWithMalformedIpv4) {
 }
 
 TEST_F(HostTest, ConstructWithMalformedIpv6) {
-  EXPECT_THROW(Host("2001:0db8:85a3::8a2e:0370:7334:1234"), domain::http::exceptions::HostException);
   EXPECT_THROW(Host("::2001:0db8:85a3::8a2e:0370:7334:1234"), domain::http::exceptions::HostException);
 }
 
@@ -106,9 +112,9 @@ TEST_F(HostTest, AssignmentOperatorSelfAssignment) {
   EXPECT_EQ(Host::TYPE_HOSTNAME, host.getType());
 }
 
-TEST_F(HostTest, InvalidHostAssignment) {
+TEST_F(HostTest, ValidHostAssignment) {
   Host host("example.com");
-  EXPECT_THROW(host = Host("invalid-host"), domain::http::exceptions::HostException);
+  EXPECT_NO_THROW(host = Host("valid-host"));
 }
 
 TEST_F(HostTest, AssignmentWithTooLongHost) {
@@ -124,7 +130,7 @@ TEST_F(HostTest, AssignmentWithMalformedIpv4) {
 
 TEST_F(HostTest, AssignmentWithMalformedIpv6) {
   Host host("example.com");
-  EXPECT_THROW(host = Host("2001:0db8:85a3::8a2e:0370:7334:1234"), domain::http::exceptions::HostException);
+  EXPECT_THROW(host = Host("2001:0db8:85a3::8a2e:0370:7334:12345"), domain::http::exceptions::HostException);
 }
 
 TEST_F(HostTest, AssignmentWithInvalidHostname) {
@@ -157,10 +163,9 @@ TEST_F(HostTest, IsValidHost) {
 
 TEST_F(HostTest, IsValidInvalidHost) {
   EXPECT_FALSE(Host::isValidHost(""));
-  EXPECT_FALSE(Host::isValidHost("invalid-host"));
   EXPECT_FALSE(Host::isValidHost("256.100.50.25"));
   EXPECT_FALSE(Host::isValidHost("192.168.0"));
-  EXPECT_FALSE(Host::isValidHost("2001:0db8:85a3::8a2e:0370:7334:1234"));
+  EXPECT_FALSE(Host::isValidHost("-starts-with-dash.com"));
   EXPECT_FALSE(Host::isValidHost("-invalidhostname.com"));
   EXPECT_FALSE(Host::isValidHost("192.168.0.256"));
   EXPECT_FALSE(Host::isValidHost("2001:0db8:85a3::8a2e:0370:7334:12345"));
@@ -187,7 +192,7 @@ TEST_F(HostTest, IsValidIpv6) {
 }
 
 TEST_F(HostTest, IsValidInvalidIpv6) {
-  EXPECT_FALSE(Host::isValidIpv6("2001:0db8:85a3::8a2e:0370:7334:1234"));
+  EXPECT_FALSE(Host::isValidIpv6("1:2:3:4:5:6:7:8:9"));
   EXPECT_FALSE(Host::isValidIpv6("::2001:0db8:85a3::8a2e:0370:7334:1234"));
   EXPECT_FALSE(Host::isValidIpv6("2001:0db8:85a3::8a2e:0370:7334:12345"));
   EXPECT_FALSE(Host::isValidIpv6("::2001:0db8:85a3::8a2e:0370:7334:12345"));
@@ -324,7 +329,7 @@ TEST_F(HostTest, SetType) {
 
 TEST_F(HostTest, SetInvalidValue) {
   Host host("example.com");
-  EXPECT_THROW(host = Host("invalid-host"), domain::http::exceptions::HostException);
+  EXPECT_THROW(host = Host("-invalid-host"), domain::http::exceptions::HostException);
 }
 
 TEST_F(HostTest, SetTooLongValue) {
@@ -340,7 +345,7 @@ TEST_F(HostTest, SetMalformedIpv4) {
 
 TEST_F(HostTest, SetMalformedIpv6) {
   Host host("example.com");
-  EXPECT_THROW(host = Host("2001:0db8:85a3::8a2e:0370:7334:1234"), domain::http::exceptions::HostException);
+  EXPECT_THROW(host = Host("2001:0db8:85a3::8a2e:0370:7334:12345"), domain::http::exceptions::HostException);
 }
 
 
@@ -375,16 +380,22 @@ TEST_F(HostTest, ComparisonWithDifferentTypes) {
   Host domainHost("example.com");
   Host unknownHost;
 
-  EXPECT_TRUE(ipv4Host == ipv6Host);
+  // Different types with different values should NOT be equal
+  EXPECT_FALSE(ipv4Host == ipv6Host);
   EXPECT_FALSE(ipv4Host == domainHost);
+  EXPECT_FALSE(ipv6Host == domainHost);
   EXPECT_TRUE(unknownHost != domainHost);
+  
+  // Same values should be equal regardless of type
+  Host anotherIpv4("192.168.0.1");
+  EXPECT_TRUE(ipv4Host == anotherIpv4);
 }
 
 TEST_F(HostTest, ComparisonWithInvalidHost) {
   Host host1("example.com");
-  EXPECT_THROW(host1 == Host("invalid-host"), domain::http::exceptions::HostException);
-  EXPECT_THROW(host1 != Host("invalid-host"), domain::http::exceptions::HostException);
-  EXPECT_THROW(host1 < Host("invalid-host"), domain::http::exceptions::HostException);
+  EXPECT_THROW(host1 == Host("-invalid-host"), domain::http::exceptions::HostException);
+  EXPECT_THROW(host1 != Host("-invalid-host"), domain::http::exceptions::HostException);
+  EXPECT_THROW(host1 < Host("-invalid-host"), domain::http::exceptions::HostException);
 }
 
 
