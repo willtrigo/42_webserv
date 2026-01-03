@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Host.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/24 14:45:29 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 03:34:45 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/03 18:22:05 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -168,6 +168,7 @@ Host::HostType Host::determineType(const std::string& host) {
 
 bool Host::parseIpv4(const std::string& ipv4) {
   if (ipv4.empty()) return false;
+  if (ipv4[0] == '.' || ipv4[ipv4.length() - 1] == '.') return false;
 
   std::vector<std::string> octets;
   std::string octet;
@@ -175,7 +176,7 @@ bool Host::parseIpv4(const std::string& ipv4) {
   int octetCount = 0;
 
   while (std::getline(iss, octet, '.') != 0) {
-    if (octetCount >= 4) return false;
+    if (octetCount > 4) return false;
     if (!isValidIpv4Octet(octet)) return false;
     ++octetCount;
   }
@@ -188,24 +189,42 @@ bool Host::parseIpv6(const std::string& ipv6) {
 
   size_t colonCount = 0;
   size_t doubleColonCount = 0;
+  size_t groupLength = 0;
+  size_t groupCount = 0;
   bool prevWasColon = false;
+  bool hasGroup = false;
 
   for (std::size_t i = 0; i < ipv6.length(); ++i) {
     char chr = ipv6[i];
 
     if (chr == ':') {
+      if (hasGroup) {
+        ++groupCount;
+        hasGroup = false;
+      }
       ++colonCount;
       if (prevWasColon) {
         ++doubleColonCount;
         if (doubleColonCount > MAX_DOUBLE_COLONS) return false;
       }
       prevWasColon = true;
+      groupLength = 0;
     } else if (std::isxdigit(chr) != 0) {
+      ++groupLength;
+      if (groupLength > 4) return false;
       prevWasColon = false;
+      hasGroup = true;
     } else {
       return false;
     }
   }
+
+  if (hasGroup) {
+    ++groupCount;
+  }
+
+  if (doubleColonCount == 0 && groupCount != 8) return false;
+  if (doubleColonCount == 1 && groupCount > 7) return false;
 
   return (colonCount >= MIN_IPV6_COLONS && colonCount <= MAX_IPV6_COLONS &&
           doubleColonCount <= MAX_DOUBLE_COLONS);
@@ -213,6 +232,9 @@ bool Host::parseIpv6(const std::string& ipv6) {
 
 bool Host::parseHostname(const std::string& hostname) {
   if (hostname.empty() || hostname.length() > MAX_HOST_LENGTH) {
+    return false;
+  }
+  if (hostname[0] == '.' || hostname[hostname.length() - 1] == '.') {
     return false;
   }
 
