@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Port.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 19:13:44 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/29 00:47:28 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/02 22:49:34 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,11 +22,25 @@ namespace domain {
 namespace http {
 namespace value_objects {
 
-Port::Port() : m_value(MIN_PORT) {}
+Port::Port() : m_value(DEFAULT_PORT) {}
 
-Port::Port(unsigned int port) : m_value(port) { validate(); }
+Port::Port(unsigned int port) : m_value(port) {
+  // Special case: Port(0) is allowed as a sentinel value for "no port specified"
+  // Used internally by Uri and other components
+  if (port != 0 && port > MAX_PORT) {
+    std::ostringstream oss;
+    oss << "Port must be between " << MIN_PORT << " and " << MAX_PORT;
+    throw exceptions::PortException(
+        oss.str(),
+        exceptions::PortException::OUT_OF_RANGE);
+  }
+  // Only validate if not using sentinel value
+  if (port != 0) {
+    validate();
+  }
+}
 
-Port::Port(const std::string& portString) : m_value(MIN_PORT) {
+Port::Port(const std::string& portString) : m_value(DEFAULT_PORT) {
   m_value = parsePortString(portString);
   validate();
 }
@@ -125,20 +139,14 @@ unsigned int Port::parsePortString(const std::string& portString) {
         exceptions::PortException::NON_DIGIT_CHARACTER);
   }
 
-  if (portString.size() > 1 && portString[0] == '0') {
-    throw exceptions::PortException(
-        "Port cannot have leading zero: '" + portString + "'",
-        exceptions::PortException::INVALID_STRING);
-  }
-
   try {
     unsigned long result = shared::utils::StringUtils::toUnsignedLong(
         portString, shared::utils::StringUtils::BASE_DECIMAL);
 
-    if (result > static_cast<unsigned long>(MAX_PORT)) {
+    if (result == 0 || result > static_cast<unsigned long>(MAX_PORT)) {
       std::ostringstream oss;
       oss << "Port value out of range: '" << portString
-          << "' (max: " << MAX_PORT << ")";
+          << "' (valid range: " << MIN_PORT << "-" << MAX_PORT << ")";
       throw exceptions::PortException(
           oss.str(), exceptions::PortException::OUT_OF_RANGE);
     }

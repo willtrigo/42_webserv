@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Port.hpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 19:12:04 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 02:28:20 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/02 22:02:53 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,8 @@ namespace value_objects {
 
 class Port {
  public:
-  static const unsigned int MIN_PORT = 0;
+  static const unsigned int MIN_PORT = 1;
+  static const unsigned int DEFAULT_PORT = 80;
   static const unsigned int MAX_PORT = 65535;
 
   static const unsigned int HTTP_PORT = 80;
