@@ -1,0 +1,188 @@
+[32m[INFO] [0mLogger initialized.
+[36m[DEBUG] [0mConfigLexer initialized.
+[36m[DEBUG] [0mConfigParser initialized.
+[32m[INFO] [0mConfigProvider initialized with parser.
+[36m[DEBUG] [0mInitializing parser for: ./conf/default.conf
+[36m[DEBUG] [0mTokenized 108 tokens from ./conf/default.conf
+[36m[DEBUG] [0mCurrent tokens (108):
+  [Line 1] STRING: 'server'
+  [Line 1] BLOCK_START: '{'
+  [Line 2] STRING: 'listen'
+  [Line 2] STRING: '80'
+  [Line 2] SEMICOLON: ';'
+  [Line 3] STRING: 'server_name'
+  [Line 3] STRING: 'localhost'
+  [Line 3] SEMICOLON: ';'
+  [Line 5] STRING: 'root'
+  [Line 5] STRING: './var/www/default'
+  [Line 5] SEMICOLON: ';'
+  [Line 6] STRING: 'index'
+  [Line 6] STRING: 'index.html'
+  [Line 6] SEMICOLON: ';'
+  [Line 8] STRING: 'error_page'
+  [Line 8] STRING: '404'
+  [Line 8] STRING: '/static/errors/404.html'
+  [Line 8] SEMICOLON: ';'
+  [Line 9] STRING: 'error_page'
+  [Line 9] STRING: '500'
+  [Line 9] STRING: '/static/errors/500.html'
+  [Line 9] SEMICOLON: ';'
+  [Line 11] STRING: 'location'
+  [Line 11] STRING: '/'
+  [Line 11] BLOCK_START: '{'
+  [Line 12] STRING: 'limit_except'
+  [Line 12] STRING: 'GET'
+  [Line 12] BLOCK_START: '{'
+  [Line 12] STRING: 'deny'
+  [Line 12] STRING: 'all'
+  [Line 12] SEMICOLON: ';'
+  [Line 12] BLOCK_END: '}'
+  [Line 14] STRING: 'autoindex'
+  [Line 14] STRING: 'off'
+  [Line 14] SEMICOLON: ';'
+  [Line 16] STRING: 'try_files'
+  [Line 16] STRING: '$uri'
+  [Line 16] STRING: '$uri/'
+  [Line 16] STRING: '=404'
+  [Line 16] SEMICOLON: ';'
+  [Line 17] BLOCK_END: '}'
+  [Line 19] STRING: 'location'
+  [Line 19] STRING: '/files'
+  [Line 19] BLOCK_START: '{'
+  [Line 20] STRING: 'limit_except'
+  [Line 20] STRING: 'POST'
+  [Line 20] BLOCK_START: '{'
+  [Line 20] STRING: 'deny'
+  [Line 20] STRING: 'all'
+  [Line 20] SEMICOLON: ';'
+  [Line 20] BLOCK_END: '}'
+  [Line 22] STRING: 'upload_store'
+  [Line 22] STRING: './var/uploads/default'
+  [Line 22] SEMICOLON: ';'
+  [Line 23] STRING: 'upload_store_permissions'
+  [Line 23] STRING: '0660'
+  [Line 23] SEMICOLON: ';'
+  [Line 24] STRING: 'upload_store_access'
+  [Line 24] STRING: 'user:rw'
+  [Line 24] STRING: 'group:r'
+  [Line 24] STRING: 'all:r'
+  [Line 24] SEMICOLON: ';'
+  [Line 26] STRING: 'autoindex'
+  [Line 26] STRING: 'on'
+  [Line 26] SEMICOLON: ';'
+  [Line 28] STRING: 'add_header'
+  [Line 28] STRING: 'Upload-Success'
+  [Line 28] STRING: 'always'
+  [Line 28] SEMICOLON: ';'
+  [Line 29] STRING: 'return'
+  [Line 29] STRING: '201'
+  [Line 29] STRING: 'Upload complete'
+  [Line 29] SEMICOLON: ';'
+  [Line 30] BLOCK_END: '}'
+  [Line 32] STRING: 'location'
+  [Line 32] STRING: '/public'
+  [Line 32] BLOCK_START: '{'
+  [Line 33] STRING: 'root'
+  [Line 33] STRING: './var/www/public'
+  [Line 33] SEMICOLON: ';'
+  [Line 35] STRING: 'limit_except'
+  [Line 35] STRING: 'GET'
+  [Line 35] STRING: 'POST'
+  [Line 35] STRING: 'DELETE'
+  [Line 35] BLOCK_START: '{'
+  [Line 35] STRING: 'deny'
+  [Line 35] STRING: 'all'
+  [Line 35] SEMICOLON: ';'
+  [Line 35] BLOCK_END: '}'
+  [Line 37] STRING: 'autoindex'
+  [Line 37] STRING: 'on'
+  [Line 37] SEMICOLON: ';'
+  [Line 39] STRING: 'try_files'
+  [Line 39] STRING: '$uri'
+  [Line 39] STRING: '$uri/index.html'
+  [Line 39] STRING: '=404'
+  [Line 39] SEMICOLON: ';'
+  [Line 40] BLOCK_END: '}'
+  [Line 42] STRING: 'location'
+  [Line 42] STRING: '/docs'
+  [Line 42] BLOCK_START: '{'
+  [Line 43] STRING: 'return'
+  [Line 43] STRING: '302'
+  [Line 43] STRING: 'http://localhost/help'
+  [Line 43] SEMICOLON: ';'
+  [Line 44] BLOCK_END: '}'
+  [Line 45] BLOCK_END: '}'
+  [Line 45] EOF
+
+[36m[DEBUG] [0mEntering server block at line 1
+[36m[DEBUG] [0mParsing server block content
+[36m[DEBUG] [0mAdded listen directive '80' at line 2
+[36m[DEBUG] [0mProcessed directive 'listen' with 1 arguments at line 2
+[36m[DEBUG] [0mAdded server name 'localhost' at line 3
+[36m[DEBUG] [0mProcessed directive 'server_name' with 1 arguments at line 3
+[36m[DEBUG] [0mSet root to './var/www/default' at line 5
+[36m[DEBUG] [0mProcessed directive 'root' with 1 arguments at line 5
+[36m[DEBUG] [0mAdded index file 'index.html' at line 6
+[36m[DEBUG] [0mProcessed directive 'index' with 1 arguments at line 6
+[36m[DEBUG] [0mSet error_page 404 -> '/static/errors/404.html' at line 8
+[36m[DEBUG] [0mProcessed directive 'error_page' with 2 arguments at line 8
+[36m[DEBUG] [0mSet error_page 500 -> '/static/errors/500.html' at line 9
+[36m[DEBUG] [0mProcessed directive 'error_page' with 2 arguments at line 9
+[36m[DEBUG] [0mParsing location block content
+[36m[DEBUG] [0mParsing location block for path: /
+[36m[DEBUG] [0mAdded allowed method 'GET' via limit_except at line 12
+[36m[DEBUG] [0mCompleted limit_except block with 1 allowed methods
+[36m[DEBUG] [0mSet autoindex to 'off' at line 14
+[36m[DEBUG] [0mProcessed directive 'autoindex' with 1 arguments at line 14
+[36m[DEBUG] [0mSet try_files with 3 arguments at line 16
+[36m[DEBUG] [0mProcessed directive 'try_files' with 3 arguments at line 16
+[36m[DEBUG] [0mEnd of location block, added location for path: /
+[36m[DEBUG] [0mParsing location block content
+[36m[DEBUG] [0mParsing location block for path: /files
+[36m[DEBUG] [0mAdded allowed method 'POST' via limit_except at line 20
+[36m[DEBUG] [0mCompleted limit_except block with 1 allowed methods
+[36m[DEBUG] [0mSet upload_store to './var/uploads/default' at line 22
+[36m[DEBUG] [0mProcessed directive 'upload_store' with 1 arguments at line 22
+[36m[DEBUG] [0mSet upload_store_permissions to 660 (432 decimal) at line 23
+[36m[DEBUG] [0mProcessed directive 'upload_store_permissions' with 1 arguments at line 23
+[36m[DEBUG] [0mSet upload_store_access component 'user:rw' at line 24
+[36m[DEBUG] [0mSet upload_store_access component 'group:r' at line 24
+[36m[DEBUG] [0mSet upload_store_access component 'all:r' at line 24
+[36m[DEBUG] [0mProcessed directive 'upload_store_access' with 3 arguments at line 24
+[36m[DEBUG] [0mSet autoindex to 'on' at line 26
+[36m[DEBUG] [0mProcessed directive 'autoindex' with 1 arguments at line 26
+[36m[DEBUG] [0mAdded custom header 'Upload-Success: always' at line 28
+[36m[DEBUG] [0mProcessed directive 'add_header' with 2 arguments at line 28
+[36m[DEBUG] [0mSet return content 201 -> 'Upload complete' at line 29
+[36m[DEBUG] [0mProcessed directive 'return' with 2 arguments at line 29
+[36m[DEBUG] [0mEnd of location block, added location for path: /files
+[36m[DEBUG] [0mParsing location block content
+[36m[DEBUG] [0mParsing location block for path: /public
+[36m[DEBUG] [0mSet root to './var/www/public' at line 33
+[36m[DEBUG] [0mProcessed directive 'root' with 1 arguments at line 33
+[36m[DEBUG] [0mAdded allowed method 'GET' via limit_except at line 35
+[36m[DEBUG] [0mAdded allowed method 'POST' via limit_except at line 35
+[36m[DEBUG] [0mAdded allowed method 'DELETE' via limit_except at line 35
+[36m[DEBUG] [0mCompleted limit_except block with 3 allowed methods
+[36m[DEBUG] [0mSet autoindex to 'on' at line 37
+[36m[DEBUG] [0mProcessed directive 'autoindex' with 1 arguments at line 37
+[36m[DEBUG] [0mSet try_files with 3 arguments at line 39
+[36m[DEBUG] [0mProcessed directive 'try_files' with 3 arguments at line 39
+[36m[DEBUG] [0mEnd of location block, added location for path: /public
+[36m[DEBUG] [0mParsing location block content
+[36m[DEBUG] [0mParsing location block for path: /docs
+[36m[DEBUG] [0mSet return 302 -> 'http://localhost/help' at line 43
+[36m[DEBUG] [0mProcessed directive 'return' with 2 arguments at line 43
+[36m[DEBUG] [0mEnd of location block, added location for path: /docs
+[36m[DEBUG] [0mEnd of server block, added server with 1 listen directives
+[32m[INFO] [0mSuccessfully parsed configuration from ./conf/default.conf with 1 servers
+[32m[INFO] [0mConfiguration loaded successfully from ./conf/default.conf with 1 servers
+[32m[INFO] [0mConfiguration loaded successfully:
+  Worker processes: 1
+  Worker connections: 1024
+  Servers: 1
+
+  Server 1:
+    Server names: localhost
+    Locations: 4
+
