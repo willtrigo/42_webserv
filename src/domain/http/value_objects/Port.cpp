@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 19:13:44 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/02 22:49:34 by umeneses         ###   ########.fr       */
+/*   Updated: 2026/01/03 14:04:44 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,19 +25,19 @@ namespace value_objects {
 Port::Port() : m_value(DEFAULT_PORT) {}
 
 Port::Port(unsigned int port) : m_value(port) {
-  // Special case: Port(0) is allowed as a sentinel value for "no port specified"
-  // Used internally by Uri and other components
-  if (port != 0 && port > MAX_PORT) {
+  if (port == 0) {
+    throw exceptions::PortException(
+        "Port cannot be zero",
+        exceptions::PortException::OUT_OF_RANGE);
+  }
+  if (port > MAX_PORT) {
     std::ostringstream oss;
     oss << "Port must be between " << MIN_PORT << " and " << MAX_PORT;
     throw exceptions::PortException(
         oss.str(),
         exceptions::PortException::OUT_OF_RANGE);
   }
-  // Only validate if not using sentinel value
-  if (port != 0) {
-    validate();
-  }
+  validate();
 }
 
 Port::Port(const std::string& portString) : m_value(DEFAULT_PORT) {
