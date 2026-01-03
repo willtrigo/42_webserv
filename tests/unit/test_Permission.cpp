@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/29 15:37:33 by umeneses          #+#    #+#             */
-/*   Updated: 2025/12/29 16:01:33 by umeneses         ###   ########.fr       */
+/*   Updated: 2026/01/03 16:16:12 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -181,8 +181,8 @@ TEST_F(PermissionTest, CanReadClassAll) {
   Permission perm(0444);  // All classes have read
   EXPECT_TRUE(perm.canRead(Permission::CLASS_ALL));
   
-  Permission perm2(0644);  // Not all have read (group doesn't have write)
-  EXPECT_FALSE(perm2.canRead(Permission::CLASS_ALL));  // Only checks if ALL have read
+  Permission perm2(0622);
+  EXPECT_FALSE(perm2.canRead(Permission::CLASS_ALL));
 }
 
 TEST_F(PermissionTest, CanWriteClassAll) {
@@ -197,7 +197,7 @@ TEST_F(PermissionTest, CanExecuteClassAll) {
   Permission perm(0111);  // All classes have execute
   EXPECT_TRUE(perm.canExecute(Permission::CLASS_ALL));
   
-  Permission perm2(0755);  // Not all have execute (group/other don't)
+  Permission perm2(0722);  // Not all have execute
   EXPECT_FALSE(perm2.canExecute(Permission::CLASS_ALL));
 }
 
