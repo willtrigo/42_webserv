@@ -22,14 +22,14 @@ See [TWO_PERSON_SPRINT.md](TWO_PERSON_SPRINT.md) for the complete 10-day impleme
 | ErrorCode | 77 | 77 | 0 | ✅ 100% |
 | ErrorPage | 56 | 53 | 3 | ⚠️ 94.6% - DESIGN ISSUE |
 | HttpMethod | 39 | 39 | 0 | ✅ 100% |
-| Path | 62 | 58 | 4 | ⚠️ 93.5% |
+| Path | 62 | 62 | 0 | ✅ 100%|
 | Size | 44 | 44 | 0 | ✅ 100% |
-| Port | 47 | 42 | 5 | ⚠️ 89.4% |
+| Port | 47 | 47 | 0 | ✅ 100% |
 | Uri | 115 | 68 | 47 | ⚠️ 59.1% |
 | QueryStringBuilder | 36 | SEGFAULT | 6+ | ❌ BLOCKED |
-| Permission | 51 | 47 | 4 | ⚠️ 92.2% |
+| Permission | 51 | 51 | 0 | ✅ 100% |
 | UploadAccess | 52 | 52 | 0 | ✅ 100% |
-| Host | 98 | 83 | 15 | ⚠️ 84.7% |
+| Host | 98 | 98 | 0 | ✅ 100%|
 | ListenDirective | 59 | 43 | 16 | ⚠️ 72.9% |
 | Route | 62 | 37 | 25 | ⚠️ 59.7% |
 | RegexPattern | 50 | 40 | 10 | ⚠️ 80% |
@@ -89,14 +89,14 @@ See [TWO_PERSON_SPRINT.md](TWO_PERSON_SPRINT.md) for the complete 10-day impleme
 - ✅ ErrorCode (77 tests, 100%)
 - ⚠️ ErrorPage (56 tests, 3 bugs)
 - ✅ HttpMethod (39 tests, 100%)
-- ⚠️ Path (62 tests, 4 bugs)
+- ✅ Path (62 tests, 100%)
 - ✅ Size (44 tests, 100%)
-- ⚠️ Port (47 tests, 5 bugs)
+- ✅ Port (47 tests, 100%)
 - ⚠️ Uri (115 tests, 47 bugs)
 - ❌ QueryStringBuilder (36 tests, SEGFAULT + 6 bugs)
-- ⚠️ Permission (51 tests, 4 bugs)
+- ✅ Permission (51 tests, 100%)
 - ✅ UploadAccess (52 tests, 100%)
-- ⚠️ Host (98 tests, 15 bugs)
+- ✅ Host (98 tests, 100%)
 - ⚠️ ListenDirective (59 tests, 16 bugs)
 - ⚠️ Route (62 tests, 25 bugs)
 - ⚠️ RegexPattern (50 tests, 10 bugs)
