@@ -6,16 +6,16 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/24 20:50:27 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/24 21:53:48 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/04 01:05:22 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef REQUEST_PARSER_HPP
 #define REQUEST_PARSER_HPP
 
-#include "domain/value_objects/HttpMethod.hpp"
-#include "domain/value_objects/Path.hpp"
-#include "domain/value_objects/QueryStringBuilder.hpp"
+#include "domain/filesystem/value_objects/Path.hpp"
+#include "domain/http/value_objects/HttpMethod.hpp"
+#include "domain/http/value_objects/QueryStringBuilder.hpp"
 
 #include <map>
 #include <string>
@@ -25,9 +25,9 @@ namespace infrastructure {
 namespace http {
 
 struct ParsedRequest {
-  domain::value_objects::HttpMethod method;
-  domain::value_objects::Path path;
-  domain::value_objects::QueryStringBuilder query;
+  domain::http::value_objects::HttpMethod method;
+  domain::filesystem::value_objects::Path path;
+  domain::http::value_objects::QueryStringBuilder query;
   std::string httpVersion;
   std::map<std::string, std::string> headers;
   std::vector<char> body;

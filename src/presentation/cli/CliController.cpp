@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/12 16:08:17 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/02 13:40:19 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/02 21:53:41 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,7 +50,6 @@ bool CliController::run(int argc, char** argv) {
         new infrastructure::config::adapters::ConfigProvider(
             this->m_view.getLogger()));
     configProvider->load(configPath);
-    // configProvider->load(configPath, "conf/default.conf");
     if (configProvider->isValid()) {
       const domain::configuration::entities::HttpConfig& config =
           configProvider->getConfiguration();
@@ -61,7 +60,6 @@ bool CliController::run(int argc, char** argv) {
       oss << "  Worker connections: " << config.getWorkerConnections() << "\n";
       oss << "  Servers: " << config.getServerConfigs().size() << "\n";
 
-      // Display server information
       const std::vector<const domain::configuration::entities::ServerConfig*>&
           servers = configProvider->getAllServers();
       for (size_t i = 0; i < servers.size(); ++i) {

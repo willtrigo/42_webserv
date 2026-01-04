@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2025/12/31 03:48:24 by dande-je         ###   ########.fr        #
+#    Updated: 2026/01/04 01:16:02 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -218,7 +218,6 @@ endif
 
 define create_dir
 	$(MKDIR) $(dir $@)
-	$(MKDIR) log
 endef
 
 define comp_objs
