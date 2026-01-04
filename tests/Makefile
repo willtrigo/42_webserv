@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/24 09:42:14 by umeneses          #+#    #+#              #
-#    Updated: 2026/01/02 12:06:24 by umeneses         ###   ########.fr        #
+#    Updated: 2026/01/04 11:41:20 by umeneses         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -53,6 +53,8 @@ NAME                            := $(BIN_DIR)/test_runner
 
 PROJECT_SRCS                    := $(shell find $(SRC_DIR) -name '*.cpp' \
 											! -name 'main.cpp' \
+											! -name 'ConnectionHandler.cpp' \
+											! -name 'SocketOrchestrator.cpp' \
 											! -name 'CliController.cpp' \
 											! -name 'CliView.cpp' \
 											! -name 'RouteMatcher.cpp' \

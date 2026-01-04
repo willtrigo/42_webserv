@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ErrorPage.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/25 21:59:54 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/29 00:19:08 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/04 17:38:54 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,9 +62,10 @@ const filesystem::value_objects::Path ErrorPage::DEFAULT_ERROR_PAGES_DIR =
 ErrorPage::ErrorPage()
     : m_errorCode(
           shared::value_objects::ErrorCode::STATUS_INTERNAL_SERVER_ERROR),
+      m_content(generateDefaultContent(m_errorCode)),
       m_contentType(DEFAULT_CONTENT_TYPE),
       m_hasFile(false),
-      m_hasContent(false) {}
+      m_hasContent(true) {}
 
 ErrorPage::ErrorPage(const shared::value_objects::ErrorCode& errorCode)
     : m_errorCode(errorCode),
@@ -394,6 +395,12 @@ void ErrorPage::validate() const {
 }
 
 void ErrorPage::validateContent() const {
+  if (m_content.empty()) {
+    throw exceptions::ErrorPageException(
+        "Error page content cannot be empty",
+        exceptions::ErrorPageException::NO_CONTENT);
+  }
+  
   if (!isValidErrorPage(m_content)) {
     throw exceptions::ErrorPageException(
         "Error page content exceeds maximum length",
