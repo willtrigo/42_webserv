@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/25 21:59:54 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/04 12:49:35 by umeneses         ###   ########.fr       */
+/*   Updated: 2026/01/04 17:38:54 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,15 +63,12 @@ ErrorPage::ErrorPage()
     : m_errorCode(
           shared::value_objects::ErrorCode::STATUS_INTERNAL_SERVER_ERROR),
       m_content(generateDefaultContent(m_errorCode)),
-      m_filePath(),
       m_contentType(DEFAULT_CONTENT_TYPE),
       m_hasFile(false),
       m_hasContent(true) {}
 
 ErrorPage::ErrorPage(const shared::value_objects::ErrorCode& errorCode)
     : m_errorCode(errorCode),
-      m_content(""),
-      m_filePath(),
       m_contentType(DEFAULT_CONTENT_TYPE),
       m_hasFile(false),
       m_hasContent(false) {
@@ -84,7 +81,6 @@ ErrorPage::ErrorPage(const shared::value_objects::ErrorCode& errorCode,
                      const std::string& content)
     : m_errorCode(errorCode),
       m_content(content),
-      m_filePath(),
       m_contentType(DEFAULT_CONTENT_TYPE),
       m_hasFile(false),
       m_hasContent(true) {
