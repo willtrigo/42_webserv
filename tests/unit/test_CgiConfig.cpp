@@ -6,12 +6,13 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 18:16:50 by umeneses          #+#    #+#             */
-/*   Updated: 2026/01/04 19:29:42 by umeneses         ###   ########.fr       */
+/*   Updated: 2026/01/05 10:38:58 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "domain/configuration/exceptions/CgiConfigException.hpp"
 #include "domain/configuration/value_objects/CgiConfig.hpp"
+#include "domain/shared/exceptions/RegexPatternException.hpp"
 
 #include <gtest/gtest.h>
 
@@ -31,7 +32,7 @@ class CgiConfigTest : public ::testing::Test {
 TEST_F(CgiConfigTest, DefaultConstructor) {
   CgiConfig* config = NULL;
   EXPECT_NO_THROW(config = new CgiConfig());
-  if (config) {
+  if (config != NULL) {
     EXPECT_TRUE(config->getCgiRoot().toString() == "/");
     delete config;
   }
@@ -217,9 +218,9 @@ TEST_F(CgiConfigTest, SetExtensionPatternValid) {
 
 TEST_F(CgiConfigTest, SetExtensionPatternEmpty) {
   CgiConfig config;
-  domain::shared::value_objects::RegexPattern emptyPattern("");
 
-  EXPECT_THROW(config.setExtensionPattern(emptyPattern), CgiConfigException);
+  EXPECT_THROW(domain::shared::value_objects::RegexPattern(""),
+               domain::shared::exceptions::RegexPatternException);
 }
 
 // ============================================================================
