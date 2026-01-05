@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/21 10:55:26 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/04 18:07:40 by umeneses         ###   ########.fr       */
+/*   Updated: 2026/01/04 21:44:17 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,10 +46,10 @@ const int BALANCE_NEGATIVE_THRESHOLD = 0;
 const std::string RegexPattern::SPECIAL_CHARACTERS = "\\^$.|?*+()[]{}";
 const std::string RegexPattern::CHARACTER_CLASS_SPECIAL = "\\^-]";
 
-const std::string RegexPattern::PHP_EXTENSION = "\\.?php$";
-const std::string RegexPattern::PYTHON_EXTENSION = "\\.?py$";
+const std::string RegexPattern::PHP_EXTENSION = "(^php$|\\.php$)";
+const std::string RegexPattern::PYTHON_EXTENSION = "(^py$|\\.py$)";
 const std::string RegexPattern::IMAGE_EXTENSIONS =
-    "\\.?(jpg|jpeg|png|gif|bmp)$";
+    "(^(jpg|jpeg|png|gif|bmp)$|\\.(jpg|jpeg|png|gif|bmp)$)";
 const std::string RegexPattern::NUMERIC_PATTERN = "^[0-9]+$";
 const std::string RegexPattern::ALPHANUMERIC_PATTERN = "^[a-zA-Z0-9]+$";
 const std::string RegexPattern::EMAIL_PATTERN =
