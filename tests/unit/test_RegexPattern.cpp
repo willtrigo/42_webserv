@@ -30,7 +30,7 @@ class RegexPatternTest : public ::testing::Test {
 TEST_F(RegexPatternTest, DefaultConstructor) {
   RegexPattern* pattern = NULL;
   EXPECT_NO_THROW(pattern = new RegexPattern());
-  if (pattern) {
+  if (pattern != NULL) {
     EXPECT_EQ("", pattern->getPattern());
     EXPECT_EQ(RegexPattern::FLAG_NONE, pattern->getFlags());
     delete pattern;
