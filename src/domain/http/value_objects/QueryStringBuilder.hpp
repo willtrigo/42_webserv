@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   QueryStringBuilder.hpp                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/23 00:38:11 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 03:11:45 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/04 13:34:15 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,12 +39,14 @@ class QueryStringBuilder {
   std::string getBaseUrl() const;
 
   void addParameter(const std::string& key, const std::string& value);
+  void addParameter(const std::string& key, const char* value);
   void addParameter(const std::string& key, int value);
   void addParameter(const std::string& key, bool value);
   void addParameter(const std::string& key, long value);
   void addParameter(const std::string& key, double value);
 
   void setParameter(const std::string& key, const std::string& value);
+  void setParameter(const std::string& key, const char* value);
   void setParameter(const std::string& key, int value);
   void setParameter(const std::string& key, bool value);
   void setParameter(const std::string& key, long value);
