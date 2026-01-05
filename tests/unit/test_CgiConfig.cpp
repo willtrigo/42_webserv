@@ -6,12 +6,13 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 18:16:50 by umeneses          #+#    #+#             */
-/*   Updated: 2026/01/05 10:38:58 by umeneses         ###   ########.fr       */
+/*   Updated: 2026/01/05 11:34:49 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "domain/configuration/exceptions/CgiConfigException.hpp"
 #include "domain/configuration/value_objects/CgiConfig.hpp"
+#include "domain/filesystem/exceptions/PathException.hpp"
 #include "domain/shared/exceptions/RegexPatternException.hpp"
 
 #include <gtest/gtest.h>
@@ -186,23 +187,15 @@ TEST_F(CgiConfigTest, SetCgiRootValid) {
 TEST_F(CgiConfigTest, SetCgiRootEmpty) {
   CgiConfig config;
 
-  EXPECT_THROW(
-      {
-        domain::filesystem::value_objects::Path emptyPath("");
-        config.setCgiRoot(emptyPath);
-      },
-      std::exception);
+  EXPECT_THROW(domain::filesystem::value_objects::Path(""),
+               domain::filesystem::exceptions::PathException);
 }
 
 TEST_F(CgiConfigTest, SetCgiRootRelative) {
   CgiConfig config;
 
-  EXPECT_THROW(
-      {
-        domain::filesystem::value_objects::Path relativePath("cgi-bin");
-        config.setCgiRoot(relativePath);
-      },
-      std::exception);
+  EXPECT_THROW(domain::filesystem::value_objects::Path("cgi-bin"),
+               domain::filesystem::exceptions::PathException);
 }
 
 // ============================================================================
@@ -218,9 +211,10 @@ TEST_F(CgiConfigTest, SetExtensionPatternValid) {
 
 TEST_F(CgiConfigTest, SetExtensionPatternEmpty) {
   CgiConfig config;
+  domain::shared::value_objects::RegexPattern
+      emptyPattern;
 
-  EXPECT_THROW(domain::shared::value_objects::RegexPattern(""),
-               domain::shared::exceptions::RegexPatternException);
+  EXPECT_THROW(config.setExtensionPattern(emptyPattern), CgiConfigException);
 }
 
 // ============================================================================
@@ -298,7 +292,7 @@ TEST_F(CgiConfigTest, IsValidTrue) {
   EXPECT_TRUE(config.isValid());
 }
 
-TEST_F(CgiConfigTest, IsValidFalse) {
+TEST_F(CgiConfigTest, IsValidFalseWhenMissingRequiredParameter) {
   domain::filesystem::value_objects::Path cgiRoot("/usr/lib/cgi-bin");
   domain::shared::value_objects::RegexPattern pattern("\\.php$");
   CgiConfig config("/usr/bin/php-cgi", cgiRoot, pattern);
