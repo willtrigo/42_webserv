@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/21 10:55:26 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/29 02:21:35 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/04 22:04:40 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,8 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstring>
+#include <regex.h>
 #include <sstream>
 
 namespace domain {
@@ -22,31 +24,32 @@ namespace shared {
 namespace value_objects {
 
 namespace {
-    const char BACKSLASH = '\\';
-    const char OPEN_BRACKET = '[';
-    const char CLOSE_BRACKET = ']';
-    const char OPEN_PAREN = '(';
-    const char CLOSE_PAREN = ')';
-    const char OPEN_BRACE = '{';
-    const char CLOSE_BRACE = '}';
-    const char CARET = '^';
-    const char LOWERCASE_I = 'i';
-    const char QUESTION_MARK = '?';
-    const char HYPHEN = '-';
-    
-    const std::size_t MIN_FLAG_MODIFIER_LENGTH = 3;
-    const std::size_t MIN_EXISTING_FLAG_LENGTH = 4;
-    const std::size_t FLAG_MODIFIER_PREFIX_LENGTH = 2;
-    const int BALANCE_ZERO = 0;
-    const int BALANCE_NEGATIVE_THRESHOLD = 0;
-}
+const char BACKSLASH = '\\';
+const char OPEN_BRACKET = '[';
+const char CLOSE_BRACKET = ']';
+const char OPEN_PAREN = '(';
+const char CLOSE_PAREN = ')';
+const char OPEN_BRACE = '{';
+const char CLOSE_BRACE = '}';
+const char CARET = '^';
+const char LOWERCASE_I = 'i';
+const char QUESTION_MARK = '?';
+const char HYPHEN = '-';
+
+const std::size_t MIN_FLAG_MODIFIER_LENGTH = 3;
+const std::size_t MIN_EXISTING_FLAG_LENGTH = 4;
+const std::size_t FLAG_MODIFIER_PREFIX_LENGTH = 2;
+const int BALANCE_ZERO = 0;
+const int BALANCE_NEGATIVE_THRESHOLD = 0;
+}  // namespace
 
 const std::string RegexPattern::SPECIAL_CHARACTERS = "\\^$.|?*+()[]{}";
 const std::string RegexPattern::CHARACTER_CLASS_SPECIAL = "\\^-]";
 
-const std::string RegexPattern::PHP_EXTENSION = "\\.php$";
-const std::string RegexPattern::PYTHON_EXTENSION = "\\.py$";
-const std::string RegexPattern::IMAGE_EXTENSIONS = "\\.(jpg|jpeg|png|gif|bmp)$";
+const std::string RegexPattern::PHP_EXTENSION = "(^php$|\\.php$)";
+const std::string RegexPattern::PYTHON_EXTENSION = "(^py$|\\.py$)";
+const std::string RegexPattern::IMAGE_EXTENSIONS =
+    "(^(jpg|jpeg|png|gif|bmp)$|\\.(jpg|jpeg|png|gif|bmp)$)";
 const std::string RegexPattern::NUMERIC_PATTERN = "^[0-9]+$";
 const std::string RegexPattern::ALPHANUMERIC_PATTERN = "^[a-zA-Z0-9]+$";
 const std::string RegexPattern::EMAIL_PATTERN =
@@ -108,6 +111,9 @@ std::string RegexPattern::getFlagsString() const {
 }
 
 bool RegexPattern::isValidPattern(const std::string& pattern) {
+  if (pattern.empty()) {
+    return false;
+  }
   try {
     validatePattern(pattern);
     return true;
@@ -118,10 +124,13 @@ bool RegexPattern::isValidPattern(const std::string& pattern) {
 
 bool RegexPattern::isSimplePattern(const std::string& pattern) {
   for (std::size_t index = 0; index < pattern.length(); ++index) {
+    if (pattern[index] == BACKSLASH) {
+      ++index;
+      continue;
+    }
+
     if (isSpecialCharacter(pattern[index], SPECIAL_CHARACTERS)) {
-      if (index == 0 || pattern[index - 1] != BACKSLASH) {
-        return false;
-      }
+      return false;
     }
   }
   return true;
@@ -166,7 +175,26 @@ bool RegexPattern::matches(const std::string& text) const {
     return m_pattern == text;
   }
 
-  return false;
+  // Use POSIX regex for complex patterns
+  regex_t regex;
+  int cflags = REG_EXTENDED | REG_NOSUB;
+
+  if (hasFlag(FLAG_CASE_INSENSITIVE)) {
+    cflags |= REG_ICASE;
+  }
+  if (hasFlag(FLAG_MULTILINE)) {
+    cflags |= REG_NEWLINE;
+  }
+
+  int compileResult = regcomp(&regex, m_pattern.c_str(), cflags);
+  if (compileResult != 0) {
+    return false;
+  }
+
+  int matchResult = regexec(&regex, text.c_str(), 0, NULL, 0);
+  regfree(&regex);
+
+  return matchResult == 0;
 }
 
 std::string RegexPattern::escape(const std::string& text) {
@@ -244,8 +272,13 @@ std::size_t RegexPattern::length() const { return m_pattern.length(); }
 void RegexPattern::validatePattern(const std::string& pattern) {
   if (pattern.empty()) {
     throw shared::exceptions::RegexPatternException(
-        "Regular expression pattern cannot be empty",
+        "Pattern cannot be empty",
         shared::exceptions::RegexPatternException::EMPTY_PATTERN);
+  }
+  if (pattern.length() > MAX_PATTERN_LENGTH) {
+    throw shared::exceptions::RegexPatternException(
+        "Pattern too long: '" + pattern + "'",
+        shared::exceptions::RegexPatternException::PATTERN_TOO_LONG);
   }
 
   if (!hasBalancedBrackets(pattern)) {
@@ -514,13 +547,13 @@ std::string RegexPattern::addFlagModifier(const std::string& pattern,
   }
 
   if (flag == FLAG_CASE_INSENSITIVE) {
-    if (pattern.length() >= MIN_EXISTING_FLAG_LENGTH && 
+    if (pattern.length() >= MIN_EXISTING_FLAG_LENGTH &&
         pattern[0] == OPEN_PAREN && pattern[1] == QUESTION_MARK &&
         pattern[2] == LOWERCASE_I && pattern[3] == CLOSE_PAREN) {
       return pattern;
     }
 
-    if (pattern.length() >= MIN_FLAG_MODIFIER_LENGTH && 
+    if (pattern.length() >= MIN_FLAG_MODIFIER_LENGTH &&
         pattern[0] == OPEN_PAREN && pattern[1] == QUESTION_MARK) {
       std::size_t pos = FLAG_MODIFIER_PREFIX_LENGTH;
       while (pos < pattern.length() && pattern[pos] != CLOSE_PAREN &&
@@ -534,8 +567,8 @@ std::string RegexPattern::addFlagModifier(const std::string& pattern,
 
       if (pos < pattern.length() && pattern[pos] == CLOSE_PAREN) {
         std::string newPattern = "(?i";
-        newPattern += pattern.substr(FLAG_MODIFIER_PREFIX_LENGTH, 
-                                    pos - FLAG_MODIFIER_PREFIX_LENGTH);
+        newPattern += pattern.substr(FLAG_MODIFIER_PREFIX_LENGTH,
+                                     pos - FLAG_MODIFIER_PREFIX_LENGTH);
         newPattern += CLOSE_PAREN;
         newPattern += pattern.substr(pos + 1);
         return newPattern;
