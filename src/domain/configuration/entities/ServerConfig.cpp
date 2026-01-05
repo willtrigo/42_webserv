@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerConfig.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 11:52:37 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/01 20:57:57 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/05 20:36:27 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,16 +27,14 @@ ServerConfig::ServerConfig()
     : m_root(filesystem::value_objects::Path::fromString(DEFAULT_ROOT, true)),
       m_clientMaxBodySize(filesystem::value_objects::Size::fromMegabytes(
           DEFAULT_CLIENT_MAX_BODY_SIZE_MB)),
-      m_returnCode(shared::value_objects::ErrorCode::ok()) {
-}
+      m_returnCode(shared::value_objects::ErrorCode::ok()) {}
 
 ServerConfig::ServerConfig(const ListenDirectives& listenDirectives)
     : m_listenDirectives(listenDirectives),
       m_root(filesystem::value_objects::Path::fromString(DEFAULT_ROOT, true)),
       m_clientMaxBodySize(filesystem::value_objects::Size::fromMegabytes(
           DEFAULT_CLIENT_MAX_BODY_SIZE_MB)),
-      m_returnCode(shared::value_objects::ErrorCode::ok()) {
-}
+      m_returnCode(shared::value_objects::ErrorCode::ok()) {}
 
 ServerConfig::ServerConfig(const ServerConfig& other) { copyFrom(other); }
 
@@ -121,6 +119,30 @@ bool ServerConfig::isDefaultServer() const {
   return false;
 }
 
+std::string ServerConfig::normalizeListenDirective(
+    const std::string& directive) {
+  std::string trimmed = shared::utils::StringUtils::trim(directive);
+
+  // Already has colon - return as-is
+  if (trimmed.find(':') != std::string::npos) {
+    return trimmed;
+  }
+
+  // Check if it's a port-only format (all digits)
+  if (shared::utils::StringUtils::isAllDigits(trimmed)) {
+    return "0.0.0.0:" + trimmed;
+  }
+
+  // Check if it's an IPv6 without port
+  if (trimmed.find("::") != std::string::npos ||
+      (trimmed.length() > 0 && trimmed[0] == '[')) {
+    return trimmed + ":80";
+  }
+
+  // Otherwise it's a hostname/IP without port
+  return trimmed + ":80";
+}
+
 void ServerConfig::addListenDirective(const ListenDirective& directive) {
   for (std::size_t i = 0; i < m_listenDirectives.size(); ++i) {
     if (m_listenDirectives[i] == directive) {
@@ -135,7 +157,8 @@ void ServerConfig::addListenDirective(const ListenDirective& directive) {
 
 void ServerConfig::addListenDirective(const std::string& directiveString) {
   try {
-    ListenDirective directive = ListenDirective::fromString(directiveString);
+    std::string normalized = normalizeListenDirective(directiveString);
+    ListenDirective directive = ListenDirective::fromString(normalized);
     addListenDirective(directive);
   } catch (const std::exception& e) {
     std::ostringstream oss;
@@ -389,8 +412,8 @@ bool ServerConfig::hasReturnRedirect() const {
 }
 
 bool ServerConfig::hasReturnContent() const {
-  return !m_returnContent.empty() && 
-         (m_returnCode.isSuccess() || m_returnCode.isClientError() || 
+  return !m_returnContent.empty() &&
+         (m_returnCode.isSuccess() || m_returnCode.isClientError() ||
           m_returnCode.isServerError());
 }
 
@@ -578,9 +601,10 @@ bool ServerConfig::hasListenDirective(
   return false;
 }
 
-void ServerConfig::setListenDirectives(const std::vector<std::string>& directives) {
+void ServerConfig::setListenDirectives(
+    const std::vector<std::string>& directives) {
   m_listenDirectives.clear();
-  
+
   for (std::size_t i = 0; i < directives.size(); ++i) {
     addListenDirective(directives[i]);
   }
@@ -588,7 +612,7 @@ void ServerConfig::setListenDirectives(const std::vector<std::string>& directive
 
 void ServerConfig::setListenDirectives(const ListenDirectives& directives) {
   m_listenDirectives.clear();
-  
+
   for (std::size_t i = 0; i < directives.size(); ++i) {
     addListenDirective(directives[i]);
   }
@@ -630,11 +654,11 @@ std::string ServerConfig::toString() const {
   }
   oss << "\n";
   oss << "  ClientMaxBodySize: " << m_clientMaxBodySize.toString() << "\n";
-if (hasReturnRedirect()) {
-    oss << "  ReturnRedirect: " << m_returnCode.getValue() << " -> '" 
+  if (hasReturnRedirect()) {
+    oss << "  ReturnRedirect: " << m_returnCode.getValue() << " -> '"
         << m_returnRedirect << "'\n";
   } else if (hasReturnContent()) {
-    oss << "  ReturnContent: " << m_returnCode.getValue() << " -> '" 
+    oss << "  ReturnContent: " << m_returnCode.getValue() << " -> '"
         << m_returnContent << "'\n";
   }
   oss << "  Locations: " << m_locations.size() << "\n";

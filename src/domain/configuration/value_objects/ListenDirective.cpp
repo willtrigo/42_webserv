@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ListenDirective.cpp                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 03:21:29 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/31 04:51:29 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/05 20:36:27 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,8 +23,7 @@ namespace domain {
 namespace configuration {
 namespace entities {
 
-const std::string ListenDirective::DEFAULT_HOST =
-    http::value_objects::Host::WILDCARD_IPV4;
+const std::string ListenDirective::DEFAULT_HOST = "0.0.0.0";
 const http::value_objects::Port ListenDirective::DEFAULT_PORT =
     http::value_objects::Port::httpPort();
 
@@ -46,14 +45,36 @@ ListenDirective::ListenDirective(const std::string& directiveString)
   std::string hostStr = normalizeHostString(parts.first);
   std::string portStr = normalizePortString(parts.second);
 
-  if (hostStr.empty()) {
-    m_host = http::value_objects::Host::wildcard();
-  } else {
-    m_host = http::value_objects::Host::fromString(hostStr);
+  // Check for invalid formats: trailing colon with no port
+  if (directiveString.find(':') != std::string::npos &&
+      directiveString[directiveString.length() - 1] == ':') {
+    throw exceptions::ListenDirectiveException(
+        "Invalid listen directive (trailing colon): " + directiveString,
+        exceptions::ListenDirectiveException::INVALID_FORMAT);
   }
 
-  if (!portStr.empty()) {
-    m_port = http::value_objects::Port::fromString(portStr);
+  // Format must include colon separator (host:port or [ipv6]:port)
+  if (directiveString.find(':') == std::string::npos) {
+    throw exceptions::ListenDirectiveException(
+        "Invalid listen directive (missing colon separator): " +
+            directiveString,
+        exceptions::ListenDirectiveException::INVALID_FORMAT);
+  }
+
+  try {
+    if (hostStr.empty()) {
+      m_host = http::value_objects::Host::wildcard();
+    } else {
+      m_host = http::value_objects::Host::fromString(hostStr);
+    }
+
+    if (!portStr.empty()) {
+      m_port = http::value_objects::Port::fromString(portStr);
+    }
+  } catch (const std::exception& e) {
+    throw exceptions::ListenDirectiveException(
+        "Invalid listen directive: " + directiveString + " (" + e.what() + ")",
+        exceptions::ListenDirectiveException::INVALID_FORMAT);
   }
 
   validate();
