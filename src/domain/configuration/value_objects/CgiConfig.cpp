@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CgiConfig.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 13:12:24 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/02 02:36:03 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/04 19:41:29 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,8 +50,19 @@ CgiConfig::CgiConfig(
     : m_scriptPath(normalizeScriptPath(scriptPath)),
       m_cgiRoot(cgiRoot),
       m_extensionPattern(extensionPattern) {
+  if (m_scriptPath.empty()) {
+    throw exceptions::CgiConfigException(
+        "CGI script path cannot be empty",
+        exceptions::CgiConfigException::INVALID_SCRIPT_PATH);
+  }
+
+  if (!isAbsolutePath(m_scriptPath)) {
+    throw exceptions::CgiConfigException(
+        "CGI script path must be absolute: " + m_scriptPath,
+        exceptions::CgiConfigException::INVALID_SCRIPT_PATH);
+  }
+
   initializeDefaultParameters();
-  validate();
 }
 
 CgiConfig::CgiConfig(const CgiConfig& other) { copyFrom(other); }
@@ -155,10 +166,9 @@ void CgiConfig::addParameter(const std::string& name,
         oss.str(), exceptions::CgiConfigException::INVALID_CGI_PARAM);
   }
 
-  ParameterMap::iterator it = m_parameters.find(name);
-  if (it != m_parameters.end()) {
-    // Allow overwriting if current value is empty
-    if (!it->second.empty()) {
+  ParameterMap::iterator iter = m_parameters.find(name);
+  if (iter != m_parameters.end()) {
+    if (!iter->second.empty()) {
       std::ostringstream oss;
       oss << "Duplicate CGI parameter: '" << name << "'";
       throw exceptions::CgiConfigException(
