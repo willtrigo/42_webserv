@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/24 21:46:04 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 22:52:28 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/05 15:19:57 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,10 +17,12 @@
 #include "domain/filesystem/value_objects/Permission.hpp"
 #include "domain/filesystem/value_objects/Size.hpp"
 #include "domain/http/value_objects/HttpMethod.hpp"
+#include "domain/http/value_objects/RouteMatchInfo.hpp"
 #include "domain/shared/value_objects/ErrorCode.hpp"
 
 #include <map>
 #include <set>
+#include <string>
 
 namespace domain {
 namespace configuration {
@@ -86,16 +88,7 @@ class Route {
   bool hasRedirectConfig() const;
   bool hasUploadConfig() const;
 
-  struct MatchInfo {
-    filesystem::value_objects::Path resolvedPath;
-    bool isDirectory;
-    std::string fileToServe;
-    std::map<std::string, std::string> queryParams;
-
-    MatchInfo();
-  };
-
-  MatchInfo resolveRequest(
+  http::value_objects::RouteMatchInfo resolveRequest(
       const std::string& requestPath,
       const std::map<std::string, std::string>& queryParams =
           std::map<std::string, std::string>()) const;

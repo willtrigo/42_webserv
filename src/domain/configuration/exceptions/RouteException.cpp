@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/24 21:51:38 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 20:01:13 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/04 16:53:23 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,14 +27,7 @@ const std::pair<RouteException::ErrorCode, std::string>
         std::make_pair(RouteException::DUPLICATE_ROUTE,
                        "Duplicate route configuration"),
         std::make_pair(RouteException::CONFIGURATION_ERROR,
-                       "Route configuration error"),
-        std::make_pair(RouteException::ROUTE_NOT_FOUND, "Route not found"),
-        std::make_pair(RouteException::METHOD_NOT_ALLOWED,
-                       "HTTP method not allowed for this route"),
-        std::make_pair(RouteException::FILE_NOT_FOUND, "File not found"),
-        std::make_pair(RouteException::PERMISSION_DENIED, "Permission denied"),
-        std::make_pair(RouteException::BODY_TOO_LARGE,
-                       "Request body too large")};
+                       "Route configuration error")};
 
 RouteException::RouteException(const std::string& message, ErrorCode code)
     : BaseException("", static_cast<int>(code)) {

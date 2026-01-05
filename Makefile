@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2026/01/04 01:16:02 by dande-je         ###   ########.fr        #
+#    Updated: 2026/01/05 15:23:18 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -122,11 +122,13 @@ SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_HTTP_EXCEPTIONS_DIR
 																	 HttpMethodException.cpp \
 																	 PortException.cpp \
 																	 QueryStringBuilderException.cpp \
+																	 RouteMatchInfoException.cpp \
 																	 UriException.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_HTTP_VALUE_OBJECTS_DIR), Host.cpp \
 																	 HttpMethod.cpp \
 																	 Port.cpp \
 																	 QueryStringBuilder.cpp \
+																	 RouteMatchInfo.cpp \
 																	 Uri.cpp)
 
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_EXCEPTION_DIR), ErrorCodeException.cpp \

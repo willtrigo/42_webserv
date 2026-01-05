@@ -1,40 +1,39 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   RouteException.hpp                                 :+:      :+:    :+:   */
+/*   RouteMatchInfoException.hpp                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/12/24 21:51:11 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/04 16:53:00 by dande-je         ###   ########.fr       */
+/*   Created: 2026/01/05 15:16:30 by dande-je          #+#    #+#             */
+/*   Updated: 2026/01/05 15:16:51 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef ROUTE_EXCEPTION_HPP
-#define ROUTE_EXCEPTION_HPP
+#ifndef ROUTE_MATCH_INFO_EXCEPTION_HPP
+#define ROUTE_MATCH_INFO_EXCEPTION_HPP
 
 #include "shared/exceptions/BaseException.hpp"
 
 namespace domain {
-namespace configuration {
+namespace http {
 namespace exceptions {
 
-class RouteException : public ::shared::exceptions::BaseException {
+class RouteMatchInfoException : public ::shared::exceptions::BaseException {
  public:
   enum ErrorCode {
-    INVALID_PATH,
-    INVALID_METHOD,
-    INVALID_HANDLER,
-    DUPLICATE_ROUTE,
-    CONFIGURATION_ERROR,
+    INVALID_RESOLVED_PATH,
+    INVALID_FILE_TO_SERVE,
+    INVALID_QUERY_PARAMS,
+    RESOLUTION_ERROR,
     CODE_COUNT
   };
 
-  explicit RouteException(const std::string& message, ErrorCode code);
-  RouteException(const RouteException& other);
-  virtual ~RouteException() throw();
+  explicit RouteMatchInfoException(const std::string& message, ErrorCode code);
+  RouteMatchInfoException(const RouteMatchInfoException& other);
+  virtual ~RouteMatchInfoException() throw();
 
-  RouteException& operator=(const RouteException& other);
+  RouteMatchInfoException& operator=(const RouteMatchInfoException& other);
 
  private:
   static const std::pair<ErrorCode, std::string> K_CODE_MSGS[];
@@ -43,7 +42,7 @@ class RouteException : public ::shared::exceptions::BaseException {
 };
 
 }  // namespace exceptions
-}  // namespace configuration
+}  // namespace http
 }  // namespace domain
 
-#endif  // ROUTE_EXCEPTION_HPP
+#endif  // ROUTE_MATCH_INFO_EXCEPTION_HPP

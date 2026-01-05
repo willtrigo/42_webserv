@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/24 21:56:57 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 22:53:47 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/05 15:20:56 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,8 +18,6 @@
 namespace domain {
 namespace configuration {
 namespace value_objects {
-
-Route::MatchInfo::MatchInfo() : isDirectory(false) {}
 
 Route::Route()
     : m_handlerType(STATIC_FILE),
@@ -100,9 +98,7 @@ bool Route::allowsMethod(const http::value_objects::HttpMethod& method) const {
 
 bool Route::matches(const std::string& requestPath) const {
   if (requestPath.empty()) {
-    std::ostringstream oss;
-    oss << "Empty request path";
-    throw exceptions::RouteException(oss.str(),
+    throw exceptions::RouteException("Empty request path",
                                      exceptions::RouteException::INVALID_PATH);
   }
 
@@ -128,10 +124,9 @@ bool Route::allowsDirectoryListing() const {
 
 void Route::setRootDirectory(const std::string& root) {
   if (root.empty()) {
-    std::ostringstream oss;
-    oss << "Root directory cannot be empty";
     throw exceptions::RouteException(
-        oss.str(), exceptions::RouteException::CONFIGURATION_ERROR);
+        "Root directory cannot be empty",
+        exceptions::RouteException::CONFIGURATION_ERROR);
   }
 
   try {
@@ -165,10 +160,9 @@ void Route::setIndexFile(const std::string& index) {
 
 void Route::setUploadDirectory(const std::string& uploadDir) {
   if (uploadDir.empty()) {
-    std::ostringstream oss;
-    oss << "Upload directory cannot be empty";
     throw exceptions::RouteException(
-        oss.str(), exceptions::RouteException::CONFIGURATION_ERROR);
+        "Upload directory cannot be empty",
+        exceptions::RouteException::CONFIGURATION_ERROR);
   }
 
   try {
@@ -184,10 +178,9 @@ void Route::setUploadDirectory(const std::string& uploadDir) {
 
 void Route::setMaxBodySize(const filesystem::value_objects::Size& maxSize) {
   if (maxSize.getBytes() == 0) {
-    std::ostringstream oss;
-    oss << "Max body size cannot be zero";
     throw exceptions::RouteException(
-        oss.str(), exceptions::RouteException::CONFIGURATION_ERROR);
+        "Max body size cannot be zero",
+        exceptions::RouteException::CONFIGURATION_ERROR);
   }
 
   m_maxBodySize = maxSize;
@@ -198,10 +191,9 @@ void Route::setDirectoryListing(bool enable) { m_directoryListing = enable; }
 void Route::setCgiConfig(const std::string& interpreter,
                          const std::string& extension) {
   if (interpreter.empty()) {
-    std::ostringstream oss;
-    oss << "CGI interpreter cannot be empty";
     throw exceptions::RouteException(
-        oss.str(), exceptions::RouteException::CONFIGURATION_ERROR);
+        "CGI interpreter cannot be empty",
+        exceptions::RouteException::CONFIGURATION_ERROR);
   }
 
   if (extension.empty() || extension[0] != '.') {
@@ -218,10 +210,9 @@ void Route::setCgiConfig(const std::string& interpreter,
 void Route::setRedirect(const std::string& target,
                         const shared::value_objects::ErrorCode& code) {
   if (target.empty()) {
-    std::ostringstream oss;
-    oss << "Redirect target cannot be empty";
     throw exceptions::RouteException(
-        oss.str(), exceptions::RouteException::CONFIGURATION_ERROR);
+        "Redirect target cannot be empty",
+        exceptions::RouteException::CONFIGURATION_ERROR);
   }
 
   if (!code.isRedirection()) {
@@ -273,38 +264,40 @@ shared::value_objects::ErrorCode Route::getRedirectCode() const {
   return m_redirectCode;
 }
 
-Route::MatchInfo Route::resolveRequest(
+http::value_objects::RouteMatchInfo Route::resolveRequest(
     const std::string& requestPath,
     const std::map<std::string, std::string>& queryParams) const {
   if (requestPath.empty()) {
-    std::ostringstream oss;
-    oss << "Cannot resolve empty request path";
-    throw exceptions::RouteException(oss.str(),
+    throw exceptions::RouteException("Cannot resolve empty request path",
                                      exceptions::RouteException::INVALID_PATH);
   }
 
-  MatchInfo info;
-
   try {
     filesystem::value_objects::Path fullPath = buildFullPath(requestPath);
-    info.resolvedPath = fullPath;
-    info.queryParams = queryParams;
-
     std::string pathStr = fullPath.toString();
-    info.isDirectory =
+    bool isDirectory =
         (!pathStr.empty() && pathStr[pathStr.length() - 1] == '/');
+    std::string fileToServe = findFileToServe(fullPath);
 
-    info.fileToServe = findFileToServe(fullPath);
+    if (isDirectory) {
+      return http::value_objects::RouteMatchInfo::createForDirectory(fullPath);
+    }
+
+    if (queryParams.empty()) {
+      return http::value_objects::RouteMatchInfo::createForFile(fullPath,
+                                                                fileToServe);
+    }
+
+    return http::value_objects::RouteMatchInfo::createForFileWithQuery(
+        fullPath, fileToServe, queryParams);
 
   } catch (const std::exception& e) {
     std::ostringstream oss;
     oss << "Failed to resolve request path '" << requestPath
         << "': " << e.what();
-    throw exceptions::RouteException(
-        oss.str(), exceptions::RouteException::FILE_NOT_FOUND);
+    throw exceptions::RouteException(oss.str(),
+                                     exceptions::RouteException::INVALID_PATH);
   }
-
-  return info;
 }
 
 filesystem::value_objects::Path Route::buildFullPath(
@@ -348,16 +341,12 @@ bool Route::isPathMatch(const std::string& requestPath) const {
   std::string pattern = m_pathPattern.toString();
 
   if (pattern.empty()) {
-    std::ostringstream oss;
-    oss << "Route pattern is empty";
-    throw exceptions::RouteException(oss.str(),
+    throw exceptions::RouteException("Route pattern is empty",
                                      exceptions::RouteException::INVALID_PATH);
   }
 
   if (requestPath.empty()) {
-    std::ostringstream oss;
-    oss << "Request path is empty";
-    throw exceptions::RouteException(oss.str(),
+    throw exceptions::RouteException("Request path is empty",
                                      exceptions::RouteException::INVALID_PATH);
   }
 
@@ -391,27 +380,20 @@ bool Route::isPathMatch(const std::string& requestPath) const {
   return false;
 }
 
-// TODO:Check if index file exists (in a real implementation, you'd check
-// filesystem) For now, we'll just return it
 std::string Route::findFileToServe(
     const filesystem::value_objects::Path& fullPath) const {
   std::string pathStr = fullPath.toString();
 
   if (pathStr.empty()) {
-    std::ostringstream oss;
-    oss << "Empty path for file serving";
-    throw exceptions::RouteException(
-        oss.str(), exceptions::RouteException::FILE_NOT_FOUND);
+    throw exceptions::RouteException("Empty path for file serving",
+                                     exceptions::RouteException::INVALID_PATH);
   }
 
-  // If it's not a directory (doesn't end with '/'), return the path itself
   if (pathStr.empty() || pathStr[pathStr.length() - 1] != '/') {
     return pathStr;
   }
 
-  // It's a directory, check for index file
   if (!m_indexFile.empty()) {
-    // Build path to index file
     std::string indexPath = pathStr;
     if (!indexPath.empty() && indexPath[indexPath.length() - 1] != '/') {
       indexPath += '/';
@@ -421,13 +403,10 @@ std::string Route::findFileToServe(
     return indexPath;
   }
 
-  // No index file specified, check if directory listing is enabled
   if (m_directoryListing && m_handlerType == DIRECTORY_LISTING) {
-    // Return the directory path itself for listing
     return pathStr;
   }
 
-  // Default: return the path as is
   return pathStr;
 }
 
