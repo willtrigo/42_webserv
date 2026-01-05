@@ -6,13 +6,14 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 16:14:41 by umeneses          #+#    #+#             */
-/*   Updated: 2025/12/30 16:18:02 by umeneses         ###   ########.fr       */
+/*   Updated: 2026/01/04 22:05:43 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <gtest/gtest.h>
-#include "domain/shared/value_objects/RegexPattern.hpp"
 #include "domain/shared/exceptions/RegexPatternException.hpp"
+#include "domain/shared/value_objects/RegexPattern.hpp"
+
+#include <gtest/gtest.h>
 
 using namespace domain::shared::value_objects;
 using namespace domain::shared::exceptions;
@@ -52,7 +53,7 @@ TEST_F(RegexPatternTest, ConstructWithPatternAndFlags) {
 TEST_F(RegexPatternTest, CopyConstructor) {
   RegexPattern original("test.*", RegexPattern::FLAG_MULTILINE);
   RegexPattern copy(original);
-  
+
   EXPECT_EQ(original.getPattern(), copy.getPattern());
   EXPECT_EQ(original.getFlags(), copy.getFlags());
 }
@@ -60,7 +61,7 @@ TEST_F(RegexPatternTest, CopyConstructor) {
 TEST_F(RegexPatternTest, AssignmentOperator) {
   RegexPattern pattern1("pattern1");
   RegexPattern pattern2("pattern2", RegexPattern::FLAG_CASE_INSENSITIVE);
-  
+
   pattern1 = pattern2;
   EXPECT_EQ("pattern2", pattern1.getPattern());
   EXPECT_EQ(RegexPattern::FLAG_CASE_INSENSITIVE, pattern1.getFlags());
@@ -69,7 +70,7 @@ TEST_F(RegexPatternTest, AssignmentOperator) {
 TEST_F(RegexPatternTest, SelfAssignment) {
   RegexPattern pattern("test", RegexPattern::FLAG_MULTILINE);
   pattern = pattern;
-  
+
   EXPECT_EQ("test", pattern.getPattern());
   EXPECT_EQ(RegexPattern::FLAG_MULTILINE, pattern.getFlags());
 }
@@ -84,8 +85,10 @@ TEST_F(RegexPatternTest, GetPattern) {
 }
 
 TEST_F(RegexPatternTest, GetFlags) {
-  RegexPattern pattern("test", RegexPattern::FLAG_CASE_INSENSITIVE | RegexPattern::FLAG_MULTILINE);
-  EXPECT_EQ(RegexPattern::FLAG_CASE_INSENSITIVE | RegexPattern::FLAG_MULTILINE, pattern.getFlags());
+  RegexPattern pattern("test", RegexPattern::FLAG_CASE_INSENSITIVE |
+                                   RegexPattern::FLAG_MULTILINE);
+  EXPECT_EQ(RegexPattern::FLAG_CASE_INSENSITIVE | RegexPattern::FLAG_MULTILINE,
+            pattern.getFlags());
 }
 
 TEST_F(RegexPatternTest, GetFlagsString) {
@@ -99,8 +102,8 @@ TEST_F(RegexPatternTest, ToString) {
 }
 
 TEST_F(RegexPatternTest, GetPatternEmpty) {
-  RegexPattern pattern("");
-  EXPECT_EQ("", pattern.getPattern());
+  // Empty patterns are invalid and should throw
+  EXPECT_THROW(RegexPattern(""), RegexPatternException);
 }
 
 // ============================================================================
@@ -110,10 +113,10 @@ TEST_F(RegexPatternTest, GetPatternEmpty) {
 TEST_F(RegexPatternTest, SetFlagCaseInsensitive) {
   RegexPattern pattern("test");
   EXPECT_FALSE(pattern.hasFlag(RegexPattern::FLAG_CASE_INSENSITIVE));
-  
+
   pattern.setFlag(RegexPattern::FLAG_CASE_INSENSITIVE, true);
   EXPECT_TRUE(pattern.hasFlag(RegexPattern::FLAG_CASE_INSENSITIVE));
-  
+
   pattern.setFlag(RegexPattern::FLAG_CASE_INSENSITIVE, false);
   EXPECT_FALSE(pattern.hasFlag(RegexPattern::FLAG_CASE_INSENSITIVE));
 }
@@ -121,7 +124,7 @@ TEST_F(RegexPatternTest, SetFlagCaseInsensitive) {
 TEST_F(RegexPatternTest, SetFlagMultiline) {
   RegexPattern pattern("test");
   EXPECT_FALSE(pattern.hasFlag(RegexPattern::FLAG_MULTILINE));
-  
+
   pattern.setFlag(RegexPattern::FLAG_MULTILINE, true);
   EXPECT_TRUE(pattern.hasFlag(RegexPattern::FLAG_MULTILINE));
 }
@@ -129,7 +132,7 @@ TEST_F(RegexPatternTest, SetFlagMultiline) {
 TEST_F(RegexPatternTest, SetFlagDotall) {
   RegexPattern pattern("test");
   EXPECT_FALSE(pattern.hasFlag(RegexPattern::FLAG_DOTALL));
-  
+
   pattern.setFlag(RegexPattern::FLAG_DOTALL, true);
   EXPECT_TRUE(pattern.hasFlag(RegexPattern::FLAG_DOTALL));
 }
@@ -137,17 +140,17 @@ TEST_F(RegexPatternTest, SetFlagDotall) {
 TEST_F(RegexPatternTest, SetFlagExtended) {
   RegexPattern pattern("test");
   EXPECT_FALSE(pattern.hasFlag(RegexPattern::FLAG_EXTENDED));
-  
+
   pattern.setFlag(RegexPattern::FLAG_EXTENDED, true);
   EXPECT_TRUE(pattern.hasFlag(RegexPattern::FLAG_EXTENDED));
 }
 
 TEST_F(RegexPatternTest, SetMultipleFlags) {
   RegexPattern pattern("test");
-  
+
   pattern.setFlag(RegexPattern::FLAG_CASE_INSENSITIVE, true);
   pattern.setFlag(RegexPattern::FLAG_MULTILINE, true);
-  
+
   EXPECT_TRUE(pattern.hasFlag(RegexPattern::FLAG_CASE_INSENSITIVE));
   EXPECT_TRUE(pattern.hasFlag(RegexPattern::FLAG_MULTILINE));
   EXPECT_FALSE(pattern.hasFlag(RegexPattern::FLAG_DOTALL));
@@ -180,7 +183,7 @@ TEST_F(RegexPatternTest, IsValidPatternTooLong) {
 TEST_F(RegexPatternTest, IsSimplePatternLiteral) {
   EXPECT_TRUE(RegexPattern::isSimplePattern("test"));
   EXPECT_TRUE(RegexPattern::isSimplePattern("hello"));
-  EXPECT_TRUE(RegexPattern::isSimplePattern("file.txt"));
+  EXPECT_TRUE(RegexPattern::isSimplePattern("file\\.txt"));
 }
 
 TEST_F(RegexPatternTest, IsSimplePatternComplex) {
@@ -296,7 +299,8 @@ TEST_F(RegexPatternTest, HasFlagSingle) {
 }
 
 TEST_F(RegexPatternTest, HasFlagMultiple) {
-  RegexPattern pattern("test", RegexPattern::FLAG_CASE_INSENSITIVE | RegexPattern::FLAG_MULTILINE);
+  RegexPattern pattern("test", RegexPattern::FLAG_CASE_INSENSITIVE |
+                                   RegexPattern::FLAG_MULTILINE);
   EXPECT_TRUE(pattern.hasFlag(RegexPattern::FLAG_CASE_INSENSITIVE));
   EXPECT_TRUE(pattern.hasFlag(RegexPattern::FLAG_MULTILINE));
   EXPECT_FALSE(pattern.hasFlag(RegexPattern::FLAG_DOTALL));
@@ -304,13 +308,13 @@ TEST_F(RegexPatternTest, HasFlagMultiple) {
 
 TEST_F(RegexPatternTest, ToggleFlag) {
   RegexPattern pattern("test");
-  
+
   pattern.setFlag(RegexPattern::FLAG_CASE_INSENSITIVE, true);
   EXPECT_TRUE(pattern.hasFlag(RegexPattern::FLAG_CASE_INSENSITIVE));
-  
+
   pattern.setFlag(RegexPattern::FLAG_CASE_INSENSITIVE, false);
   EXPECT_FALSE(pattern.hasFlag(RegexPattern::FLAG_CASE_INSENSITIVE));
-  
+
   pattern.setFlag(RegexPattern::FLAG_CASE_INSENSITIVE, true);
   EXPECT_TRUE(pattern.hasFlag(RegexPattern::FLAG_CASE_INSENSITIVE));
 }
@@ -326,7 +330,8 @@ TEST_F(RegexPatternTest, FromString) {
 }
 
 TEST_F(RegexPatternTest, FromStringWithFlags) {
-  RegexPattern pattern = RegexPattern::fromString("test", RegexPattern::FLAG_CASE_INSENSITIVE);
+  RegexPattern pattern =
+      RegexPattern::fromString("test", RegexPattern::FLAG_CASE_INSENSITIVE);
   EXPECT_EQ("test", pattern.getPattern());
   EXPECT_EQ(RegexPattern::FLAG_CASE_INSENSITIVE, pattern.getFlags());
 }
@@ -335,7 +340,8 @@ TEST_F(RegexPatternTest, LiteralFactory) {
   RegexPattern pattern = RegexPattern::literal("test.*");
   std::string patternStr = pattern.getPattern();
   EXPECT_NE("test.*", patternStr);
-  EXPECT_TRUE(patternStr.find("\\") != std::string::npos || patternStr != "test.*");
+  EXPECT_TRUE(patternStr.find("\\") != std::string::npos ||
+              patternStr != "test.*");
 }
 
 TEST_F(RegexPatternTest, CaseInsensitiveFactory) {
@@ -359,7 +365,7 @@ TEST_F(RegexPatternTest, PythonExtensionFactory) {
 
 TEST_F(RegexPatternTest, ImageExtensionsFactory) {
   RegexPattern pattern = RegexPattern::imageExtensions();
-  EXPECT_TRUE(pattern.matches("jpg") || pattern.matches("jpeg") || 
+  EXPECT_TRUE(pattern.matches("jpg") || pattern.matches("jpeg") ||
               pattern.matches("png") || pattern.matches("gif"));
 }
 
@@ -371,7 +377,7 @@ TEST_F(RegexPatternTest, EqualityOperator) {
   RegexPattern pattern1("test");
   RegexPattern pattern2("test");
   RegexPattern pattern3("other");
-  
+
   EXPECT_TRUE(pattern1 == pattern2);
   EXPECT_FALSE(pattern1 == pattern3);
 }
@@ -380,7 +386,7 @@ TEST_F(RegexPatternTest, InequalityOperator) {
   RegexPattern pattern1("test");
   RegexPattern pattern2("other");
   RegexPattern pattern3("test");
-  
+
   EXPECT_TRUE(pattern1 != pattern2);
   EXPECT_FALSE(pattern1 != pattern3);
 }
@@ -388,7 +394,7 @@ TEST_F(RegexPatternTest, InequalityOperator) {
 TEST_F(RegexPatternTest, LessThanOperator) {
   RegexPattern pattern1("aaa");
   RegexPattern pattern2("bbb");
-  
+
   EXPECT_TRUE(pattern1 < pattern2);
   EXPECT_FALSE(pattern2 < pattern1);
 }
@@ -396,6 +402,6 @@ TEST_F(RegexPatternTest, LessThanOperator) {
 TEST_F(RegexPatternTest, EqualityWithDifferentFlags) {
   RegexPattern pattern1("test", RegexPattern::FLAG_CASE_INSENSITIVE);
   RegexPattern pattern2("test", RegexPattern::FLAG_MULTILINE);
-  
+
   EXPECT_FALSE(pattern1 == pattern2);
 }

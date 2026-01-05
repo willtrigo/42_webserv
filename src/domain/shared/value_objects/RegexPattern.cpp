@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/21 10:55:26 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/04 21:44:17 by umeneses         ###   ########.fr       */
+/*   Updated: 2026/01/04 22:04:40 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -124,18 +124,13 @@ bool RegexPattern::isValidPattern(const std::string& pattern) {
 
 bool RegexPattern::isSimplePattern(const std::string& pattern) {
   for (std::size_t index = 0; index < pattern.length(); ++index) {
-    if (pattern[index] == '.') {
-      if (index + 1 < pattern.length() &&
-          (pattern[index + 1] == '*' || pattern[index + 1] == '+')) {
-        return false;
-      }
+    if (pattern[index] == BACKSLASH) {
+      ++index;
       continue;
     }
 
     if (isSpecialCharacter(pattern[index], SPECIAL_CHARACTERS)) {
-      if (index == 0 || pattern[index - 1] != BACKSLASH) {
-        return false;
-      }
+      return false;
     }
   }
   return true;
@@ -193,7 +188,6 @@ bool RegexPattern::matches(const std::string& text) const {
 
   int compileResult = regcomp(&regex, m_pattern.c_str(), cflags);
   if (compileResult != 0) {
-    regfree(&regex);
     return false;
   }
 
@@ -277,7 +271,9 @@ std::size_t RegexPattern::length() const { return m_pattern.length(); }
 
 void RegexPattern::validatePattern(const std::string& pattern) {
   if (pattern.empty()) {
-    return;
+    throw shared::exceptions::RegexPatternException(
+        "Pattern cannot be empty",
+        shared::exceptions::RegexPatternException::EMPTY_PATTERN);
   }
   if (pattern.length() > MAX_PATTERN_LENGTH) {
     throw shared::exceptions::RegexPatternException(
