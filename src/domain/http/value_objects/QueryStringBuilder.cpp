@@ -3,15 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   QueryStringBuilder.cpp                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/23 00:39:57 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 03:22:43 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/04 15:50:20 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "domain/http/exceptions/QueryStringBuilderException.hpp"
 #include "domain/http/value_objects/QueryStringBuilder.hpp"
+#include "domain/http/value_objects/Uri.hpp"
 
 #include <cctype>
 #include <cstdlib>
@@ -27,6 +28,16 @@ QueryStringBuilder::QueryStringBuilder() {}
 QueryStringBuilder::QueryStringBuilder(const std::string& baseUrl)
     : m_baseUrl(baseUrl) {
   validateBaseUrl(baseUrl);
+  
+  std::size_t questionPos = baseUrl.find('?');
+  if (questionPos != std::string::npos) {
+    m_baseUrl = baseUrl.substr(0, questionPos);
+    std::string queryString = baseUrl.substr(questionPos + 1);
+    
+    if (!queryString.empty()) {
+      m_parameters = parseQueryString(queryString).m_parameters;
+    }
+  }
 }
 
 QueryStringBuilder::~QueryStringBuilder() {}
@@ -56,6 +67,25 @@ void QueryStringBuilder::validateBaseUrl(const std::string& url) {
         << " characters (max: " << MAX_URL_LENGTH << ")";
     throw exceptions::QueryStringBuilderException(
         oss.str(), exceptions::QueryStringBuilderException::INVALID_URL_FORMAT);
+  }
+
+  bool hasScheme = url.find("://") != std::string::npos;
+  bool isRelative = !url.empty() && url[0] == '/';
+  
+  if (!hasScheme && !isRelative) {
+    throw exceptions::QueryStringBuilderException(
+        "Invalid URL format: must be absolute (with ://) or relative (starting with /)",
+        exceptions::QueryStringBuilderException::INVALID_URL_FORMAT);
+  }
+
+  if (hasScheme) {
+    try {
+      Uri uri(url);
+    } catch (const std::exception& e) {
+      throw exceptions::QueryStringBuilderException(
+          std::string("Invalid URL format: ") + e.what(),
+          exceptions::QueryStringBuilderException::INVALID_URL_FORMAT);
+    }
   }
 }
 
@@ -154,6 +184,11 @@ void QueryStringBuilder::addParameter(const std::string& key,
   addParameterInternal(key, value);
 }
 
+void QueryStringBuilder::addParameter(const std::string& key,
+                                      const char* value) {
+  addParameterInternal(key, std::string(value));
+}
+
 void QueryStringBuilder::addParameter(const std::string& key, int value) {
   addParameterInternal(key, value);
 }
@@ -176,6 +211,11 @@ void QueryStringBuilder::setParameter(const std::string& key,
   validateParameterValue(value);
   m_parameters[key] = value;
   validateParameterCount();
+}
+
+void QueryStringBuilder::setParameter(const std::string& key,
+                                      const char* value) {
+  setParameter(key, std::string(value));
 }
 
 void QueryStringBuilder::setParameter(const std::string& key, int value) {
@@ -314,8 +354,6 @@ QueryStringBuilder::getParametersVector() const {
 }
 
 std::string QueryStringBuilder::build() const {
-  validateUrlLength();
-
   std::ostringstream result;
   result << m_baseUrl;
 
@@ -476,7 +514,7 @@ QueryStringBuilder QueryStringBuilder::fromString(const std::string& url) {
 // TODO: refactor this func
 QueryStringBuilder QueryStringBuilder::parseQueryString(
     const std::string& queryString) {
-  QueryStringBuilder builder("");
+  QueryStringBuilder builder;
 
   if (queryString.empty()) {
     return builder;
@@ -505,26 +543,15 @@ QueryStringBuilder QueryStringBuilder::parseQueryString(
       std::string value = decode(pair.substr(equalPos + 1));
 
       if (!isValidParameterName(key)) {
-        std::ostringstream oss;
-        oss << "Invalid parameter name: '" << key << "'";
-        throw exceptions::QueryStringBuilderException(
-            oss.str(),
-            exceptions::QueryStringBuilderException::INVALID_PARAMETER_NAME);
+        continue;
       }
 
-      builder.m_parameters[key] = value;
+      if (builder.m_parameters.find(key) == builder.m_parameters.end()) {
+        builder.m_parameters[key] = value;
+      }
     } else {
-      std::string key = decode(pair);
-
-      if (!isValidParameterName(key)) {
-        std::ostringstream oss;
-        oss << "Invalid parameter name: '" << key << "'";
-        throw exceptions::QueryStringBuilderException(
-            oss.str(),
-            exceptions::QueryStringBuilderException::INVALID_PARAMETER_NAME);
-      }
-
-      builder.m_parameters[key] = "";
+      // Skip parameters without '=' (considered invalid during parsing)
+      continue;
     }
   }
 

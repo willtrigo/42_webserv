@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/29 14:21:59 by umeneses          #+#    #+#             */
-/*   Updated: 2025/12/29 21:36:10 by umeneses         ###   ########.fr       */
+/*   Updated: 2026/01/04 15:38:25 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -366,7 +366,18 @@ TEST_F(QueryStringBuilderTest, ParseAndBuildRoundtrip) {
   QueryStringBuilder builder = QueryStringBuilder::fromString(originalUrl);
   std::string rebuiltUrl = builder.build();
   
-  EXPECT_EQ(originalUrl, rebuiltUrl);
+  // Note: Parameter order may differ due to std::map sorting (alphabetical)
+  // Check that all parameters are preserved correctly
+  EXPECT_EQ("http://example.com/search", builder.getBaseUrl());
+  EXPECT_EQ(3, builder.getParameterCount());
+  EXPECT_EQ("webserver", builder.getParameter("q"));
+  EXPECT_EQ("2", builder.getParameter("page"));
+  EXPECT_EQ("10", builder.getParameter("limit"));
+  
+  // Verify the rebuilt URL contains all parameters with correct encoding
+  EXPECT_TRUE(rebuiltUrl.find("q=webserver") != std::string::npos);
+  EXPECT_TRUE(rebuiltUrl.find("page=2") != std::string::npos);
+  EXPECT_TRUE(rebuiltUrl.find("limit=10") != std::string::npos);
 }
 
 TEST_F(QueryStringBuilderTest, ParseEmpty) {
@@ -391,9 +402,7 @@ TEST_F(QueryStringBuilderTest, ParseEmpty) {
 // - isValidUrl() → Test through URL validation edge cases
 // - validateParameterKey() → Test through invalid keys
 // - validateParameterValue() → Test through invalid values
-//
-// Example test structure (commented out until segfault is fixed):
-/*
+
 TEST_F(QueryStringBuilderTest, ValidateUrlFormat) {
   EXPECT_THROW(QueryStringBuilder("not-a-url"), domain::http::exceptions::QueryStringBuilderException);
   EXPECT_THROW(QueryStringBuilder("http://"), domain::http::exceptions::QueryStringBuilderException);
@@ -417,4 +426,4 @@ TEST_F(QueryStringBuilderTest, EncodeSpecialCharacters) {
   EXPECT_TRUE(url.find("%26") != std::string::npos);
   EXPECT_TRUE(url.find("%3D") != std::string::npos);
 }
-*/
+
