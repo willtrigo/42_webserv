@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 11:08:29 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/01 18:41:39 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/04 15:04:49 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -105,6 +105,7 @@ class ErrorCode {
 
   unsigned int getValue() const;
   std::string toString() const;
+  std::string toStatusLine() const;
   std::string getDescription() const;
 
   static bool isValidErrorCode(unsigned int code);

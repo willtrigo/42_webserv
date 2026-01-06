@@ -1,40 +1,45 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   RouteMatcherException.hpp                          :+:      :+:    :+:   */
+/*   CgiExecutionException.hpp                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/12/24 20:37:18 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/04 16:40:36 by dande-je         ###   ########.fr       */
+/*   Created: 2026/01/05 17:38:18 by dande-je          #+#    #+#             */
+/*   Updated: 2026/01/05 17:49:08 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef ROUTEMATCHEREXCEPTION_HPP
-#define ROUTEMATCHEREXCEPTION_HPP
+#ifndef CGI_EXECUTION_EXCEPTION_HPP
+#define CGI_EXECUTION_EXCEPTION_HPP
 
 #include "shared/exceptions/BaseException.hpp"
 
 namespace infrastructure {
-namespace network {
+namespace cgi {
 namespace exceptions {
 
-class RouteMatcherException : public ::shared::exceptions::BaseException {
+class CgiExecutionException : public ::shared::exceptions::BaseException {
  public:
   enum ErrorCode {
-    ROUTE_NOT_FOUND,
-    METHOD_NOT_ALLOWED,
-    NO_MATCHING_ROUTE,
-    INVALID_REQUEST_PATH,
-    MATCHING_FAILED,
+    FORK_FAILED,
+    EXEC_FAILED,
+    PIPE_FAILED,
+    SCRIPT_NOT_FOUND,
+    SCRIPT_NOT_EXECUTABLE,
+    TIMEOUT,
+    INVALID_OUTPUT,
+    PROCESS_ERROR,
+    ENVIRONMENT_ERROR,
+    INTERPRETER_NOT_FOUND,
     CODE_COUNT
   };
 
-  explicit RouteMatcherException(const std::string& msg, ErrorCode code);
-  RouteMatcherException(const RouteMatcherException& other);
-  virtual ~RouteMatcherException() throw();
+  explicit CgiExecutionException(const std::string& message, ErrorCode code);
+  CgiExecutionException(const CgiExecutionException& other);
+  virtual ~CgiExecutionException() throw();
 
-  RouteMatcherException& operator=(const RouteMatcherException& other);
+  CgiExecutionException& operator=(const CgiExecutionException& other);
 
  private:
   static const std::pair<ErrorCode, std::string> K_CODE_MSGS[];
@@ -43,7 +48,7 @@ class RouteMatcherException : public ::shared::exceptions::BaseException {
 };
 
 }  // namespace exceptions
-}  // namespace network
+}  // namespace cgi
 }  // namespace infrastructure
 
-#endif  // ROUTEMATCHEREXCEPTION_HPP
+#endif  // CGI_EXECUTION_EXCEPTION_HPP

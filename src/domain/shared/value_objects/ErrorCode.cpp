@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 11:20:04 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 20:10:23 by umeneses         ###   ########.fr       */
+/*   Updated: 2026/01/04 15:04:35 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -104,6 +104,12 @@ unsigned int ErrorCode::getValue() const { return m_value; }
 std::string ErrorCode::toString() const {
   std::ostringstream oss;
   oss << m_value;
+  return oss.str();
+}
+
+std::string ErrorCode::toStatusLine() const {
+  std::ostringstream oss;
+  oss << m_value << " " << getDescription();
   return oss.str();
 }
 

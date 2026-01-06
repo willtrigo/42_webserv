@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/12 17:36:08 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/14 20:13:16 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/06 19:57:30 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@ int main(int argc, char** argv) {
   infrastructure::logging::Logger logger(consoleWriter, logFile);
 
   CliView view(logger);
-  CliController controller(view);
+  presentation::cli::CliController controller(view);
   
   return controller.run(argc, argv) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

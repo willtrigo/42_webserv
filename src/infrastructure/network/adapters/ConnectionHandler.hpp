@@ -6,24 +6,32 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 11:57:13 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/04 01:11:20 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/06 04:59:04 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef INFRASTRUCTURE_NETWORK_CONNECTIONHANDLER_HPP
-#define INFRASTRUCTURE_NETWORK_CONNECTIONHANDLER_HPP
+#ifndef CONNECTIONHANDLER_HPP
+#define CONNECTIONHANDLER_HPP
 
 #include "application/ports/IConfigProvider.hpp"
 #include "application/ports/ILogger.hpp"
+#include "domain/configuration/entities/LocationConfig.hpp"
 #include "domain/configuration/entities/ServerConfig.hpp"
+#include "domain/configuration/value_objects/Route.hpp"
+#include "domain/filesystem/value_objects/Path.hpp"
+#include "domain/http/entities/HttpRequest.hpp"
+#include "domain/http/entities/HttpResponse.hpp"
+#include "domain/shared/value_objects/ErrorCode.hpp"
+#include "infrastructure/network/adapters/TcpSocket.hpp"
+#include "infrastructure/cgi/primitives/CgiResponse.hpp"
 
+#include <ctime>
+#include <map>
 #include <string>
 
 namespace infrastructure {
 namespace network {
 namespace adapters {
-
-class TcpSocket;
 
 class ConnectionHandler {
  public:
@@ -34,6 +42,11 @@ class ConnectionHandler {
     STATE_KEEP_ALIVE,
     STATE_CLOSING
   };
+
+  static const size_t K_READ_BUFFER_SIZE = 8192;
+  static const time_t K_CONNECTION_TIMEOUT = 60;
+  static const time_t K_KEEPALIVE_TIMEOUT = 5;
+  static const size_t K_MAX_REQUEST_SIZE = 1048576;
 
   ConnectionHandler(
       TcpSocket* socket,
@@ -48,9 +61,7 @@ class ConnectionHandler {
   bool shouldClose() const;
 
   State getState() const;
-
   int getFd() const;
-
   std::string getRemoteAddress() const;
 
   bool isTimedOut(time_t currentTime) const;
@@ -61,24 +72,115 @@ class ConnectionHandler {
   ConnectionHandler(const ConnectionHandler&);
   ConnectionHandler& operator=(const ConnectionHandler&);
 
-  void handleRead();
+  // ========== CORE EVENT HANDLING ==========
 
+  void handleRead();
   void handleWrite();
 
   bool parseRequest();
 
   void processRequest();
 
+  // ========== VIRTUAL HOST RESOLUTION ==========
+
   const domain::configuration::entities::ServerConfig* resolveVirtualHost();
 
-  void generateErrorResponse(int statusCode, const std::string& message);
+  // ========== LOCATION MATCHING ==========
+
+  const domain::configuration::entities::LocationConfig* findMatchingLocation(
+      const domain::configuration::entities::ServerConfig* serverConfig,
+      const std::string& requestPath) const;
+
+  // ========== HTTP METHOD HANDLERS ==========
+
+  void handleGetRequest(
+      const domain::configuration::value_objects::Route& route,
+      const domain::configuration::entities::LocationConfig& location,
+      const domain::filesystem::value_objects::Path& requestPath);
+
+  void handlePostRequest(
+      const domain::configuration::value_objects::Route& route,
+      const domain::configuration::entities::LocationConfig& location,
+      const domain::filesystem::value_objects::Path& requestPath);
+
+  void handleDeleteRequest(
+      const domain::configuration::value_objects::Route& route,
+      const domain::configuration::entities::LocationConfig& location,
+      const domain::filesystem::value_objects::Path& requestPath);
+
+  // ========== RESOURCE HANDLERS ==========
+
+  void handleDirectoryRequest(
+      const domain::configuration::entities::LocationConfig& location,
+      const domain::filesystem::value_objects::Path& directoryPath,
+      const domain::filesystem::value_objects::Path& requestPath);
+
+  void handleStaticFileRequest(
+      const domain::configuration::entities::LocationConfig& location,
+      const domain::filesystem::value_objects::Path& filePath);
+
+  void handleDirectoryListing(
+      const domain::filesystem::value_objects::Path& directoryPath,
+      const domain::filesystem::value_objects::Path& requestPath);
+
+  void handleCgiRequest(
+      const domain::configuration::entities::LocationConfig& location,
+      const domain::filesystem::value_objects::Path& scriptPath);
+
+  void handleFileUpload(
+      const domain::configuration::entities::LocationConfig& location,
+      const domain::filesystem::value_objects::Path& requestPath);
+
+  // ========== SPECIAL DIRECTIVE HANDLERS ==========
+
+  void handleRedirect(
+      const domain::configuration::entities::LocationConfig& location);
+
+  void handleReturnContent(
+      const domain::configuration::entities::LocationConfig& location);
+
+  // ========== ERROR HANDLING ==========
+
+  void generateErrorResponse(
+      const domain::shared::value_objects::ErrorCode& statusCode,
+      const std::string& message);
+
+  void handleNotFound(
+      const domain::configuration::entities::LocationConfig& location);
+
+  void serveErrorPage(const std::string& errorPagePath,
+                      const domain::shared::value_objects::ErrorCode& statusCode);
+
+  // ========== VALIDATION & UTILITIES ==========
+
+  bool validateRequestBodySize(
+      const domain::configuration::entities::LocationConfig& location) const;
+
+  domain::filesystem::value_objects::Path tryFindFile(
+      const domain::configuration::entities::LocationConfig& location,
+      const domain::filesystem::value_objects::Path& requestPath) const;
+
+  void buildCgiEnvironment(
+      std::map<std::string, std::string>& env,
+      const domain::configuration::entities::LocationConfig& location,
+      const domain::filesystem::value_objects::Path& scriptPath) const;
+
+  void buildHttpResponseFromCgi(
+      const infrastructure::cgi::primitives::CgiResponse& cgiResponse);
+
+  void applyCustomHeaders(
+      const domain::configuration::entities::LocationConfig& location);
 
   bool shouldKeepAlive() const;
 
+  void resetForNextRequest();
+
   std::string formatState() const;
 
-  void logRequest(const std::string& method, const std::string& uri,
-                  int statusCode);
+  void logRequest(const domain::http::entities::HttpRequest& request,
+                  const domain::http::entities::HttpResponse& response);
+
+  // ========== MEMBER VARIABLES ==========
 
   application::ports::ILogger& m_logger;
   application::ports::IConfigProvider& m_configProvider;
@@ -90,19 +192,14 @@ class ConnectionHandler {
   time_t m_lastActivityTime;
 
   std::string m_requestBuffer;
+  domain::http::entities::HttpRequest m_request;
+  domain::http::entities::HttpResponse m_response;
   std::string m_responseBuffer;
   size_t m_responseOffset;
-
-  std::string m_requestMethod;
-  std::string m_requestUri;
-  std::string m_requestProtocol;
-
-  static const size_t K_READ_BUFFER_SIZE = 8192;
-  static const time_t K_CONNECTION_TIMEOUT = 60;
 };
 
 }  // namespace adapters
 }  // namespace network
 }  // namespace infrastructure
 
-#endif  // INFRASTRUCTURE_NETWORK_CONNECTIONHANDLER_HPP
+#endif  // CONNECTIONHANDLER_HPP

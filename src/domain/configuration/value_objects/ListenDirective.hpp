@@ -18,6 +18,7 @@
 
 #include <string>
 
+// TODO: change entities for value_objects
 namespace domain {
 namespace configuration {
 namespace entities {

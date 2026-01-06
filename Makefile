@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/12 17:14:28 by dande-je          #+#    #+#              #
-#    Updated: 2026/01/05 15:23:18 by dande-je         ###   ########.fr        #
+#    Updated: 2026/01/06 19:43:21 by dande-je         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -27,47 +27,68 @@ RESET                           := \033[0m
 
 SRCS_DIR                        := src/
 
-SRCS_APPLICATION_DIR            := $(SRCS_DIR)application/
-SRCS_USE_CASES_DIR              := $(SRCS_APPLICATION_DIR)use_cases/
-SRCS_SERVICES_DIR               := $(SRCS_APPLICATION_DIR)services/
+SRCS_APPLICATION_DIR                         := $(SRCS_DIR)application/
+SRCS_SERVICES_DIR                            := $(SRCS_APPLICATION_DIR)services/
 
+# DOMAIN
 SRCS_DOMAIN_DIR                              := $(SRCS_DIR)domain/
+
 SRCS_DOMAIN_CONFIGURATION_DIR                := $(SRCS_DOMAIN_DIR)configuration/
 SRCS_DOMAIN_CONFIGURATION_ENTITIES_DIR       := $(SRCS_DOMAIN_CONFIGURATION_DIR)entities/
 SRCS_DOMAIN_CONFIGURATION_EXCEPTIONS_DIR     := $(SRCS_DOMAIN_CONFIGURATION_DIR)exceptions/
 SRCS_DOMAIN_CONFIGURATION_VALUE_OBJECTS_DIR  := $(SRCS_DOMAIN_CONFIGURATION_DIR)value_objects/
+
 SRCS_DOMAIN_FILESYSTEM_DIR                   := $(SRCS_DOMAIN_DIR)filesystem/
 SRCS_DOMAIN_FILESYSTEM_EXCEPTIONS_DIR        := $(SRCS_DOMAIN_FILESYSTEM_DIR)exceptions/
 SRCS_DOMAIN_FILESYSTEM_SERVICES_DIR          := $(SRCS_DOMAIN_FILESYSTEM_DIR)services/
 SRCS_DOMAIN_FILESYSTEM_VALUE_OBJECTS_DIR     := $(SRCS_DOMAIN_FILESYSTEM_DIR)value_objects/
+
 SRCS_DOMAIN_HTTP_DIR                         := $(SRCS_DOMAIN_DIR)http/
+SRCS_DOMAIN_HTTP_ENTITIES_DIR                := $(SRCS_DOMAIN_HTTP_DIR)entities/
 SRCS_DOMAIN_HTTP_VALUE_OBJECTS_DIR           := $(SRCS_DOMAIN_HTTP_DIR)value_objects/
 SRCS_DOMAIN_HTTP_EXCEPTIONS_DIR              := $(SRCS_DOMAIN_HTTP_DIR)exceptions/
+
 SRCS_DOMAIN_SHARED_DIR                       := $(SRCS_DOMAIN_DIR)shared/
 SRCS_DOMAIN_SHARED_EXCEPTION_DIR             := $(SRCS_DOMAIN_SHARED_DIR)exceptions/
 SRCS_DOMAIN_SHARED_UTILS_DIR                 := $(SRCS_DOMAIN_SHARED_DIR)utils/
 SRCS_DOMAIN_SHARED_VALUE_OBJECTS_DIR         := $(SRCS_DOMAIN_SHARED_DIR)value_objects/
 
+# INFRASTRUCTURE
 SRCS_INFRASTRUCTURE_DIR                      := $(SRCS_DIR)infrastructure/
+
+SRCS_INFRASTRUCTURE_CGI_DIR                  := $(SRCS_INFRASTRUCTURE_DIR)cgi/
+SRCS_INFRASTRUCTURE_CGI_ADAPTERS_DIR         := $(SRCS_INFRASTRUCTURE_CGI_DIR)adapters/
+SRCS_INFRASTRUCTURE_CGI_EXCEPTIONS_DIR       := $(SRCS_INFRASTRUCTURE_CGI_DIR)exceptions/
+SRCS_INFRASTRUCTURE_CGI_PRIMITIVES_DIR       := $(SRCS_INFRASTRUCTURE_CGI_DIR)primitives/
+
 SRCS_INFRASTRUCTURE_CONFIG_DIR               := $(SRCS_INFRASTRUCTURE_DIR)config/
 SRCS_INFRASTRUCTURE_CONFIG_ADAPTERS_DIR      := $(SRCS_INFRASTRUCTURE_CONFIG_DIR)adapters/
 SRCS_INFRASTRUCTURE_CONFIG_EXCEPTIONS_DIR    := $(SRCS_INFRASTRUCTURE_CONFIG_DIR)exceptions/
 SRCS_INFRASTRUCTURE_CONFIG_HANDLERS_DIR      := $(SRCS_INFRASTRUCTURE_CONFIG_DIR)handlers/
 SRCS_INFRASTRUCTURE_CONFIG_LEXER_DIR         := $(SRCS_INFRASTRUCTURE_CONFIG_DIR)lexer/
 SRCS_INFRASTRUCTURE_CONFIG_PARSERS_DIR       := $(SRCS_INFRASTRUCTURE_CONFIG_DIR)parsers/
-SRCS_HTTP_DIR                   := $(SRCS_INFRASTRUCTURE_DIR)http/
-SRCS_IO_DIR                     := $(SRCS_INFRASTRUCTURE_DIR)io/
 
-SRCS_FILESYSTEM_DIR                         := $(SRCS_INFRASTRUCTURE_DIR)filesystem/
-SRCS_FILESYSTEM_ADAPTERS_DIR                := $(SRCS_FILESYSTEM_DIR)adapters/
-SRCS_FILESYSTEM_EXCEPTION_DIR               := $(SRCS_FILESYSTEM_DIR)exceptions/
+SRCS_HTTP_DIR                                := $(SRCS_INFRASTRUCTURE_DIR)http/
 
-SRCS_LOGGING_DIR                := $(SRCS_INFRASTRUCTURE_DIR)logging/
-SRCS_NETWORK_DIR                := $(SRCS_INFRASTRUCTURE_DIR)network/
+SRCS_IO_DIR                                  := $(SRCS_INFRASTRUCTURE_DIR)io/
 
-SRCS_PRESENTATION_DIR           := $(SRCS_DIR)presentation/
-SRCS_CLI_DIR                    := $(SRCS_PRESENTATION_DIR)cli/
+SRCS_FILESYSTEM_DIR                          := $(SRCS_INFRASTRUCTURE_DIR)filesystem/
+SRCS_FILESYSTEM_ADAPTERS_DIR                 := $(SRCS_FILESYSTEM_DIR)adapters/
+SRCS_FILESYSTEM_EXCEPTION_DIR                := $(SRCS_FILESYSTEM_DIR)exceptions/
 
+SRCS_LOGGING_DIR                             := $(SRCS_INFRASTRUCTURE_DIR)logging/
+
+SRCS_NETWORK_DIR                             := $(SRCS_INFRASTRUCTURE_DIR)network/
+SRCS_NETWORK_ADAPTERS_DIR                    := $(SRCS_NETWORK_DIR)adapters/
+SRCS_NETWORK_EXCEPTIONS_DIR                  := $(SRCS_NETWORK_DIR)exceptions/
+SRCS_NETWORK_HANDLERS_DIR                    := $(SRCS_NETWORK_DIR)handlers/
+SRCS_NETWORK_PRIMITIVES_DIR                  := $(SRCS_NETWORK_DIR)primitives/
+
+# PRESENTATION
+SRCS_PRESENTATION_DIR                        := $(SRCS_DIR)presentation/
+SRCS_CLI_DIR                                 := $(SRCS_PRESENTATION_DIR)cli/
+
+# SHARED
 SRCS_SHARED_DIR                 := $(SRCS_DIR)shared/
 SRCS_EXCEPTIONS_DIR             := $(SRCS_SHARED_DIR)exceptions/
 SRCS_UTILS_DIR                  := $(SRCS_SHARED_DIR)utils/
@@ -118,14 +139,22 @@ SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_FILESYSTEM_VALUE_OB
 																	 Size.cpp \
 																	 UploadAccess.cpp)
 
+SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_HTTP_ENTITIES_DIR), HttpRequest.cpp \
+																	 HttpResponse.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_HTTP_EXCEPTIONS_DIR), HostException.cpp \
+																	 HttpHeaderException.cpp \
 																	 HttpMethodException.cpp \
+																	 HttpRequestException.cpp \
+																	 HttpResponseException.cpp \
+																	 HttpVersionException.cpp \
 																	 PortException.cpp \
 																	 QueryStringBuilderException.cpp \
 																	 RouteMatchInfoException.cpp \
 																	 UriException.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_HTTP_VALUE_OBJECTS_DIR), Host.cpp \
+																	 HttpHeader.cpp \
 																	 HttpMethod.cpp \
+																	 HttpVersion.cpp \
 																	 Port.cpp \
 																	 QueryStringBuilder.cpp \
 																	 RouteMatchInfo.cpp \
@@ -138,6 +167,13 @@ SRCS_FILES                      += $(addprefix $(SRCS_DOMAIN_SHARED_VALUE_OBJECT
 																	 RegexPattern.cpp)
 
 # INFRASTRUCTURE
+SRCS_FILES                      += $(addprefix $(SRCS_INFRASTRUCTURE_CGI_ADAPTERS_DIR), CgiExecutor.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_INFRASTRUCTURE_CGI_EXCEPTIONS_DIR), CgiExecutionException.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_INFRASTRUCTURE_CGI_PRIMITIVES_DIR), CgiExecutionContext.cpp \
+																	 CgiRequest.cpp \
+																	 CgiResponse.cpp \
+																	 PipeDescriptors.cpp)
+
 SRCS_FILES                      += $(addprefix $(SRCS_INFRASTRUCTURE_CONFIG_ADAPTERS_DIR), ConfigProvider.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_INFRASTRUCTURE_CONFIG_EXCEPTIONS_DIR), ConfigException.cpp \
 																	 ParserException.cpp \
@@ -155,26 +191,42 @@ SRCS_FILES                      += $(addprefix $(SRCS_INFRASTRUCTURE_CONFIG_PARS
 																	 ParserContext.cpp \
 																	 ParserState.cpp)
 
-SRCS_FILES                      += $(addprefix $(SRCS_FILESYSTEM_EXCEPTION_DIR), DirectoryListerException.cpp \
-																	 FileHandlerException.cpp \
-																	 FileSystemHelperException.cpp \
-																	 PathResolverException.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_FILESYSTEM_ADAPTERS_DIR), DirectoryEntryComparators.cpp \
 																	 DirectoryLister.cpp \
 																	 FileHandler.cpp \
 																	 FileSystemHelper.cpp \
 																	 PathResolver.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_FILESYSTEM_EXCEPTION_DIR), DirectoryListerException.cpp \
+																	 FileHandlerException.cpp \
+																	 FileSystemHelperException.cpp \
+																	 PathResolverException.cpp)
+
+SRCS_FILES                      += $(addprefix $(SRCS_HTTP_DIR), RequestParser.cpp \
+																	 RequestParserException.cpp)
 
 SRCS_FILES                      += $(addprefix $(SRCS_IO_DIR), FileWriter.cpp \
 																	 StreamWriter.cpp)
 SRCS_FILES                      += $(addprefix $(SRCS_LOGGING_DIR), Logger.cpp)
+
+SRCS_FILES                      += $(addprefix $(SRCS_NETWORK_ADAPTERS_DIR), ConnectionHandler.cpp \
+																	 EventMultiplexer.cpp \
+																	 SocketOrchestrator.cpp \
+																	 TcpSocket.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_NETWORK_EXCEPTIONS_DIR), ConnectionException.cpp \
+																	 MultiplexerException.cpp \
+																	 RouteMatcherException.cpp \
+																	 SocketException.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_NETWORK_HANDLERS_DIR), RouteMatcher.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_NETWORK_PRIMITIVES_DIR), RouteMatchResult.cpp \
+																	 SocketEvent.cpp)
 
 # PRESENTATION
 SRCS_FILES                      += $(addprefix $(SRCS_CLI_DIR), CliController.cpp \
 																	 CliView.cpp)
 
 SRCS_FILES                      += $(addprefix $(SRCS_EXCEPTIONS_DIR), BaseException.cpp)
-SRCS_FILES                      += $(addprefix $(SRCS_UTILS_DIR), TerminalColor.cpp)
+SRCS_FILES                      += $(addprefix $(SRCS_UTILS_DIR), SignalHandler.cpp \
+																	 TerminalColor.cpp)
 
 SRCS_FILES                      += $(addprefix $(SRCS_DIR), main.cpp)
 

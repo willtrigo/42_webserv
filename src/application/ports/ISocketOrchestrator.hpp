@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/02 21:53:04 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/03 06:38:25 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/06 05:25:02 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,7 @@ class ISocketOrchestrator {
   virtual bool isRunning() const = 0;
 
   virtual size_t getActiveConnectionCount() const = 0;
+  virtual size_t getServerSocketCount() const = 0;
 };
 
 }  // namespace ports

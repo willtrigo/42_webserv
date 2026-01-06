@@ -6,17 +6,78 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 06:49:26 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/03 10:04:04 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/06 05:29:39 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "infrastructure/network/SocketOrchestrator.hpp"
+#include "infrastructure/network/adapters/SocketOrchestrator.hpp"
+#include "infrastructure/network/adapters/ConnectionHandler.hpp"
+#include "infrastructure/network/adapters/EventMultiplexer.hpp"
+#include "infrastructure/network/adapters/TcpSocket.hpp"
+#include "infrastructure/network/primitives/SocketEvent.hpp"
+#include "domain/configuration/value_objects/ListenDirective.hpp"
 
+#include <cerrno>
+#include <cstring>
 #include <sstream>
 #include <stdexcept>
 
 namespace infrastructure {
 namespace network {
+namespace adapters {
+
+// ============================================================================
+// ListenSocket Implementation
+// ============================================================================
+
+SocketOrchestrator::ListenSocket::ListenSocket()
+    : socket(NULL), bindPort(0) {}
+
+SocketOrchestrator::ListenSocket::ListenSocket(TcpSocket* sock,
+                                                const std::string& address,
+                                                unsigned int port)
+    : socket(sock), bindAddress(address), bindPort(port) {}
+
+SocketOrchestrator::ListenSocket::~ListenSocket() {
+  delete socket;
+  socket = NULL;
+  serverConfigs.clear();
+}
+
+bool SocketOrchestrator::ListenSocket::matchesBinding(
+    const std::string& address, unsigned int port) const {
+  return bindAddress == address && bindPort == port;
+}
+
+void SocketOrchestrator::ListenSocket::addServerConfig(
+    const domain::configuration::entities::ServerConfig* config) {
+  if (config == NULL) {
+    return;
+  }
+
+  for (size_t i = 0; i < serverConfigs.size(); ++i) {
+    if (serverConfigs[i] == config) {
+      return;
+    }
+  }
+
+  serverConfigs.push_back(config);
+}
+
+const domain::configuration::entities::ServerConfig*
+SocketOrchestrator::ListenSocket::resolveDefaultServer() const {
+  for (size_t i = 0; i < serverConfigs.size(); ++i) {
+    if (serverConfigs[i]->isDefaultServer()) {
+      return serverConfigs[i];
+    }
+  }
+
+  return serverConfigs.empty() ? NULL : serverConfigs[0];
+}
+
+// ============================================================================
+// SocketOrchestrator Implementation
+// ============================================================================
 
 SocketOrchestrator::SocketOrchestrator(
     application::ports::ILogger& logger,
@@ -25,40 +86,29 @@ SocketOrchestrator::SocketOrchestrator(
       m_configProvider(configProvider),
       m_multiplexer(NULL),
       m_isRunning(false),
-      m_shutdownRequested(false) {
+      m_shutdownRequested(false),
+      m_lastConnectionSweep(0) {
   if (!configProvider.isValid()) {
     throw std::invalid_argument(
-        "SocketOrchestrator: ConfigProvider must be valid before construction");
+        "SocketOrchestrator requires valid ConfigProvider");
   }
 }
 
 SocketOrchestrator::~SocketOrchestrator() {
-  shutdown();
-
-  // Cleanup connection handlers
-  for (std::map<int, ConnectionHandler*>::iterator it =
-           m_connectionHandlers.begin();
-       it != m_connectionHandlers.end(); ++it) {
-    delete it->second;
+  if (m_isRunning) {
+    shutdown();
   }
-  m_connectionHandlers.clear();
-
-  // Cleanup server sockets
-  for (std::vector<TcpSocket*>::iterator it = m_serverSockets.begin();
-       it != m_serverSockets.end(); ++it) {
-    delete *it;
-  }
-  m_serverSockets.clear();
-
-  // Cleanup multiplexer
-  delete m_multiplexer;
-  m_multiplexer = NULL;
+  cleanupResources();
 }
+
+// ============================================================================
+// Public Interface Implementation
+// ============================================================================
 
 void SocketOrchestrator::initialize() {
   if (m_isRunning) {
     m_logger.warn(
-        "SocketOrchestrator::initialize() invoked while already running; "
+        "SocketOrchestrator::initialize() invoked while already initialized; "
         "ignoring");
     return;
   }
@@ -71,24 +121,23 @@ void SocketOrchestrator::initialize() {
 
     m_isRunning = true;
     m_shutdownRequested = false;
+    m_lastConnectionSweep = std::time(NULL);
 
     std::ostringstream oss;
-    oss << "SocketOrchestrator initialized successfully with "
-        << m_serverSockets.size() << " server socket(s)";
+    oss << "SocketOrchestrator initialized with " << m_listenSockets.size()
+        << " listen socket(s)";
     m_logger.info(oss.str());
 
   } catch (const std::exception& ex) {
     m_logger.error(std::string("Initialization failed: ") + ex.what());
+    cleanupResources();
     m_isRunning = false;
     throw;
   }
 }
 
 void SocketOrchestrator::run() {
-  if (!m_isRunning) {
-    throw std::logic_error(
-        "SocketOrchestrator::run() invoked before initialize()");
-  }
+  validateInitializationState();
 
   m_logger.info("Starting event loop");
 
@@ -96,8 +145,9 @@ void SocketOrchestrator::run() {
     try {
       processEventLoopIteration();
     } catch (const std::exception& ex) {
-      m_logger.error(std::string("Event loop iteration failed: ") + ex.what());
-      // Continue processing; don't terminate on single iteration failure
+      std::ostringstream oss;
+      oss << "Event loop iteration failed: " << ex.what();
+      m_logger.error(oss.str());
     }
   }
 
@@ -112,20 +162,7 @@ void SocketOrchestrator::shutdown() {
   m_logger.info("Initiating graceful shutdown");
   m_shutdownRequested = true;
 
-  // Close all client connections
-  std::vector<int> clientFds;
-  clientFds.reserve(m_connectionHandlers.size());
-
-  for (std::map<int, ConnectionHandler*>::const_iterator it =
-           m_connectionHandlers.begin();
-       it != m_connectionHandlers.end(); ++it) {
-    clientFds.push_back(it->first);
-  }
-
-  for (std::vector<int>::const_iterator it = clientFds.begin();
-       it != clientFds.end(); ++it) {
-    closeConnection(*it);
-  }
+  cleanupConnectionHandlers();
 
   m_isRunning = false;
   m_logger.info("Shutdown complete");
@@ -137,207 +174,424 @@ size_t SocketOrchestrator::getActiveConnectionCount() const {
   return m_connectionHandlers.size();
 }
 
+size_t SocketOrchestrator::getServerSocketCount() const {
+  return m_listenSockets.size();
+}
+
+// ============================================================================
+// Initialization Methods
+// ============================================================================
+
 void SocketOrchestrator::initializeServerSockets() {
   const std::vector<const domain::configuration::entities::ServerConfig*>&
       serverConfigs = m_configProvider.getAllServers();
 
   if (serverConfigs.empty()) {
-    throw std::runtime_error(
-        "No server configurations available for socket initialization");
+    throw std::runtime_error("No server configurations available");
   }
 
   m_logger.info("Creating server sockets from configuration");
 
-  // TODO: Implement TcpSocket creation logic
-  // For each unique listen directive across all ServerConfigs:
-  //   1. Create TcpSocket instance
-  //   2. Bind to address:port
-  //   3. Set non-blocking mode
-  //   4. Begin listening (backlog from config or default 128)
-  //   5. Store in m_serverSockets
+  UniqueBindingSet uniqueBindings;
+  collectUniqueBindings(uniqueBindings);
+  createListenSocketsFromBindings(uniqueBindings);
+  associateServerConfigsWithListenSockets();
 
-  // Placeholder implementation structure:
-  /*
-  std::set<std::string> uniqueBindings;  // "ip:port" format
-
-  for (size_t i = 0; i < serverConfigs.size(); ++i) {
-    const domain::configuration::entities::ServerConfig* config =
-        serverConfigs[i];
-    const std::vector<domain::configuration::value_objects::ListenDirective>&
-        listenDirectives = config->getListenDirectives();
-
-    for (size_t j = 0; j < listenDirectives.size(); ++j) {
-      std::ostringstream bindKey;
-      bindKey << listenDirectives[j].getHost() << ":"
-              << listenDirectives[j].getPort();
-
-      if (uniqueBindings.insert(bindKey.str()).second) {
-        TcpSocket* socket = new TcpSocket(
-            listenDirectives[j].getHost(),
-            listenDirectives[j].getPort(),
-            m_logger);
-
-        socket->bind();
-        socket->listen(128);  // Standard backlog
-        socket->setNonBlocking(true);
-
-        m_serverSockets.push_back(socket);
-
-        m_logger.info("Server socket bound to " + bindKey.str());
-      }
-    }
+  if (m_listenSockets.empty()) {
+    throw std::runtime_error("Failed to create any server sockets");
   }
-  */
 
-  if (m_serverSockets.empty()) {
-    throw std::runtime_error(
-        "Failed to create any server sockets from configuration");
-  }
+  std::ostringstream oss;
+  oss << "Created " << m_listenSockets.size() << " listen socket(s)";
+  m_logger.info(oss.str());
 }
 
 void SocketOrchestrator::registerServerSocketsWithMultiplexer() {
-  // TODO: Implement EventMultiplexer creation and registration
-  // m_multiplexer = new EventMultiplexer(m_logger);
-  //
-  // for (std::vector<TcpSocket*>::iterator it = m_serverSockets.begin();
-  //      it != m_serverSockets.end(); ++it) {
-  //   m_multiplexer->registerSocket((*it)->getFd(), EventMultiplexer::READ);
-  // }
+  m_multiplexer = new EventMultiplexer(m_logger);
+
+  for (ListenSocketMap::const_iterator it = m_listenSockets.begin();
+       it != m_listenSockets.end(); ++it) {
+    const int fd = it->first;
+    m_multiplexer->registerSocket(fd, primitives::SocketEvent::EVENT_READ);
+
+    std::ostringstream oss;
+    oss << "Registered listen socket fd=" << fd << " ("
+        << it->second->bindAddress << ":" << it->second->bindPort << ")";
+    m_logger.debug(oss.str());
+  }
 
   m_logger.info("Server sockets registered with event multiplexer");
 }
 
+void SocketOrchestrator::collectUniqueBindings(
+    UniqueBindingSet& uniqueBindings) const {
+  const std::vector<const domain::configuration::entities::ServerConfig*>&
+      serverConfigs = m_configProvider.getAllServers();
+
+  for (size_t i = 0; i < serverConfigs.size(); ++i) {
+    const domain::configuration::entities::ServerConfig::ListenDirectives&
+        listenDirectives = serverConfigs[i]->getListenDirectives();
+
+    for (size_t j = 0; j < listenDirectives.size(); ++j) {
+      const domain::configuration::entities::ListenDirective& directive =
+          listenDirectives[j];
+
+      std::ostringstream bindKey;
+      bindKey << directive.getHost().getValue() << ":"
+              << directive.getPort().getValue();
+
+      uniqueBindings.insert(bindKey.str());
+    }
+  }
+}
+
+void SocketOrchestrator::createListenSocketsFromBindings(
+    const UniqueBindingSet& bindings) {
+  for (UniqueBindingSet::const_iterator it = bindings.begin();
+       it != bindings.end(); ++it) {
+    const std::string& binding = *it;
+    const size_t colonPos = binding.find(':');
+
+    if (colonPos == std::string::npos) {
+      std::ostringstream oss;
+      oss << "Invalid binding format: " << binding;
+      throw std::runtime_error(oss.str());
+    }
+
+    const std::string hostStr = binding.substr(0, colonPos);
+    const std::string portStr = binding.substr(colonPos + 1);
+
+    const domain::http::value_objects::Host host(hostStr);
+    const domain::http::value_objects::Port port(portStr);
+
+    TcpSocket* socket = new TcpSocket(host, port, m_logger);
+
+    try {
+      socket->bind();
+      socket->listen(K_DEFAULT_LISTEN_BACKLOG);
+      socket->setNonBlocking(true);
+
+      ListenSocket* listenSocket =
+          new ListenSocket(socket, hostStr, port.getValue());
+      m_listenSockets[socket->getFd()] = listenSocket;
+
+      std::ostringstream oss;
+      oss << "Bound listen socket to " << binding
+          << " (fd=" << socket->getFd() << ")";
+      m_logger.info(oss.str());
+
+    } catch (const std::exception& ex) {
+      delete socket;
+      throw;
+    }
+  }
+}
+
+void SocketOrchestrator::associateServerConfigsWithListenSockets() {
+  const std::vector<const domain::configuration::entities::ServerConfig*>&
+      serverConfigs = m_configProvider.getAllServers();
+
+  for (size_t i = 0; i < serverConfigs.size(); ++i) {
+    const domain::configuration::entities::ServerConfig* serverConfig =
+        serverConfigs[i];
+    const domain::configuration::entities::ServerConfig::ListenDirectives&
+        listenDirectives = serverConfig->getListenDirectives();
+
+    for (size_t j = 0; j < listenDirectives.size(); ++j) {
+      const domain::configuration::entities::ListenDirective& directive =
+          listenDirectives[j];
+
+      const std::string hostStr = directive.getHost().getValue();
+      const unsigned int portVal = directive.getPort().getValue();
+
+      for (ListenSocketMap::iterator lsIt = m_listenSockets.begin();
+           lsIt != m_listenSockets.end(); ++lsIt) {
+        if (lsIt->second->matchesBinding(hostStr, portVal)) {
+          lsIt->second->addServerConfig(serverConfig);
+        }
+      }
+    }
+  }
+}
+
+// ============================================================================
+// Event Loop Methods
+// ============================================================================
+
 void SocketOrchestrator::processEventLoopIteration() {
-  // TODO: Implement event processing
-  // 1. Call m_multiplexer->wait(timeout) to get ready file descriptors
-  // 2. For each ready FD:
-  //    - If server socket: handleNewConnection(fd)
-  //    - If client socket: handleClientEvent(fd)
-  // 3. Handle timeouts for idle connections
+  const std::vector<primitives::SocketEvent> readyEvents =
+      m_multiplexer->wait(K_EVENT_LOOP_TIMEOUT_MS);
 
-  // Placeholder structure:
-  /*
-  std::vector<int> readyFds = m_multiplexer->wait(1000);  // 1s timeout
+  processReadyEvents(readyEvents);
 
-  for (std::vector<int>::const_iterator it = readyFds.begin();
-       it != readyFds.end(); ++it) {
-    int fd = *it;
+  const time_t currentTime = std::time(NULL);
+  if (currentTime - m_lastConnectionSweep >= K_CONNECTION_SWEEP_INTERVAL) {
+    performConnectionSweep(currentTime);
+    m_lastConnectionSweep = currentTime;
+  }
+}
+
+void SocketOrchestrator::processReadyEvents(
+    const std::vector<primitives::SocketEvent>& readyEvents) {
+  for (size_t i = 0; i < readyEvents.size(); ++i) {
+    const primitives::SocketEvent& event = readyEvents[i];
+    const int fd = event.getFd();
+
+    if (!event.isValid()) {
+      continue;
+    }
+
+    if (event.hasError() || event.hasHangup()) {
+      if (isServerSocket(fd)) {
+        std::ostringstream oss;
+        oss << "Error/Hangup on server socket fd=" << fd;
+        m_logger.error(oss.str());
+      } else {
+        closeConnection(fd);
+      }
+      continue;
+    }
 
     if (isServerSocket(fd)) {
-      handleNewConnection(fd);
+      if (event.isReadable()) {
+        handleNewConnection(fd);
+      }
     } else {
       handleClientEvent(fd);
     }
   }
-  */
 }
 
-void SocketOrchestrator::handleNewConnection(int serverSocketFd) {
-  // TODO: Implement connection acceptance
-  // 1. Accept new connection on server socket
-  // 2. Set client socket to non-blocking
-  // 3. Resolve ServerConfig for this connection
-  // 4. Create ConnectionHandler with resolved config
-  // 5. Register client socket with multiplexer
-  // 6. Store handler in m_connectionHandlers
+void SocketOrchestrator::performConnectionSweep(time_t currentTime) {
+  std::vector<int> timedOutConnections;
+  timedOutConnections.reserve(m_connectionHandlers.size() / 10);
 
-  // Placeholder structure:
-  /*
-  TcpSocket* serverSocket = findServerSocket(serverSocketFd);
-  TcpSocket* clientSocket = serverSocket->accept();
-
-  if (clientSocket == NULL) {
-    if (errno != EAGAIN && errno != EWOULDBLOCK) {
-      m_logger.error("Accept failed: " + std::string(std::strerror(errno)));
+  for (ConnectionHandlerMap::iterator it = m_connectionHandlers.begin();
+       it != m_connectionHandlers.end(); ++it) {
+    if (it->second->isTimedOut(currentTime)) {
+      timedOutConnections.push_back(it->first);
     }
+  }
+
+  for (size_t i = 0; i < timedOutConnections.size(); ++i) {
+    std::ostringstream oss;
+    oss << "Closing timed-out connection fd=" << timedOutConnections[i];
+    m_logger.debug(oss.str());
+    closeConnection(timedOutConnections[i]);
+  }
+
+  if (!timedOutConnections.empty()) {
+    std::ostringstream oss;
+    oss << "Closed " << timedOutConnections.size() << " timed-out connection(s)";
+    m_logger.info(oss.str());
+  }
+}
+
+// ============================================================================
+// Connection Management Methods
+// ============================================================================
+
+void SocketOrchestrator::handleNewConnection(int serverSocketFd) {
+  ListenSocket* listenSocket = findListenSocket(serverSocketFd);
+  if (listenSocket == NULL || listenSocket->socket == NULL) {
+    std::ostringstream oss;
+    oss << "Invalid listen socket for fd=" << serverSocketFd;
+    m_logger.error(oss.str());
     return;
   }
 
-  clientSocket->setNonBlocking(true);
-  int clientFd = clientSocket->getFd();
+  if (!canAcceptNewConnection()) {
+    m_logger.warn(
+        "Connection limit reached; rejecting new connection attempt");
+    return;
+  }
 
-  const domain::configuration::entities::ServerConfig* config =
-      resolveServerConfig(clientFd);
+  try {
+    TcpSocket* clientSocket = listenSocket->socket->accept();
 
-  ConnectionHandler* handler = new ConnectionHandler(
-      clientSocket, config, m_logger, m_configProvider);
+    if (clientSocket == NULL) {
+      return;
+    }
 
-  m_connectionHandlers[clientFd] = handler;
-  m_multiplexer->registerSocket(clientFd, EventMultiplexer::READ);
+    clientSocket->setNonBlocking(true);
+    const int clientFd = clientSocket->getFd();
 
-  std::ostringstream oss;
-  oss << "Accepted new connection: FD=" << clientFd;
-  m_logger.debug(oss.str());
-  */
+    const domain::configuration::entities::ServerConfig* serverConfig =
+        resolveServerConfig(listenSocket);
+
+    if (serverConfig == NULL) {
+      std::ostringstream oss;
+      oss << "No server configuration resolved for connection fd=" << clientFd;
+      m_logger.error(oss.str());
+      delete clientSocket;
+      return;
+    }
+
+    ConnectionHandler* handler = new ConnectionHandler(
+        clientSocket, serverConfig, m_logger, m_configProvider);
+
+    registerClientSocket(clientFd, handler);
+
+    std::ostringstream oss;
+    oss << "Accepted connection from " << clientSocket->getRemoteAddress()
+        << " (fd=" << clientFd << ")";
+    m_logger.info(oss.str());
+
+  } catch (const std::exception& ex) {
+    std::ostringstream oss;
+    oss << "Failed to accept connection: " << ex.what();
+    m_logger.error(oss.str());
+  }
 }
 
 void SocketOrchestrator::handleClientEvent(int clientSocketFd) {
-  std::map<int, ConnectionHandler*>::iterator it =
+  ConnectionHandlerMap::iterator it =
       m_connectionHandlers.find(clientSocketFd);
 
   if (it == m_connectionHandlers.end()) {
-    m_logger.warning("Received event for unknown client socket; closing");
+    std::ostringstream oss;
+    oss << "Received event for unknown client socket fd=" << clientSocketFd;
+    m_logger.warn(oss.str());
     closeConnection(clientSocketFd);
     return;
   }
 
   ConnectionHandler* handler = it->second;
 
-  // TODO: Delegate to ConnectionHandler
-  // try {
-  //   handler->processEvent();
-  //
-  //   if (handler->shouldClose()) {
-  //     closeConnection(clientSocketFd);
-  //   }
-  // } catch (const std::exception& ex) {
-  //   m_logger.error("Client event processing failed: " +
-  //   std::string(ex.what())); closeConnection(clientSocketFd);
-  // }
+  try {
+    handler->processEvent();
+
+    if (handler->shouldClose()) {
+      closeConnection(clientSocketFd);
+    }
+
+  } catch (const std::exception& ex) {
+    std::ostringstream oss;
+    oss << "Client event processing failed for fd=" << clientSocketFd << ": "
+        << ex.what();
+    m_logger.error(oss.str());
+    closeConnection(clientSocketFd);
+  }
 }
 
 void SocketOrchestrator::closeConnection(int clientSocketFd) {
-  std::map<int, ConnectionHandler*>::iterator it =
+  ConnectionHandlerMap::iterator it =
       m_connectionHandlers.find(clientSocketFd);
 
   if (it == m_connectionHandlers.end()) {
     return;
   }
 
-  // TODO: Cleanup sequence
-  // 1. Deregister from multiplexer
-  // 2. Delete handler (which should close socket)
-  // 3. Remove from map
+  deregisterClientSocket(clientSocketFd);
 
-  // m_multiplexer->deregisterSocket(clientSocketFd);
   delete it->second;
   m_connectionHandlers.erase(it);
 
   std::ostringstream oss;
-  oss << "Closed connection: FD=" << clientSocketFd;
+  oss << "Closed connection fd=" << clientSocketFd << " (active="
+      << m_connectionHandlers.size() << ")";
   m_logger.debug(oss.str());
 }
 
-const domain::configuration::entities::ServerConfig*
-SocketOrchestrator::resolveServerConfig(int clientSocketFd) const {
-  // TODO: Implement virtual host resolution
-  // 1. Get local address/port from socket
-  // 2. Match against ServerConfig listen directives
-  // 3. If multiple matches, defer to Host header (handled by
-  // ConnectionHandler)
-  // 4. Return first matching config as default
-
-  // Placeholder: return first server config
-  const std::vector<const domain::configuration::entities::ServerConfig*>&
-      configs = m_configProvider.getAllServers();
-
-  if (configs.empty()) {
-    throw std::runtime_error(
-        "No server configurations available for connection resolution");
-  }
-
-  return configs[0];
+bool SocketOrchestrator::canAcceptNewConnection() const {
+  return m_connectionHandlers.size() < K_MAX_CONNECTIONS;
 }
 
+void SocketOrchestrator::registerClientSocket(int clientFd,
+                                               ConnectionHandler* handler) {
+  m_connectionHandlers[clientFd] = handler;
+  m_multiplexer->registerSocket(clientFd, primitives::SocketEvent::EVENT_READ);
+}
+
+void SocketOrchestrator::deregisterClientSocket(int clientFd) {
+  m_multiplexer->deregisterSocket(clientFd);
+}
+
+// ============================================================================
+// Server Resolution Methods
+// ============================================================================
+
+const domain::configuration::entities::ServerConfig*
+SocketOrchestrator::resolveServerConfig(const ListenSocket* listenSocket) const {
+  if (listenSocket == NULL) {
+    return NULL;
+  }
+
+  return listenSocket->resolveDefaultServer();
+}
+
+SocketOrchestrator::ListenSocket* SocketOrchestrator::findListenSocket(
+    int serverSocketFd) const {
+  ListenSocketMap::const_iterator it = m_listenSockets.find(serverSocketFd);
+  return (it != m_listenSockets.end()) ? it->second : NULL;
+}
+
+bool SocketOrchestrator::isServerSocket(int fileDescriptor) const {
+  return m_listenSockets.find(fileDescriptor) != m_listenSockets.end();
+}
+
+// ============================================================================
+// State Management Methods
+// ============================================================================
+
+void SocketOrchestrator::validateInitializationState() const {
+  if (!m_isRunning) {
+    throw std::logic_error(
+        "SocketOrchestrator::run() invoked before initialize()");
+  }
+
+  if (m_multiplexer == NULL) {
+    throw std::logic_error("EventMultiplexer not initialized");
+  }
+
+  if (m_listenSockets.empty()) {
+    throw std::logic_error("No listen sockets available");
+  }
+}
+
+void SocketOrchestrator::cleanupResources() {
+  cleanupConnectionHandlers();
+  cleanupServerSockets();
+  cleanupMultiplexer();
+}
+
+void SocketOrchestrator::cleanupServerSockets() {
+  for (ListenSocketMap::iterator it = m_listenSockets.begin();
+       it != m_listenSockets.end(); ++it) {
+    delete it->second;
+  }
+  m_listenSockets.clear();
+}
+
+void SocketOrchestrator::cleanupConnectionHandlers() {
+  std::vector<int> clientFds;
+  clientFds.reserve(m_connectionHandlers.size());
+
+  for (ConnectionHandlerMap::const_iterator it = m_connectionHandlers.begin();
+       it != m_connectionHandlers.end(); ++it) {
+    clientFds.push_back(it->first);
+  }
+
+  for (size_t i = 0; i < clientFds.size(); ++i) {
+    closeConnection(clientFds[i]);
+  }
+
+  m_connectionHandlers.clear();
+}
+
+void SocketOrchestrator::cleanupMultiplexer() {
+  delete m_multiplexer;
+  m_multiplexer = NULL;
+}
+
+std::string SocketOrchestrator::formatOrchestrationState() const {
+  std::ostringstream oss;
+  oss << "SocketOrchestrator[running=" << (m_isRunning ? "yes" : "no")
+      << ", servers=" << m_listenSockets.size()
+      << ", connections=" << m_connectionHandlers.size() << "]";
+  return oss.str();
+}
+
+}  // namespace adapters
 }  // namespace network
 }  // namespace infrastructure

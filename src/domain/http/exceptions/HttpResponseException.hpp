@@ -1,45 +1,43 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   RequestParserException.hpp                         :+:      :+:    :+:   */
+/*   HttpResponseException.hpp                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/12/24 20:50:49 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/06 19:55:37 by dande-je         ###   ########.fr       */
+/*   Created: 2026/01/04 15:07:25 by dande-je          #+#    #+#             */
+/*   Updated: 2026/01/04 15:10:05 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef REQUEST_PARSER_EXCEPTION_HPP
-#define REQUEST_PARSER_EXCEPTION_HPP
+#ifndef HTTPRESPONSEEXCEPTION_HPP
+#define HTTPRESPONSEEXCEPTION_HPP
 
 #include "shared/exceptions/BaseException.hpp"
 
-namespace shared {
+namespace domain {
+namespace http {
 namespace exceptions {
 
-class RequestParserException : public ::shared::exceptions::BaseException {
+class HttpResponseException : public ::shared::exceptions::BaseException {
  public:
   enum ErrorCode {
-    MALFORMED_REQUEST,
-    UNSUPPORTED_METHOD,
+    INVALID_RESPONSE,
+    INVALID_STATUS_CODE,
     INVALID_HEADER,
-    INVALID_BODY,
-    CHUNKED_ENCODING_ERROR,
-    CONTENT_LENGTH_MISMATCH,
-    URI_TOO_LONG,
-    HEADER_TOO_LARGE,
     BODY_TOO_LARGE,
-    INVALID_HTTP_VERSION,
-    TIMEOUT,
+    SERIALIZATION_FAILED,
+    MISSING_REQUIRED_HEADER,
+    DUPLICATE_HEADER,
+    INVALID_CONTENT_LENGTH,
     CODE_COUNT
   };
 
-  explicit RequestParserException(const std::string& msg, ErrorCode code);
-  RequestParserException(const RequestParserException& other);
-  virtual ~RequestParserException() throw();
+  explicit HttpResponseException(const std::string& msg, ErrorCode code);
+  HttpResponseException(const HttpResponseException& other);
+  virtual ~HttpResponseException() throw();
 
-  RequestParserException& operator=(const RequestParserException& other);
+  HttpResponseException& operator=(const HttpResponseException& other);
 
  private:
   static const std::pair<ErrorCode, std::string> K_CODE_MSGS[];
@@ -48,6 +46,7 @@ class RequestParserException : public ::shared::exceptions::BaseException {
 };
 
 }  // namespace exceptions
-}  // namespace shared
+}  // namespace http
+}  // namespace domain
 
-#endif  // REQUEST_PARSER_EXCEPTION_HPP
+#endif  // HTTPRESPONSEEXCEPTION_HPP
