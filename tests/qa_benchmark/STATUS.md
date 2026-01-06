@@ -89,9 +89,10 @@ All reference outputs in `tests/qa_benchmark/baseline/`:
 - ✅ QueryStringBuilder (36 tests, 100%)
 - ✅ UploadAccess (52 tests, 100%)
 - ✅ RegexPattern (50 tests, 100%)
-- ✅ CgiConfig (63 tests, 100%))
+- ✅ CgiConfig (63 tests, 100%)
+- ✅ ListenDirective (59 tests, 100%)
 
-- ⚠️ ListenDirective (59 tests, 16 bugs)
+**Pending:**
 - ⚠️ Uri (115 tests, 47 bugs)
 - ⚠️ Route (62 tests, 25 bugs)
 - ❌ RouteMatchInfo (0 tests)
