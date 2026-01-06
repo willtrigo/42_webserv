@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ListenDirective.hpp                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 03:21:07 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/31 04:12:03 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/05 21:04:53 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,6 +69,12 @@ class ListenDirective {
   void validateHostPortCombination() const;
   void validateIpv6Specifics() const;
   static void validateDirectiveString(const std::string& directiveString);
+  static void validateDirectiveFormat(const std::string& directiveString);
+  static void validatePortStringFormat(const std::string& portStr,
+                                       const std::string& directiveString);
+  void parseAndSetHostPort(const std::string& hostStr,
+                           const std::string& portStr,
+                           const std::string& directiveString);
   void validateHostnameFormat() const;
   static void validateHostnameColonPresence(const std::string& hostname);
   static void validateHostnameBrackets(const std::string& hostname);
