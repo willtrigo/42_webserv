@@ -1,40 +1,42 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   RouteMatcherException.hpp                          :+:      :+:    :+:   */
+/*   HttpVersionException.hpp                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/12/24 20:37:18 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/04 16:40:36 by dande-je         ###   ########.fr       */
+/*   Created: 2026/01/04 13:41:14 by dande-je          #+#    #+#             */
+/*   Updated: 2026/01/04 13:45:18 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef ROUTEMATCHEREXCEPTION_HPP
-#define ROUTEMATCHEREXCEPTION_HPP
+#ifndef HTTPVERSIONEXCEPTION_HPP
+#define HTTPVERSIONEXCEPTION_HPP
 
 #include "shared/exceptions/BaseException.hpp"
 
-namespace infrastructure {
-namespace network {
+namespace domain {
+namespace http {
 namespace exceptions {
 
-class RouteMatcherException : public ::shared::exceptions::BaseException {
+class HttpVersionException : public ::shared::exceptions::BaseException {
  public:
   enum ErrorCode {
-    ROUTE_NOT_FOUND,
-    METHOD_NOT_ALLOWED,
-    NO_MATCHING_ROUTE,
-    INVALID_REQUEST_PATH,
-    MATCHING_FAILED,
+    INVALID_FORMAT,
+    UNSUPPORTED_VERSION,
+    EMPTY_STRING,
+    INVALID_MAJOR_VERSION,
+    INVALID_MINOR_VERSION,
+    VERSION_TOO_OLD,
+    VERSION_TOO_NEW,
     CODE_COUNT
   };
 
-  explicit RouteMatcherException(const std::string& msg, ErrorCode code);
-  RouteMatcherException(const RouteMatcherException& other);
-  virtual ~RouteMatcherException() throw();
+  explicit HttpVersionException(const std::string& msg, ErrorCode code);
+  HttpVersionException(const HttpVersionException& other);
+  virtual ~HttpVersionException() throw();
 
-  RouteMatcherException& operator=(const RouteMatcherException& other);
+  HttpVersionException& operator=(const HttpVersionException& other);
 
  private:
   static const std::pair<ErrorCode, std::string> K_CODE_MSGS[];
@@ -43,7 +45,7 @@ class RouteMatcherException : public ::shared::exceptions::BaseException {
 };
 
 }  // namespace exceptions
-}  // namespace network
-}  // namespace infrastructure
+}  // namespace http
+}  // namespace domain
 
-#endif  // ROUTEMATCHEREXCEPTION_HPP
+#endif  // HTTPVERSIONEXCEPTION_HPP

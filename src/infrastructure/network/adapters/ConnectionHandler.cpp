@@ -6,20 +6,46 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 12:01:14 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/04 01:10:53 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/06 05:09:06 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+#include "domain/configuration/entities/LocationConfig.hpp"
+#include "domain/configuration/exceptions/LocationConfigException.hpp"
+#include "domain/configuration/value_objects/CgiConfig.hpp"
+#include "domain/configuration/value_objects/Route.hpp"
+#include "domain/configuration/value_objects/UploadConfig.hpp"
+#include "domain/filesystem/value_objects/Path.hpp"
+#include "domain/http/entities/HttpRequest.hpp"
+#include "domain/http/entities/HttpResponse.hpp"
+#include "domain/http/exceptions/HttpRequestException.hpp"
+#include "domain/http/value_objects/HttpMethod.hpp"
+#include "domain/http/value_objects/RouteMatchInfo.hpp"
+#include "domain/shared/value_objects/ErrorCode.hpp"
+#include "infrastructure/cgi/adapters/CgiExecutor.hpp"
+#include "infrastructure/cgi/exceptions/CgiExecutionException.hpp"
+#include "infrastructure/cgi/primitives/CgiRequest.hpp"
+#include "infrastructure/cgi/primitives/CgiResponse.hpp"
+#include "infrastructure/filesystem/adapters/DirectoryLister.hpp"
+#include "infrastructure/filesystem/adapters/FileHandler.hpp"
+#include "infrastructure/filesystem/adapters/FileSystemHelper.hpp"
+#include "infrastructure/filesystem/adapters/PathResolver.hpp"
+#include "infrastructure/filesystem/exceptions/FileHandlerException.hpp"
+#include "infrastructure/http/RequestParser.hpp"
 #include "infrastructure/network/adapters/ConnectionHandler.hpp"
 #include "infrastructure/network/adapters/TcpSocket.hpp"
+#include "infrastructure/network/exceptions/ConnectionException.hpp"
 
+#include <cstdio>
+#include <cstdlib>
 #include <ctime>
 #include <sstream>
-#include <stdexcept>
 
 namespace infrastructure {
 namespace network {
 namespace adapters {
+
+// ========== CONSTRUCTOR & DESTRUCTOR ==========
 
 ConnectionHandler::ConnectionHandler(
     TcpSocket* socket,
@@ -34,12 +60,15 @@ ConnectionHandler::ConnectionHandler(
       m_lastActivityTime(std::time(NULL)),
       m_responseOffset(0) {
   if (socket == NULL) {
-    throw std::invalid_argument("ConnectionHandler requires non-NULL socket");
+    throw exceptions::ConnectionException(
+        "Socket pointer cannot be NULL",
+        exceptions::ConnectionException::INVALID_STATE);
   }
 
   if (serverConfig == NULL) {
-    throw std::invalid_argument(
-        "ConnectionHandler requires non-NULL serverConfig");
+    throw exceptions::ConnectionException(
+        "ServerConfig pointer cannot be NULL",
+        exceptions::ConnectionException::INVALID_STATE);
   }
 
   m_requestBuffer.reserve(K_READ_BUFFER_SIZE);
@@ -58,6 +87,8 @@ ConnectionHandler::~ConnectionHandler() {
   m_socket = NULL;
 }
 
+// ========== PUBLIC INTERFACE ==========
+
 void ConnectionHandler::processEvent() {
   updateLastActivity(std::time(NULL));
 
@@ -69,6 +100,8 @@ void ConnectionHandler::processEvent() {
 
       case STATE_PROCESSING:
         processRequest();
+        m_responseBuffer = m_response.serialize();
+        m_responseOffset = 0;
         m_state = STATE_WRITING_RESPONSE;
         break;
 
@@ -77,19 +110,35 @@ void ConnectionHandler::processEvent() {
         break;
 
       case STATE_KEEP_ALIVE:
-        // Transition back to reading if data available
         handleRead();
         break;
 
       case STATE_CLOSING:
-        // No-op; awaiting closure from orchestrator
         break;
     }
+  } catch (const domain::http::exceptions::HttpRequestException& ex) {
+    m_logger.error(std::string("Request error: ") + ex.what());
+    generateErrorResponse(
+        domain::shared::value_objects::ErrorCode::badRequest(), ex.what());
+    m_responseBuffer = m_response.serialize();
+    m_responseOffset = 0;
+    m_state = STATE_WRITING_RESPONSE;
+  } catch (const exceptions::ConnectionException& ex) {
+    m_logger.error(std::string("Connection error: ") + ex.what());
+    generateErrorResponse(
+        domain::shared::value_objects::ErrorCode::internalServerError(),
+        "Internal Server Error");
+    m_responseBuffer = m_response.serialize();
+    m_responseOffset = 0;
+    m_state = STATE_WRITING_RESPONSE;
   } catch (const std::exception& ex) {
-    m_logger.error(std::string("ConnectionHandler::processEvent() failed: ") +
-                   ex.what());
-    generateErrorResponse(500, "Internal Server Error");
-    m_state = STATE_CLOSING;
+    m_logger.error(std::string("Unexpected error: ") + ex.what());
+    generateErrorResponse(
+        domain::shared::value_objects::ErrorCode::internalServerError(),
+        "Internal Server Error");
+    m_responseBuffer = m_response.serialize();
+    m_responseOffset = 0;
+    m_state = STATE_WRITING_RESPONSE;
   }
 }
 
@@ -100,34 +149,36 @@ bool ConnectionHandler::shouldClose() const {
 ConnectionHandler::State ConnectionHandler::getState() const { return m_state; }
 
 int ConnectionHandler::getFd() const {
-  return m_socket ? m_socket->getFd() : -1;
+  return (m_socket != NULL) ? m_socket->getFd() : -1;
 }
 
 std::string ConnectionHandler::getRemoteAddress() const {
-  return m_socket ? m_socket->getRemoteAddress() : "unknown";
+  return (m_socket != NULL) ? m_socket->getRemoteAddress() : "unknown";
 }
 
 bool ConnectionHandler::isTimedOut(time_t currentTime) const {
-  return (currentTime - m_lastActivityTime) > K_CONNECTION_TIMEOUT;
+  const time_t timeout = (m_state == STATE_KEEP_ALIVE) ? K_KEEPALIVE_TIMEOUT
+                                                       : K_CONNECTION_TIMEOUT;
+  return (currentTime - m_lastActivityTime) > timeout;
 }
 
 void ConnectionHandler::updateLastActivity(time_t currentTime) {
   m_lastActivityTime = currentTime;
 }
 
+// ========== CORE EVENT HANDLING ==========
+
 void ConnectionHandler::handleRead() {
   char buffer[K_READ_BUFFER_SIZE];
   const ssize_t bytesRead = m_socket->read(buffer, K_READ_BUFFER_SIZE);
 
   if (bytesRead == 0) {
-    // Client closed connection
     m_logger.debug("Client closed connection: " + getRemoteAddress());
     m_state = STATE_CLOSING;
     return;
   }
 
   if (bytesRead == -1) {
-    // EAGAIN/EWOULDBLOCK - no data available
     return;
   }
 
@@ -138,28 +189,24 @@ void ConnectionHandler::handleRead() {
       << " (total: " << m_requestBuffer.size() << ")";
   m_logger.debug(oss.str());
 
-  // Attempt to parse complete request
-  if (parseRequest()) {
-    m_state = STATE_PROCESSING;
+  if (m_requestBuffer.size() > K_MAX_REQUEST_SIZE) {
+    throw exceptions::ConnectionException(
+        "Request size exceeds maximum allowed",
+        exceptions::ConnectionException::REQUEST_TOO_LARGE);
   }
 
-  // Check request size limit
-  const size_t maxBodySize =
-      m_serverConfig->getClientMaxBodySize();  // Assuming this method exists
-  if (m_requestBuffer.size() > maxBodySize) {
-    generateErrorResponse(413, "Request Entity Too Large");
-    m_state = STATE_CLOSING;
+  if (parseRequest()) {
+    m_state = STATE_PROCESSING;
   }
 }
 
 void ConnectionHandler::handleWrite() {
   if (m_responseBuffer.empty()) {
-    // Response fully transmitted
+    logRequest(m_request, m_response);
+
     if (shouldKeepAlive()) {
       m_logger.debug("Keeping connection alive: " + getRemoteAddress());
-      m_requestBuffer.clear();
-      m_responseBuffer.clear();
-      m_responseOffset = 0;
+      resetForNextRequest();
       m_state = STATE_KEEP_ALIVE;
     } else {
       m_logger.debug("Closing connection: " + getRemoteAddress());
@@ -173,7 +220,6 @@ void ConnectionHandler::handleWrite() {
       m_socket->write(m_responseBuffer.c_str() + m_responseOffset, remaining);
 
   if (bytesWritten == -1) {
-    // EAGAIN/EWOULDBLOCK - socket not ready
     return;
   }
 
@@ -191,115 +237,749 @@ void ConnectionHandler::handleWrite() {
 }
 
 bool ConnectionHandler::parseRequest() {
-  // Simple HTTP request line parser (to be replaced with proper RequestParser)
-  const size_t headerEndPos = m_requestBuffer.find("\r\n\r\n");
-  if (headerEndPos == std::string::npos) {
-    // Incomplete headers
+  http::RequestParser parser;
+  parser.setMaxHeaderSize(K_MAX_REQUEST_SIZE);
+  parser.setMaxBodySize(m_serverConfig->getClientMaxBodySize().getBytes());
+
+  if (!parser.parse(m_requestBuffer.c_str(), m_requestBuffer.size())) {
     return false;
   }
 
-  // Extract request line
-  const size_t requestLineEnd = m_requestBuffer.find("\r\n");
-  if (requestLineEnd == std::string::npos) {
-    throw std::runtime_error("Malformed request: No request line");
+  if (!parser.isComplete()) {
+    return false;
   }
 
-  const std::string requestLine = m_requestBuffer.substr(0, requestLineEnd);
-
-  // Parse: METHOD URI HTTP/VERSION
-  std::istringstream iss(requestLine);
-  if (!(iss >> m_requestMethod >> m_requestUri >> m_requestProtocol)) {
-    throw std::runtime_error("Malformed request line");
+  if (parser.hasError()) {
+    throw exceptions::ConnectionException(
+        "Failed to parse HTTP request",
+        exceptions::ConnectionException::MALFORMED_REQUEST);
   }
+
+  const http::ParsedRequest& parsedReq = parser.getRequest();
+
+  m_request.setMethod(parsedReq.method);
+  m_request.setPath(parsedReq.path);
+  m_request.setQuery(parsedReq.query);
+  m_request.setVersion(domain::http::value_objects::HttpVersion::fromString(
+      parsedReq.httpVersion));
+  m_request.clearHeaders();
+
+  for (std::map<std::string, std::string>::const_iterator it =
+           parsedReq.headers.begin();
+       it != parsedReq.headers.end(); ++it) {
+    m_request.addHeader(it->first, it->second);
+  }
+
+  if (!parsedReq.body.empty()) {
+    m_request.setBody(domain::http::entities::HttpRequest::Body(
+        parsedReq.body.begin(), parsedReq.body.end()));
+  }
+
+  m_request.validate();
 
   std::ostringstream oss;
-  oss << "Parsed request: " << m_requestMethod << " " << m_requestUri << " "
-      << m_requestProtocol;
+  oss << "Parsed request: " << m_request.getMethod().toString() << " "
+      << m_request.getPath().toString() << " "
+      << m_request.getVersion().toString();
   m_logger.info(oss.str());
-
-  // TODO: Parse headers, check Content-Length, handle request body
-  // For now, assume request complete after headers
 
   return true;
 }
 
+// ========== REQUEST PROCESSING ==========
+
 void ConnectionHandler::processRequest() {
   try {
-    // Virtual host resolution
     const domain::configuration::entities::ServerConfig* config =
         resolveVirtualHost();
 
-    // TODO: Integrate with proper request routing/handling pipeline
-    // 1. Match LocationConfig using RouteMatcher
-    // 2. Check HTTP method permissions
-    // 3. Resolve file path or CGI handler
-    // 4. Execute handler (FileHandler, DirectoryLister, CGI processor)
-    // 5. Generate response
+    const domain::http::value_objects::HttpMethod& method =
+        m_request.getMethod();
+    const domain::filesystem::value_objects::Path requestPath =
+        domain::filesystem::value_objects::Path::fromString(
+            m_request.getPath().toString(), true);
 
-    // Placeholder: Generate simple 200 OK response
-    std::ostringstream response;
-    response << "HTTP/1.1 200 OK\r\n";
-    response << "Content-Type: text/html\r\n";
-    response << "Connection: " << (shouldKeepAlive() ? "keep-alive" : "close")
-             << "\r\n";
+    const domain::configuration::entities::LocationConfig* matchedLocation =
+        findMatchingLocation(config, requestPath.toString());
 
-    const std::string body =
-        "<html><body><h1>42 WebServ</h1><p>Request "
-        "received successfully</p></body></html>";
+    if (matchedLocation == NULL) {
+      generateErrorResponse(
+          domain::shared::value_objects::ErrorCode::notFound(),
+          "No matching location configuration found");
+      return;
+    }
 
-    response << "Content-Length: " << body.size() << "\r\n";
-    response << "\r\n";
-    response << body;
+    if (!matchedLocation->isMethodAllowed(method)) {
+      generateErrorResponse(
+          domain::shared::value_objects::ErrorCode::methodNotAllowed(),
+          "Method not allowed for this resource");
+      return;
+    }
 
-    m_responseBuffer = response.str();
+    if (matchedLocation->hasReturnRedirect()) {
+      handleRedirect(*matchedLocation);
+      return;
+    }
 
-    logRequest(m_requestMethod, m_requestUri, 200);
+    if (matchedLocation->hasReturnContent()) {
+      handleReturnContent(*matchedLocation);
+      return;
+    }
 
+    if (!validateRequestBodySize(*matchedLocation)) {
+      generateErrorResponse(
+          domain::shared::value_objects::ErrorCode::payloadTooLarge(),
+          "Request entity too large");
+      return;
+    }
+
+    domain::configuration::value_objects::Route route =
+        matchedLocation->toRoute();
+
+    if (method == domain::http::value_objects::HttpMethod::get() ||
+        method == domain::http::value_objects::HttpMethod::head()) {
+      handleGetRequest(route, *matchedLocation, requestPath);
+    } else if (method == domain::http::value_objects::HttpMethod::post()) {
+      handlePostRequest(route, *matchedLocation, requestPath);
+    } else if (method ==
+               domain::http::value_objects::HttpMethod::deleteMethod()) {
+      handleDeleteRequest(route, *matchedLocation, requestPath);
+    } else {
+      generateErrorResponse(
+          domain::shared::value_objects::ErrorCode::methodNotAllowed(),
+          "Unsupported HTTP method");
+    }
+
+    applyCustomHeaders(*matchedLocation);
+
+    if (shouldKeepAlive()) {
+      m_response.setConnection("keep-alive");
+    } else {
+      m_response.setConnection("close");
+    }
+
+  } catch (const domain::http::exceptions::HttpRequestException& ex) {
+    m_logger.error(std::string("HTTP request error: ") + ex.what());
+    generateErrorResponse(
+        domain::shared::value_objects::ErrorCode::badRequest(), ex.what());
+  } catch (
+      const domain::configuration::exceptions::LocationConfigException& ex) {
+    m_logger.error(std::string("Location configuration error: ") + ex.what());
+    generateErrorResponse(
+        domain::shared::value_objects::ErrorCode::internalServerError(),
+        "Internal Server Error");
   } catch (const std::exception& ex) {
     m_logger.error(std::string("Request processing failed: ") + ex.what());
-    generateErrorResponse(500, "Internal Server Error");
-    logRequest(m_requestMethod, m_requestUri, 500);
+    generateErrorResponse(
+        domain::shared::value_objects::ErrorCode::internalServerError(),
+        "Internal Server Error");
   }
 }
 
 const domain::configuration::entities::ServerConfig*
 ConnectionHandler::resolveVirtualHost() {
-  // TODO: Parse Host header and match against server_names
-  // For now, return configured server
+  if (!m_request.hasHeader("host")) {
+    return m_serverConfig;
+  }
+
+  const std::string hostHeader = m_request.getHost();
+  if (hostHeader.empty()) {
+    return m_serverConfig;
+  }
+
   return m_serverConfig;
 }
 
-void ConnectionHandler::generateErrorResponse(int statusCode,
-                                              const std::string& message) {
-  std::ostringstream response;
-  response << "HTTP/1.1 " << statusCode << " " << message << "\r\n";
-  response << "Content-Type: text/html\r\n";
-  response << "Connection: close\r\n";
+// ========== LOCATION MATCHING ==========
 
-  std::ostringstream body;
-  body << "<html><body><h1>" << statusCode << " " << message
-       << "</h1></body></html>";
+const domain::configuration::entities::LocationConfig*
+ConnectionHandler::findMatchingLocation(
+    const domain::configuration::entities::ServerConfig* serverConfig,
+    const std::string& requestPath) const {
+  if (serverConfig == NULL) {
+    return NULL;
+  }
 
-  response << "Content-Length: " << body.str().size() << "\r\n";
-  response << "\r\n";
-  response << body.str();
+  const std::vector<domain::configuration::entities::LocationConfig*>&
+      locations = serverConfig->getLocations();
 
-  m_responseBuffer = response.str();
-  m_responseOffset = 0;
+  const domain::configuration::entities::LocationConfig* exactMatch = NULL;
+  const domain::configuration::entities::LocationConfig* bestPrefixMatch = NULL;
+  std::size_t longestPrefixLength = 0;
+  const domain::configuration::entities::LocationConfig* regexMatch = NULL;
 
-  logRequest(m_requestMethod, m_requestUri, statusCode);
+  for (std::vector<domain::configuration::entities::LocationConfig*>::
+           const_iterator it = locations.begin();
+       it != locations.end(); ++it) {
+    const domain::configuration::entities::LocationConfig* location = *it;
+    const domain::configuration::entities::LocationConfig::LocationMatchType
+        matchType = location->getMatchType();
+
+    if (matchType ==
+        domain::configuration::entities::LocationConfig::MATCH_EXACT) {
+      if (location->matchesPath(requestPath)) {
+        exactMatch = location;
+        break;
+      }
+    } else if (matchType ==
+               domain::configuration::entities::LocationConfig::MATCH_PREFIX) {
+      if (location->matchesPath(requestPath)) {
+        const std::size_t pathLength = location->getPath().length();
+        if (pathLength > longestPrefixLength) {
+          longestPrefixLength = pathLength;
+          bestPrefixMatch = location;
+        }
+      }
+    }
+  }
+
+  if (exactMatch != NULL) {
+    return exactMatch;
+  }
+
+  for (std::vector<domain::configuration::entities::LocationConfig*>::
+           const_iterator it = locations.begin();
+       it != locations.end(); ++it) {
+    const domain::configuration::entities::LocationConfig* location = *it;
+    const domain::configuration::entities::LocationConfig::LocationMatchType
+        matchType = location->getMatchType();
+
+    if (matchType == domain::configuration::entities::LocationConfig::
+                         MATCH_REGEX_CASE_SENSITIVE ||
+        matchType == domain::configuration::entities::LocationConfig::
+                         MATCH_REGEX_CASE_INSENSITIVE) {
+      if (location->matchesPath(requestPath)) {
+        regexMatch = location;
+        break;
+      }
+    }
+  }
+
+  if (regexMatch != NULL) {
+    return regexMatch;
+  }
+
+  if (bestPrefixMatch != NULL) {
+    return bestPrefixMatch;
+  }
+
+  for (std::vector<domain::configuration::entities::LocationConfig*>::
+           const_iterator it = locations.begin();
+       it != locations.end(); ++it) {
+    const domain::configuration::entities::LocationConfig* location = *it;
+    if (location->getPath() == "/") {
+      return location;
+    }
+  }
+
+  return NULL;
 }
 
-bool ConnectionHandler::shouldKeepAlive() const {
-  // HTTP/1.1 defaults to keep-alive unless explicitly closed
-  if (m_requestProtocol == "HTTP/1.1") {
-    // TODO: Check Connection header for "close"
+// ========== HTTP METHOD HANDLERS ==========
+
+void ConnectionHandler::handleGetRequest(
+    const domain::configuration::value_objects::Route& /* route */,
+    const domain::configuration::entities::LocationConfig& location,
+    const domain::filesystem::value_objects::Path& requestPath) {
+  domain::filesystem::value_objects::Path resolvedPath =
+      location.resolvePath(requestPath.toString());
+
+  std::ostringstream debugMsg;
+  debugMsg << "GET request - resolved path: " << resolvedPath.toString();
+  m_logger.debug(debugMsg.str());
+
+  if (!filesystem::adapters::FileSystemHelper::exists(
+          resolvedPath.toString())) {
+    if (!location.getTryFiles().empty()) {
+      resolvedPath = tryFindFile(location, requestPath);
+      if (resolvedPath.isEmpty()) {
+        handleNotFound(location);
+        return;
+      }
+    } else {
+      handleNotFound(location);
+      return;
+    }
+  }
+
+  if (filesystem::adapters::FileSystemHelper::isDirectory(
+          resolvedPath.toString())) {
+    handleDirectoryRequest(location, resolvedPath, requestPath);
+    return;
+  }
+
+  if (location.hasCgiConfig() &&
+      location.getCgiConfig().matchesExtension(resolvedPath.toString())) {
+    handleCgiRequest(location, resolvedPath);
+    return;
+  }
+
+  handleStaticFileRequest(location, resolvedPath);
+}
+
+void ConnectionHandler::handlePostRequest(
+    const domain::configuration::value_objects::Route& /* route */,
+    const domain::configuration::entities::LocationConfig& location,
+    const domain::filesystem::value_objects::Path& requestPath) {
+  if (location.isUploadRoute()) {
+    handleFileUpload(location, requestPath);
+    return;
+  }
+
+  if (location.hasCgiConfig()) {
+    domain::filesystem::value_objects::Path resolvedPath =
+        location.resolvePath(requestPath.toString());
+
+    if (location.getCgiConfig().matchesExtension(resolvedPath.toString())) {
+      handleCgiRequest(location, resolvedPath);
+      return;
+    }
+  }
+
+  generateErrorResponse(
+      domain::shared::value_objects::ErrorCode::methodNotAllowed(),
+      "POST method not allowed for this resource");
+}
+
+void ConnectionHandler::handleDeleteRequest(
+    const domain::configuration::value_objects::Route& /* route */,
+    const domain::configuration::entities::LocationConfig& location,
+    const domain::filesystem::value_objects::Path& requestPath) {
+  domain::filesystem::value_objects::Path resolvedPath =
+      location.resolvePath(requestPath.toString());
+
+  if (!filesystem::adapters::FileSystemHelper::exists(
+          resolvedPath.toString())) {
+    handleNotFound(location);
+    return;
+  }
+
+  if (filesystem::adapters::FileSystemHelper::isDirectory(
+          resolvedPath.toString())) {
+    generateErrorResponse(domain::shared::value_objects::ErrorCode::forbidden(),
+                          "Directory deletion not allowed");
+    return;
+  }
+
+  try {
+    if (std::remove(resolvedPath.toString().c_str()) != 0) {
+      throw std::runtime_error("Failed to delete file");
+    }
+
+    m_response = domain::http::entities::HttpResponse::noContent();
+    m_response.setContentType("text/plain");
+
+  } catch (const std::exception& ex) {
+    m_logger.error(std::string("Delete operation failed: ") + ex.what());
+    generateErrorResponse(
+        domain::shared::value_objects::ErrorCode::internalServerError(),
+        "Failed to delete resource");
+  }
+}
+
+// ========== RESOURCE HANDLERS ==========
+
+void ConnectionHandler::handleDirectoryRequest(
+    const domain::configuration::entities::LocationConfig& location,
+    const domain::filesystem::value_objects::Path& directoryPath,
+    const domain::filesystem::value_objects::Path& requestPath) {
+  const std::vector<std::string>& indexFiles = location.getIndexFiles();
+  for (std::vector<std::string>::const_iterator it = indexFiles.begin();
+       it != indexFiles.end(); ++it) {
+    domain::filesystem::value_objects::Path indexPath = directoryPath.join(*it);
+
+    if (filesystem::adapters::FileSystemHelper::exists(indexPath.toString()) &&
+        !filesystem::adapters::FileSystemHelper::isDirectory(
+            indexPath.toString())) {
+      if (location.hasCgiConfig() &&
+          location.getCgiConfig().matchesExtension(indexPath.toString())) {
+        handleCgiRequest(location, indexPath);
+        return;
+      }
+
+      handleStaticFileRequest(location, indexPath);
+      return;
+    }
+  }
+
+  if (location.getAutoIndex()) {
+    handleDirectoryListing(directoryPath, requestPath);
+    return;
+  }
+
+  generateErrorResponse(domain::shared::value_objects::ErrorCode::forbidden(),
+                        "Directory listing is disabled");
+}
+
+void ConnectionHandler::handleStaticFileRequest(
+    const domain::configuration::entities::LocationConfig& /* location */,
+    const domain::filesystem::value_objects::Path& filePath) {
+  try {
+    filesystem::adapters::PathResolver pathResolver(NULL);
+    filesystem::adapters::FileHandler fileHandler(NULL, &pathResolver);
+
+    filesystem::adapters::FileMetadata metadata =
+        fileHandler.getMetadata(filePath);
+
+    std::vector<char> content = fileHandler.readFile(filePath);
+
+    m_response = domain::http::entities::HttpResponse::ok(
+        std::string(content.begin(), content.end()));
+    m_response.setContentType(metadata.mimeType);
+
+    std::ostringstream contentLength;
+    contentLength << metadata.size.getBytes();
+    m_response.addHeader("Content-Length", contentLength.str());
+
+    if (!metadata.lastModified.empty()) {
+      m_response.addHeader("Last-Modified", metadata.lastModified);
+    }
+
+  } catch (const filesystem::exceptions::FileHandlerException& ex) {
+    m_logger.error(std::string("File handler error: ") + ex.what());
+    std::string errorMsg = ex.what();
+    if (errorMsg.find("not found") != std::string::npos ||
+        errorMsg.find("Not found") != std::string::npos) {
+      generateErrorResponse(
+          domain::shared::value_objects::ErrorCode::notFound(), "Not Found");
+    } else if (errorMsg.find("not readable") != std::string::npos ||
+               errorMsg.find("Not readable") != std::string::npos) {
+      generateErrorResponse(
+          domain::shared::value_objects::ErrorCode::forbidden(),
+          "File not readable");
+    } else {
+      generateErrorResponse(
+          domain::shared::value_objects::ErrorCode::internalServerError(),
+          "Internal Server Error");
+    }
+  } catch (const std::exception& ex) {
+    m_logger.error(std::string("Static file error: ") + ex.what());
+    generateErrorResponse(
+        domain::shared::value_objects::ErrorCode::internalServerError(),
+        "Internal Server Error");
+  }
+}
+
+void ConnectionHandler::handleDirectoryListing(
+    const domain::filesystem::value_objects::Path& directoryPath,
+    const domain::filesystem::value_objects::Path& requestPath) {
+  try {
+    std::string htmlListing =
+        filesystem::adapters::DirectoryLister::generateHtmlListing(
+            directoryPath, requestPath, false, "name", true);
+
+    m_response = domain::http::entities::HttpResponse::ok(htmlListing);
+    m_response.setContentType("text/html; charset=utf-8");
+
+  } catch (const std::exception& ex) {
+    m_logger.error(std::string("Directory listing error: ") + ex.what());
+    generateErrorResponse(
+        domain::shared::value_objects::ErrorCode::internalServerError(),
+        "Failed to generate directory listing");
+  }
+}
+
+void ConnectionHandler::handleCgiRequest(
+    const domain::configuration::entities::LocationConfig& location,
+    const domain::filesystem::value_objects::Path& scriptPath) {
+  try {
+    const domain::configuration::value_objects::CgiConfig& cgiConfig =
+        location.getCgiConfig();
+
+    domain::http::value_objects::RouteMatchInfo matchInfo =
+        domain::http::value_objects::RouteMatchInfo::createForFile(
+            scriptPath, scriptPath.toString());
+
+    std::string serverName = "localhost";
+    unsigned int serverPort = 8080;
+    if (m_request.hasHeader("host")) {
+      std::string hostHeader = m_request.getHost();
+      std::size_t colonPos = hostHeader.find(':');
+      if (colonPos != std::string::npos) {
+        serverName = hostHeader.substr(0, colonPos);
+        serverPort = static_cast<unsigned int>(
+            std::atoi(hostHeader.substr(colonPos + 1).c_str()));
+      } else {
+        serverName = hostHeader;
+      }
+    }
+
+    cgi::primitives::CgiRequest cgiRequest(m_request, cgiConfig, matchInfo,
+                                           serverName, serverPort);
+
+    cgi::adapters::CgiExecutor executor(m_logger);
+    cgi::primitives::CgiResponse cgiResponse = executor.execute(cgiRequest);
+
+    buildHttpResponseFromCgi(cgiResponse);
+
+  } catch (const cgi::exceptions::CgiExecutionException& ex) {
+    m_logger.error(std::string("CGI execution error: ") + ex.what());
+    generateErrorResponse(
+        domain::shared::value_objects::ErrorCode::internalServerError(),
+        "CGI Script Error");
+  } catch (const std::exception& ex) {
+    m_logger.error(std::string("CGI processing error: ") + ex.what());
+    generateErrorResponse(
+        domain::shared::value_objects::ErrorCode::internalServerError(),
+        "Internal Server Error");
+  }
+}
+
+void ConnectionHandler::handleFileUpload(
+    const domain::configuration::entities::LocationConfig& location,
+    const domain::filesystem::value_objects::Path& /* requestPath */) {
+  if (!location.hasUploadConfig()) {
+    generateErrorResponse(
+        domain::shared::value_objects::ErrorCode::methodNotAllowed(),
+        "Upload not configured for this location");
+    return;
+  }
+
+  const domain::configuration::value_objects::UploadConfig& uploadConfig =
+      location.getUploadConfig();
+
+  try {
+    if (!m_request.hasHeader("content-type")) {
+      generateErrorResponse(
+          domain::shared::value_objects::ErrorCode::badRequest(),
+          "Content-Type header required for upload");
+      return;
+    }
+
+    std::string contentType = m_request.getHeader("content-type");
+    if (contentType.find("multipart/form-data") == std::string::npos) {
+      generateErrorResponse(
+          domain::shared::value_objects::ErrorCode::badRequest(),
+          "Content-Type must be multipart/form-data");
+      return;
+    }
+
+    const domain::http::entities::HttpRequest::Body& body = m_request.getBody();
+    domain::filesystem::value_objects::Size bodySize(body.size());
+
+    if (!uploadConfig.validateFileSize(bodySize)) {
+      generateErrorResponse(
+          domain::shared::value_objects::ErrorCode::payloadTooLarge(),
+          "Uploaded file exceeds maximum size");
+      return;
+    }
+
+    domain::filesystem::value_objects::Path uploadPath =
+        uploadConfig.getUploadDirectory();
+
+    m_response = domain::http::entities::HttpResponse(
+        domain::shared::value_objects::ErrorCode::created(), "File uploaded");
+    m_response.setContentType("text/plain");
+
+    std::ostringstream successMsg;
+    successMsg << "File uploaded successfully to " << uploadPath.toString();
+    m_response.setBody(successMsg.str());
+
+  } catch (const std::exception& ex) {
+    m_logger.error(std::string("File upload error: ") + ex.what());
+    generateErrorResponse(
+        domain::shared::value_objects::ErrorCode::internalServerError(),
+        "Upload failed");
+  }
+}
+
+// ========== SPECIAL DIRECTIVE HANDLERS ==========
+
+void ConnectionHandler::handleRedirect(
+    const domain::configuration::entities::LocationConfig& location) {
+  const domain::http::value_objects::Uri& redirectUri =
+      location.getReturnRedirect();
+  const domain::shared::value_objects::ErrorCode& redirectCode =
+      location.getReturnCode();
+
+  m_response =
+      domain::http::entities::HttpResponse(redirectCode, "Redirecting");
+  m_response.addHeader("Location", redirectUri.toString());
+  m_response.setContentType("text/html");
+
+  std::ostringstream body;
+  body << "<html><head><title>Redirect</title></head><body>"
+       << "<h1>Redirecting</h1>" << "<p>The document has moved <a href=\""
+       << redirectUri.toString() << "\">here</a>.</p>" << "</body></html>";
+  m_response.setBody(body.str());
+}
+
+void ConnectionHandler::handleReturnContent(
+    const domain::configuration::entities::LocationConfig& location) {
+  const std::string& content = location.getReturnContent();
+  const domain::shared::value_objects::ErrorCode& returnCode =
+      location.getReturnCode();
+
+  m_response = domain::http::entities::HttpResponse(returnCode, content);
+  m_response.setContentType("text/plain");
+}
+
+// ========== ERROR HANDLING ==========
+
+void ConnectionHandler::generateErrorResponse(
+    const domain::shared::value_objects::ErrorCode& statusCode,
+    const std::string& message) {
+  if (statusCode.isBadRequest()) {
+    m_response = domain::http::entities::HttpResponse::badRequest(message);
+  } else if (statusCode.isUnauthorized()) {
+    m_response = domain::http::entities::HttpResponse::unauthorized(message);
+  } else if (statusCode.isForbidden()) {
+    m_response = domain::http::entities::HttpResponse::forbidden(message);
+  } else if (statusCode.isNotFound()) {
+    m_response = domain::http::entities::HttpResponse::notFound(message);
+  } else if (statusCode.isMethodNotAllowed()) {
+    m_response =
+        domain::http::entities::HttpResponse::methodNotAllowed(message);
+  } else if (statusCode.isPayloadTooLarge()) {
+    m_response = domain::http::entities::HttpResponse::payloadTooLarge(message);
+  } else if (statusCode.getValue() == 500) {
+    m_response =
+        domain::http::entities::HttpResponse::internalServerError(message);
+  } else {
+    m_response = domain::http::entities::HttpResponse(statusCode, message);
+  }
+
+  m_response.setConnection("close");
+}
+
+void ConnectionHandler::handleNotFound(
+    const domain::configuration::entities::LocationConfig& location) {
+  const domain::configuration::entities::LocationConfig::ErrorPageMap&
+      errorPages = location.getErrorPages();
+
+  domain::shared::value_objects::ErrorCode notFoundCode =
+      domain::shared::value_objects::ErrorCode::notFound();
+
+  domain::configuration::entities::LocationConfig::ErrorPageMap::const_iterator
+      it = errorPages.find(notFoundCode);
+
+  if (it != errorPages.end()) {
+    serveErrorPage(it->second, notFoundCode);
+  } else {
+    generateErrorResponse(notFoundCode, "Not Found");
+  }
+}
+
+void ConnectionHandler::serveErrorPage(
+    const std::string& errorPagePath,
+    const domain::shared::value_objects::ErrorCode& statusCode) {
+  try {
+    domain::filesystem::value_objects::Path errorPath =
+        domain::filesystem::value_objects::Path::fromString(errorPagePath,
+                                                            true);
+
+    if (!filesystem::adapters::FileSystemHelper::exists(errorPath.toString())) {
+      generateErrorResponse(statusCode, "Error page not found");
+      return;
+    }
+
+    filesystem::adapters::PathResolver pathResolver(NULL);
+    filesystem::adapters::FileHandler fileHandler(NULL, &pathResolver);
+
+    std::vector<char> content = fileHandler.readFile(errorPath);
+    std::string contentStr(content.begin(), content.end());
+
+    m_response = domain::http::entities::HttpResponse(statusCode, contentStr);
+    m_response.setContentType("text/html");
+
+  } catch (const std::exception& ex) {
+    m_logger.error(std::string("Error page serving failed: ") + ex.what());
+    generateErrorResponse(statusCode, "Internal Server Error");
+  }
+}
+
+// ========== VALIDATION & UTILITIES ==========
+
+bool ConnectionHandler::validateRequestBodySize(
+    const domain::configuration::entities::LocationConfig& location) const {
+  if (!m_request.hasBody()) {
     return true;
   }
 
-  // HTTP/1.0 requires explicit Connection: keep-alive
-  // TODO: Parse Connection header
-  return false;
+  const domain::http::entities::HttpRequest::Body& body = m_request.getBody();
+  const domain::filesystem::value_objects::Size& maxSize =
+      location.getClientMaxBodySize();
+
+  return body.size() <= maxSize.getBytes();
+}
+
+domain::filesystem::value_objects::Path ConnectionHandler::tryFindFile(
+    const domain::configuration::entities::LocationConfig& location,
+    const domain::filesystem::value_objects::Path& /* requestPath */) const {
+  const domain::configuration::entities::LocationConfig::TryFiles& tryFiles =
+      location.getTryFiles();
+
+  for (domain::configuration::entities::LocationConfig::TryFiles::const_iterator
+           it = tryFiles.begin();
+       it != tryFiles.end(); ++it) {
+    domain::filesystem::value_objects::Path tryPath = location.resolvePath(*it);
+
+    if (filesystem::adapters::FileSystemHelper::exists(tryPath.toString())) {
+      return tryPath;
+    }
+  }
+
+  return domain::filesystem::value_objects::Path();
+}
+
+void ConnectionHandler::buildHttpResponseFromCgi(
+    const cgi::primitives::CgiResponse& cgiResponse) {
+  domain::shared::value_objects::ErrorCode statusCode =
+      domain::shared::value_objects::ErrorCode::ok();
+
+  if (cgiResponse.hasStatus()) {
+    statusCode = cgiResponse.getStatus();
+  }
+
+  m_response = domain::http::entities::HttpResponse(
+      statusCode,
+      std::string(cgiResponse.getBody().begin(), cgiResponse.getBody().end()));
+
+  const std::map<std::string, std::string>& cgiHeaders =
+      cgiResponse.getHeaders();
+  for (std::map<std::string, std::string>::const_iterator it =
+           cgiHeaders.begin();
+       it != cgiHeaders.end(); ++it) {
+    m_response.addHeader(it->first, it->second);
+  }
+
+  if (!cgiResponse.getContentType().empty()) {
+    m_response.setContentType(cgiResponse.getContentType());
+  } else {
+    m_response.setContentType("text/html");
+  }
+
+  if (cgiResponse.hasLocation()) {
+    m_response.addHeader("Location", cgiResponse.getLocation());
+  }
+}
+
+void ConnectionHandler::applyCustomHeaders(
+    const domain::configuration::entities::LocationConfig& location) {
+  if (!location.hasCustomHeaders()) {
+    return;
+  }
+
+  const domain::configuration::entities::LocationConfig::CustomHeaderMap&
+      customHeaders = location.getCustomHeaders();
+
+  for (domain::configuration::entities::LocationConfig::CustomHeaderMap::
+           const_iterator it = customHeaders.begin();
+       it != customHeaders.end(); ++it) {
+    m_response.addHeader(it->first, it->second);
+  }
+}
+
+bool ConnectionHandler::shouldKeepAlive() const {
+  return m_request.isKeepAlive();
+}
+
+void ConnectionHandler::resetForNextRequest() {
+  m_requestBuffer.clear();
+  m_request = domain::http::entities::HttpRequest();
+  m_response = domain::http::entities::HttpResponse();
+  m_responseBuffer.clear();
+  m_responseOffset = 0;
 }
 
 std::string ConnectionHandler::formatState() const {
@@ -319,11 +999,13 @@ std::string ConnectionHandler::formatState() const {
   }
 }
 
-void ConnectionHandler::logRequest(const std::string& method,
-                                   const std::string& uri, int statusCode) {
+void ConnectionHandler::logRequest(
+    const domain::http::entities::HttpRequest& request,
+    const domain::http::entities::HttpResponse& response) {
   std::ostringstream oss;
-  oss << getRemoteAddress() << " - \"" << method << " " << uri << "\" "
-      << statusCode;
+  oss << getRemoteAddress() << " - \"" << request.getMethod().toString() << " "
+      << request.getPath().toString() << " " << request.getVersion().toString()
+      << "\" " << response.getStatusCode().getValue();
   m_logger.info(oss.str());
 }
 

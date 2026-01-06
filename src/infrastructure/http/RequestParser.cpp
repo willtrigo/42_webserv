@@ -6,35 +6,40 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/24 20:53:07 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/24 22:14:50 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/06 19:53:13 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+#include "domain/filesystem/value_objects/Path.hpp"
+#include "domain/http/value_objects/HttpMethod.hpp"
+#include "domain/http/value_objects/QueryStringBuilder.hpp"
 #include "infrastructure/http/RequestParser.hpp"
-#include "shared/exceptions/RequestParserException.hpp"
+#include "infrastructure/http/RequestParserException.hpp"
 
 #include <algorithm>
 #include <cctype>
 #include <sstream>
 
+// TODO: refactor this class
 namespace infrastructure {
 namespace http {
 
 using shared::exceptions::RequestParserException;
 
 ParsedRequest::ParsedRequest()
-    : method(domain::value_objects::HttpMethod::METHOD_UNKNOWN),
-      path(domain::value_objects::Path::fromString("/", true)),
+    : method(domain::http::value_objects::HttpMethod::METHOD_UNKNOWN),
+      path(domain::filesystem::value_objects::Path::fromString("/", true)),
       httpVersion("HTTP/1.1") {}
 
 bool ParsedRequest::isComplete() const {
-  return !hasError() && method.getMethod() !=
-                            domain::value_objects::HttpMethod::METHOD_UNKNOWN;
+  return !hasError() &&
+         method.getMethod() !=
+             domain::http::value_objects::HttpMethod::METHOD_UNKNOWN;
 }
 
 bool ParsedRequest::hasError() const {
   return method.getMethod() ==
-             domain::value_objects::HttpMethod::METHOD_UNKNOWN ||
+             domain::http::value_objects::HttpMethod::METHOD_UNKNOWN ||
          path.isEmpty();
 }
 
@@ -328,7 +333,8 @@ void RequestParser::processStartLine(const std::string& line) {
     throw RequestParserException("Unsupported HTTP method: " + methodStr,
                                  RequestParserException::UNSUPPORTED_METHOD);
   }
-  m_request.method = domain::value_objects::HttpMethod::fromString(methodStr);
+  m_request.method =
+      domain::http::value_objects::HttpMethod::fromString(methodStr);
 
   // Parse URI and query string
   std::size_t queryPos = uri.find('?');
@@ -337,7 +343,8 @@ void RequestParser::processStartLine(const std::string& line) {
     pathStr = uri.substr(0, queryPos);
     std::string queryStr = uri.substr(queryPos + 1);
     m_request.query =
-        domain::value_objects::QueryStringBuilder::parseQueryString(queryStr);
+        domain::http::value_objects::QueryStringBuilder::parseQueryString(
+            queryStr);
   } else {
     pathStr = uri;
   }
@@ -360,7 +367,8 @@ void RequestParser::processStartLine(const std::string& line) {
   }
 
   try {
-    m_request.path = domain::value_objects::Path::fromString(pathStr, true);
+    m_request.path =
+        domain::filesystem::value_objects::Path::fromString(pathStr, true);
   } catch (const std::exception& e) {
     std::ostringstream oss;
     oss << "Invalid path: " << e.what();
@@ -406,7 +414,7 @@ void RequestParser::processHeaderLine(const std::string& line) {
 }
 
 bool RequestParser::validateMethod(const std::string& method) const {
-  return domain::value_objects::HttpMethod::isValidMethodString(method);
+  return domain::http::value_objects::HttpMethod::isValidMethodString(method);
 }
 
 bool RequestParser::validatePath(const std::string& path) const {

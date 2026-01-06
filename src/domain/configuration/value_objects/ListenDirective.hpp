@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 03:21:07 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/31 04:12:03 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/06 05:30:33 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 
 #include <string>
 
+// TODO: change entities for value_objects
 namespace domain {
 namespace configuration {
 namespace entities {

@@ -6,11 +6,11 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/24 20:51:11 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/24 20:57:22 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/06 19:56:07 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "shared/exceptions/RequestParserException.hpp"
+#include "infrastructure/http/RequestParserException.hpp"
 
 #include <sstream>
 

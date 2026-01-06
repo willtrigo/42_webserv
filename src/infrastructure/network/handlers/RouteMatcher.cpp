@@ -6,38 +6,38 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/24 20:41:42 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/03 06:42:18 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/05 15:44:58 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-// TODO: not using yet
-#include "domain/value_objects/HttpMethod.hpp"
-#include "domain/value_objects/Path.hpp"
-#include "infrastructure/network/RouteMatcher.hpp"
-#include "shared/exceptions/RouteException.hpp"
+#include "domain/configuration/exceptions/RouteException.hpp"
+#include "domain/filesystem/value_objects/Path.hpp"
+#include "domain/http/value_objects/HttpMethod.hpp"
+#include "domain/http/value_objects/RouteMatchInfo.hpp"
+#include "infrastructure/network/exceptions/RouteMatcherException.hpp"
+#include "infrastructure/network/handlers/RouteMatcher.hpp"
 
 #include <algorithm>
 #include <sstream>
 
 namespace infrastructure {
 namespace network {
-
-MatchResult::MatchResult() : route(NULL), isExactMatch(false) {}
-
-bool MatchResult::isValid() const { return route != NULL; }
+namespace handlers {
 
 RouteMatcher::RouteMatcher() {}
 
-void RouteMatcher::addRoute(const domain::entities::Route& route) {
+void RouteMatcher::addRoute(
+    const domain::configuration::value_objects::Route& route) {
   validateNoDuplicate(route);
-
   m_routes.push_back(route);
 }
 
-void RouteMatcher::removeRoute(const domain::value_objects::Path& pathPattern) {
+void RouteMatcher::removeRoute(
+    const domain::filesystem::value_objects::Path& pathPattern) {
   std::string patternStr = pathPattern.toString();
 
-  for (std::vector<domain::entities::Route>::iterator it = m_routes.begin();
+  for (std::vector<domain::configuration::value_objects::Route>::iterator it =
+           m_routes.begin();
        it != m_routes.end(); ++it) {
     if (it->getPath().toString() == patternStr) {
       m_routes.erase(it);
@@ -48,65 +48,62 @@ void RouteMatcher::removeRoute(const domain::value_objects::Path& pathPattern) {
 
 void RouteMatcher::clear() { m_routes.clear(); }
 
-MatchResult RouteMatcher::match(
+primitives::RouteMatchResult RouteMatcher::match(
     const std::string& httpMethod,
-    const domain::value_objects::Path& requestPath,
+    const domain::filesystem::value_objects::Path& requestPath,
     const std::map<std::string, std::string>& queryParams) const {
-  MatchResult result;
-
-  const domain::entities::Route* exactRoute = findExactMatch(requestPath);
-  if (exactRoute) {
-    domain::value_objects::HttpMethod method =
-        domain::value_objects::HttpMethod::fromString(httpMethod);
+  const domain::configuration::value_objects::Route* exactRoute =
+      findExactMatch(requestPath);
+  if (exactRoute != NULL) {
+    domain::http::value_objects::HttpMethod method =
+        domain::http::value_objects::HttpMethod::fromString(httpMethod);
 
     if (!exactRoute->allowsMethod(method)) {
       std::ostringstream oss;
       oss << "Method " << httpMethod << " not allowed for route "
           << exactRoute->getPath().toString();
-      throw shared::exceptions::RouteException(
-          oss.str(), shared::exceptions::RouteException::METHOD_NOT_ALLOWED);
+      throw exceptions::RouteMatcherException(
+          oss.str(), exceptions::RouteMatcherException::METHOD_NOT_ALLOWED);
     }
 
-    result.route = exactRoute;
-    result.isExactMatch = true;
-    result.matchInfo =
+    domain::http::value_objects::RouteMatchInfo matchInfo =
         exactRoute->resolveRequest(requestPath.toString(), queryParams);
-    return result;
+
+    return primitives::RouteMatchResult(exactRoute, matchInfo, true);
   }
 
-  const domain::entities::Route* prefixRoute = findPrefixMatch(requestPath);
-  if (prefixRoute != 0) {
-    domain::value_objects::HttpMethod method =
-        domain::value_objects::HttpMethod::fromString(httpMethod);
+  const domain::configuration::value_objects::Route* prefixRoute =
+      findPrefixMatch(requestPath);
+  if (prefixRoute != NULL) {
+    domain::http::value_objects::HttpMethod method =
+        domain::http::value_objects::HttpMethod::fromString(httpMethod);
 
     if (!prefixRoute->allowsMethod(method)) {
       std::ostringstream oss;
       oss << "Method " << httpMethod << " not allowed for route "
           << prefixRoute->getPath().toString();
-      throw shared::exceptions::RouteException(
-          oss.str(), shared::exceptions::RouteException::METHOD_NOT_ALLOWED);
+      throw exceptions::RouteMatcherException(
+          oss.str(), exceptions::RouteMatcherException::METHOD_NOT_ALLOWED);
     }
 
-    result.route = prefixRoute;
-    result.isExactMatch = false;
-    result.matchInfo =
+    domain::http::value_objects::RouteMatchInfo matchInfo =
         prefixRoute->resolveRequest(requestPath.toString(), queryParams);
-    return result;
+
+    return primitives::RouteMatchResult(prefixRoute, matchInfo, false);
   }
 
-  // No route found
   std::ostringstream oss;
   oss << "No route found for path: " << requestPath.toString();
-  throw shared::exceptions::RouteException(
-      oss.str(), shared::exceptions::RouteException::ROUTE_NOT_FOUND);
+  throw exceptions::RouteMatcherException(
+      oss.str(), exceptions::RouteMatcherException::ROUTE_NOT_FOUND);
 }
 
 bool RouteMatcher::hasRoute(
-    const domain::value_objects::Path& pathPattern) const {
+    const domain::filesystem::value_objects::Path& pathPattern) const {
   std::string patternStr = pathPattern.toString();
 
-  for (std::vector<domain::entities::Route>::const_iterator it =
-           m_routes.begin();
+  for (std::vector<domain::configuration::value_objects::Route>::const_iterator
+           it = m_routes.begin();
        it != m_routes.end(); ++it) {
     if (it->getPath().toString() == patternStr) {
       return true;
@@ -118,23 +115,26 @@ bool RouteMatcher::hasRoute(
 
 size_t RouteMatcher::count() const { return m_routes.size(); }
 
-const std::vector<domain::entities::Route>& RouteMatcher::getAllRoutes() const {
+const std::vector<domain::configuration::value_objects::Route>&
+RouteMatcher::getAllRoutes() const {
   return m_routes;
 }
 
-domain::entities::Route RouteMatcher::createRouteFromConfig(
+// TODO: refactor this func
+domain::configuration::value_objects::Route RouteMatcher::createRouteFromConfig(
     const std::string& pathPattern,
     const std::map<std::string, std::string>& config) {
   try {
-    domain::value_objects::Path::fromString(pathPattern, true);
+    domain::filesystem::value_objects::Path::fromString(pathPattern, true);
   } catch (const std::exception& e) {
     std::ostringstream oss;
     oss << "Invalid route pattern: " << pathPattern << " - " << e.what();
-    throw shared::exceptions::RouteException(
-        oss.str(), shared::exceptions::RouteException::INVALID_PATH);
+    throw domain::configuration::exceptions::RouteException(
+        oss.str(),
+        domain::configuration::exceptions::RouteException::INVALID_PATH);
   }
 
-  std::set<domain::value_objects::HttpMethod> allowedMethods;
+  std::set<domain::http::value_objects::HttpMethod> allowedMethods;
 
   std::map<std::string, std::string>::const_iterator iter =
       config.find("allowed_methods");
@@ -143,48 +143,51 @@ domain::entities::Route RouteMatcher::createRouteFromConfig(
     std::istringstream iss(methodsStr);
     std::string method;
     while (std::getline(iss, method, ',') != 0) {
-      // Trim whitespace
       method.erase(0, method.find_first_not_of(" \t"));
       method.erase(method.find_last_not_of(" \t") + 1);
 
-      if (!domain::value_objects::HttpMethod::isValidMethodString(method)) {
+      if (!domain::http::value_objects::HttpMethod::isValidMethodString(
+              method)) {
         std::ostringstream oss;
         oss << "Invalid HTTP method: " << method;
-        throw shared::exceptions::RouteException(
-            oss.str(), shared::exceptions::RouteException::INVALID_METHOD);
+        throw domain::configuration::exceptions::RouteException(
+            oss.str(),
+            domain::configuration::exceptions::RouteException::INVALID_METHOD);
       }
 
       allowedMethods.insert(
-          domain::value_objects::HttpMethod::fromString(method));
+          domain::http::value_objects::HttpMethod::fromString(method));
     }
   } else {
-    allowedMethods.insert(domain::value_objects::HttpMethod::get());
+    allowedMethods.insert(domain::http::value_objects::HttpMethod::get());
   }
 
-  domain::entities::Route::HandlerType handlerType =
-      domain::entities::Route::STATIC_FILE;
+  domain::configuration::value_objects::Route::HandlerType handlerType =
+      domain::configuration::value_objects::Route::STATIC_FILE;
 
   iter = config.find("handler_type");
   if (iter != config.end()) {
     std::string typeStr = iter->second;
     if (typeStr == "cgi") {
-      handlerType = domain::entities::Route::CGI_EXECUTION;
+      handlerType = domain::configuration::value_objects::Route::CGI_EXECUTION;
     } else if (typeStr == "directory") {
-      handlerType = domain::entities::Route::DIRECTORY_LISTING;
+      handlerType =
+          domain::configuration::value_objects::Route::DIRECTORY_LISTING;
     } else if (typeStr == "redirect") {
-      handlerType = domain::entities::Route::REDIRECT;
+      handlerType = domain::configuration::value_objects::Route::REDIRECT;
     } else if (typeStr == "upload") {
-      handlerType = domain::entities::Route::UPLOAD;
+      handlerType = domain::configuration::value_objects::Route::UPLOAD;
     } else if (typeStr != "static") {
       std::ostringstream oss;
       oss << "Invalid handler type: " << typeStr;
-      throw shared::exceptions::RouteException(
-          oss.str(), shared::exceptions::RouteException::INVALID_HANDLER);
+      throw domain::configuration::exceptions::RouteException(
+          oss.str(),
+          domain::configuration::exceptions::RouteException::INVALID_HANDLER);
     }
   }
 
-  domain::entities::Route route(
-      domain::value_objects::Path::fromString(pathPattern, true),
+  domain::configuration::value_objects::Route route(
+      domain::filesystem::value_objects::Path::fromString(pathPattern, true),
       allowedMethods, handlerType);
 
   iter = config.find("root");
@@ -205,14 +208,15 @@ domain::entities::Route RouteMatcher::createRouteFromConfig(
   iter = config.find("max_body_size");
   if (iter != config.end()) {
     try {
-      domain::value_objects::Size maxSize =
-          domain::value_objects::Size::fromString(iter->second);
+      domain::filesystem::value_objects::Size maxSize =
+          domain::filesystem::value_objects::Size::fromString(iter->second);
       route.setMaxBodySize(maxSize);
     } catch (const std::exception& e) {
       std::ostringstream oss;
       oss << "Invalid max body size: " << iter->second << " - " << e.what();
-      throw shared::exceptions::RouteException(
-          oss.str(), shared::exceptions::RouteException::CONFIGURATION_ERROR);
+      throw domain::configuration::exceptions::RouteException(
+          oss.str(), domain::configuration::exceptions::RouteException::
+                         CONFIGURATION_ERROR);
     }
   }
 
@@ -224,10 +228,11 @@ domain::entities::Route RouteMatcher::createRouteFromConfig(
                               value == "yes" || value == "1");
   }
 
-  if (handlerType == domain::entities::Route::CGI_EXECUTION) {
+  if (handlerType ==
+      domain::configuration::value_objects::Route::CGI_EXECUTION) {
     iter = config.find("cgi_interpreter");
     if (iter != config.end()) {
-      std::string cgiExtension = ".php";  // Default
+      std::string cgiExtension = ".php";
       std::map<std::string, std::string>::const_iterator extIt =
           config.find("cgi_extension");
       if (extIt != config.end()) {
@@ -235,49 +240,51 @@ domain::entities::Route RouteMatcher::createRouteFromConfig(
       }
       route.setCgiConfig(iter->second, cgiExtension);
     } else {
-      throw shared::exceptions::RouteException(
+      throw domain::configuration::exceptions::RouteException(
           "Missing cgi_interpreter for CGI route",
-          shared::exceptions::RouteException::CONFIGURATION_ERROR);
+          domain::configuration::exceptions::RouteException::
+              CONFIGURATION_ERROR);
     }
   }
 
-  if (handlerType == domain::entities::Route::REDIRECT) {
+  if (handlerType == domain::configuration::value_objects::Route::REDIRECT) {
     iter = config.find("redirect_target");
     if (iter != config.end()) {
-      domain::value_objects::ErrorCode redirectCode(
-          301);  // Default: Moved Permanently
+      domain::shared::value_objects::ErrorCode redirectCode(
+          domain::shared::value_objects::ErrorCode::STATUS_MOVED_PERMANENTLY);
       std::map<std::string, std::string>::const_iterator codeIt =
           config.find("redirect_code");
       if (codeIt != config.end()) {
         try {
-          redirectCode =
-              domain::value_objects::ErrorCode::fromString(codeIt->second);
+          redirectCode = domain::shared::value_objects::ErrorCode::fromString(
+              codeIt->second);
         } catch (const std::exception& e) {
           std::ostringstream oss;
           oss << "Invalid redirect code: " << codeIt->second << " - "
               << e.what();
-          throw shared::exceptions::RouteException(
-              oss.str(),
-              shared::exceptions::RouteException::CONFIGURATION_ERROR);
+          throw domain::configuration::exceptions::RouteException(
+              oss.str(), domain::configuration::exceptions::RouteException::
+                             CONFIGURATION_ERROR);
         }
       }
       route.setRedirect(iter->second, redirectCode);
     } else {
-      throw shared::exceptions::RouteException(
+      throw domain::configuration::exceptions::RouteException(
           "Missing redirect_target for redirect route",
-          shared::exceptions::RouteException::CONFIGURATION_ERROR);
+          domain::configuration::exceptions::RouteException::
+              CONFIGURATION_ERROR);
     }
   }
 
   return route;
 }
 
-const domain::entities::Route* RouteMatcher::findExactMatch(
-    const domain::value_objects::Path& requestPath) const {
+const domain::configuration::value_objects::Route* RouteMatcher::findExactMatch(
+    const domain::filesystem::value_objects::Path& requestPath) const {
   std::string requestStr = requestPath.toString();
 
-  for (std::vector<domain::entities::Route>::const_iterator it =
-           m_routes.begin();
+  for (std::vector<domain::configuration::value_objects::Route>::const_iterator
+           it = m_routes.begin();
        it != m_routes.end(); ++it) {
     if (it->getPath().toString() == requestStr) {
       return &(*it);
@@ -291,24 +298,22 @@ const domain::entities::Route* RouteMatcher::findExactMatch(
   return NULL;
 }
 
-
-const domain::entities::Route* RouteMatcher::findPrefixMatch(
-    const domain::value_objects::Path& requestPath) const {
-  
+const domain::configuration::value_objects::Route*
+RouteMatcher::findPrefixMatch(
+    const domain::filesystem::value_objects::Path& requestPath) const {
   std::string requestStr = requestPath.toString();
-  
-  // Create vector of route pointers
-  std::vector<const domain::entities::Route*> sortedRoutes;
-  for (std::vector<domain::entities::Route>::const_iterator it = m_routes.begin();
+
+  std::vector<const domain::configuration::value_objects::Route*> sortedRoutes;
+  for (std::vector<domain::configuration::value_objects::Route>::const_iterator
+           it = m_routes.begin();
        it != m_routes.end(); ++it) {
     sortedRoutes.push_back(&(*it));
   }
-  
-  // Sort by path length (longest first) using function pointer
+
   std::sort(sortedRoutes.begin(), sortedRoutes.end(), compareRouteLength);
 
-  for (std::vector<const domain::entities::Route*>::const_iterator it =
-           sortedRoutes.begin();
+  for (std::vector<const domain::configuration::value_objects::Route*>::
+           const_iterator it = sortedRoutes.begin();
        it != sortedRoutes.end(); ++it) {
     std::string routePattern = (*it)->getPath().toString();
 
@@ -323,26 +328,30 @@ const domain::entities::Route* RouteMatcher::findPrefixMatch(
   return NULL;
 }
 
-bool RouteMatcher::compareRouteLength(const domain::entities::Route* a, 
-                               const domain::entities::Route* b) {
-  return a->getPath().toString().length() > b->getPath().toString().length();
+bool RouteMatcher::compareRouteLength(
+    const domain::configuration::value_objects::Route* routeA,
+    const domain::configuration::value_objects::Route* routeB) {
+  return routeA->getPath().toString().length() >
+         routeB->getPath().toString().length();
 }
 
 void RouteMatcher::validateNoDuplicate(
-    const domain::entities::Route& route) const {
+    const domain::configuration::value_objects::Route& route) const {
   std::string patternStr = route.getPath().toString();
 
-  for (std::vector<domain::entities::Route>::const_iterator it =
-           m_routes.begin();
+  for (std::vector<domain::configuration::value_objects::Route>::const_iterator
+           it = m_routes.begin();
        it != m_routes.end(); ++it) {
     if (it->getPath().toString() == patternStr) {
       std::ostringstream oss;
       oss << "Duplicate route pattern: " << patternStr;
-      throw shared::exceptions::RouteException(
-          oss.str(), shared::exceptions::RouteException::DUPLICATE_ROUTE);
+      throw domain::configuration::exceptions::RouteException(
+          oss.str(),
+          domain::configuration::exceptions::RouteException::DUPLICATE_ROUTE);
     }
   }
 }
 
+}  // namespace handlers
 }  // namespace network
 }  // namespace infrastructure
