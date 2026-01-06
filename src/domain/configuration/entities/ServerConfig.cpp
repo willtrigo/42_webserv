@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 11:52:37 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/05 20:36:27 by umeneses         ###   ########.fr       */
+/*   Updated: 2026/01/05 21:46:40 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -130,17 +130,21 @@ std::string ServerConfig::normalizeListenDirective(
 
   // Check if it's a port-only format (all digits)
   if (shared::utils::StringUtils::isAllDigits(trimmed)) {
-    return "0.0.0.0:" + trimmed;
+    return ListenDirective::DEFAULT_HOST + std::string(":") + trimmed;
   }
 
   // Check if it's an IPv6 without port
   if (trimmed.find("::") != std::string::npos ||
-      (trimmed.length() > 0 && trimmed[0] == '[')) {
-    return trimmed + ":80";
+      (!trimmed.empty() && trimmed[0] == '[')) {
+        std::ostringstream oss;
+        oss << trimmed << ":" << ListenDirective::DEFAULT_PORT.getValue();
+    return oss.str();
   }
 
   // Otherwise it's a hostname/IP without port
-  return trimmed + ":80";
+  std::ostringstream oss;
+  oss << trimmed << ":" << ListenDirective::DEFAULT_PORT.getValue();
+  return oss.str();
 }
 
 void ServerConfig::addListenDirective(const ListenDirective& directive) {
