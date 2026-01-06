@@ -3,15 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   ListenDirective.cpp                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 03:21:29 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/31 04:51:29 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/05 21:04:51 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "domain/configuration/exceptions/ListenDirectiveException.hpp"
 #include "domain/configuration/value_objects/ListenDirective.hpp"
+#include "domain/http/exceptions/HostException.hpp"
+#include "domain/http/exceptions/PortException.hpp"
 #include "domain/http/value_objects/Host.hpp"
 #include "domain/http/value_objects/Port.hpp"
 #include "domain/shared/utils/StringUtils.hpp"
@@ -23,8 +25,7 @@ namespace domain {
 namespace configuration {
 namespace entities {
 
-const std::string ListenDirective::DEFAULT_HOST =
-    http::value_objects::Host::WILDCARD_IPV4;
+const std::string ListenDirective::DEFAULT_HOST = "0.0.0.0";
 const http::value_objects::Port ListenDirective::DEFAULT_PORT =
     http::value_objects::Port::httpPort();
 
@@ -40,22 +41,14 @@ ListenDirective::ListenDirective(const http::value_objects::Host& host,
 ListenDirective::ListenDirective(const std::string& directiveString)
     : m_host(http::value_objects::Host::wildcard()), m_port(DEFAULT_PORT) {
   validateDirectiveString(directiveString);
+  validateDirectiveFormat(directiveString);
 
   std::pair<std::string, std::string> parts = splitDirective(directiveString);
-
   std::string hostStr = normalizeHostString(parts.first);
   std::string portStr = normalizePortString(parts.second);
 
-  if (hostStr.empty()) {
-    m_host = http::value_objects::Host::wildcard();
-  } else {
-    m_host = http::value_objects::Host::fromString(hostStr);
-  }
-
-  if (!portStr.empty()) {
-    m_port = http::value_objects::Port::fromString(portStr);
-  }
-
+  validatePortStringFormat(portStr, directiveString);
+  parseAndSetHostPort(hostStr, portStr, directiveString);
   validate();
 }
 
@@ -117,6 +110,14 @@ bool ListenDirective::isValidDirective(const std::string& directiveString) {
 
   std::string trimmed = shared::utils::StringUtils::trim(directiveString);
   if (trimmed.empty()) {
+    return false;
+  }
+
+  if (directiveString.find(':') == std::string::npos) {
+    return false;
+  }
+
+  if (directiveString[directiveString.length() - 1] == ':') {
     return false;
   }
 
@@ -398,6 +399,58 @@ bool ListenDirective::hasPort(const std::string& directiveString) {
     return port <= http::value_objects::Port::MAX_PORT;
   } catch (...) {
     return false;
+  }
+}
+
+void ListenDirective::validateDirectiveFormat(
+    const std::string& directiveString) {
+  if (directiveString.find(':') != std::string::npos &&
+      directiveString[directiveString.length() - 1] == ':') {
+    throw exceptions::ListenDirectiveException(
+        "Invalid listen directive (trailing colon): " + directiveString,
+        exceptions::ListenDirectiveException::INVALID_FORMAT);
+  }
+
+  if (directiveString.find(':') == std::string::npos) {
+    throw exceptions::ListenDirectiveException(
+        "Invalid listen directive (missing colon separator): " +
+            directiveString,
+        exceptions::ListenDirectiveException::INVALID_FORMAT);
+  }
+}
+
+void ListenDirective::validatePortStringFormat(
+    const std::string& portStr, const std::string& directiveString) {
+  if (!portStr.empty()) {
+    if (!shared::utils::StringUtils::isAllDigits(portStr)) {
+      throw exceptions::ListenDirectiveException(
+          "Invalid listen directive format: " + directiveString,
+          exceptions::ListenDirectiveException::INVALID_FORMAT);
+    }
+  }
+}
+
+void ListenDirective::parseAndSetHostPort(const std::string& hostStr,
+                                          const std::string& portStr,
+                                          const std::string& directiveString) {
+  try {
+    if (hostStr.empty()) {
+      m_host = http::value_objects::Host::wildcard();
+    } else {
+      m_host = http::value_objects::Host::fromString(hostStr);
+    }
+
+    if (!portStr.empty()) {
+      m_port = http::value_objects::Port::fromString(portStr);
+    }
+  } catch (const http::exceptions::PortException&) {
+    throw;
+  } catch (const http::exceptions::HostException&) {
+    throw;
+  } catch (const std::exception& e) {
+    throw exceptions::ListenDirectiveException(
+        "Invalid listen directive: " + directiveString + " (" + e.what() + ")",
+        exceptions::ListenDirectiveException::INVALID_FORMAT);
   }
 }
 

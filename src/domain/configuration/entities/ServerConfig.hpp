@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerConfig.hpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 11:50:30 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/01 19:00:39 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/05 20:36:27 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -119,6 +119,7 @@ class ServerConfig {
   void validateLocations() const;
   void validateClientMaxBodySize() const;
 
+  static std::string normalizeListenDirective(const std::string& directive);
   static bool isValidServerName(const std::string& name);
   static bool isWildcardServerName(const std::string& name);
   static bool matchesServerName(const std::string& configName,

@@ -75,53 +75,28 @@ All reference outputs in `tests/qa_benchmark/baseline/`:
 ## 📊 Current Test Status
 
 **Total Tests:** 1041  
-**Status:** Running (QueryStringBuilder segfault blocks full suite)
+**Status:** Running (ListenDirective -> Uri -> Route)
 
 **Completed:**
-- ✅ Port: 47/47 (100%)
-- ✅ Path: 62/62 (100%)  
-- ✅ Permission: 51/51 (100%)
-- ✅ Host: 98/98 (100%)
+- ✅ Port (47 tests, 100%)
+- ✅ Path (62 tests, 100%)  
+- ✅ Permission (51 tests, 100%)
+- ✅ Host (98 tests, 100%)
+- ✅ ErrorCode (77 tests, 100%)
+- ✅ ErrorPage (56 tests, 100%)
+- ✅ HttpMethod (39 tests, 100%)
+- ✅ Size (44 tests, 100%)
+- ✅ QueryStringBuilder (36 tests, 100%)
+- ✅ UploadAccess (52 tests, 100%)
+- ✅ RegexPattern (50 tests, 100%)
+- ✅ CgiConfig (63 tests, 100%)
+- ✅ ListenDirective (59 tests, 100%)
+
+**Pending:**
+- ⚠️ Uri (115 tests, 47 bugs)
+- ⚠️ Route (62 tests, 25 bugs)
+- ❌ RouteMatchInfo (0 tests)
 
 ---
-
-## 🎯 Next Priority Fixes
-
-### Option A: ErrorPage (3 bugs) - Quick Win
-**Failing Tests:** 53/56 passing (3 failures)
-- `ErrorPageTest.DefaultConstructor`
-- `ErrorPageTest.ConstructWithEmptyContent`
-- `ErrorPageTest.ValidateThroughConstructorNoContent`
-
-**Estimated time:** 15-30 minutes  
-**Risk:** Low (likely validation logic)
-
----
-
-### Option B: QueryStringBuilder Segfault - Critical
-**Issue:** Segmentation fault in `CopyConstructor` test  
-**Blocks:** Full test suite execution  
-**Estimated time:** 30-60 minutes  
-**Risk:** Medium (memory management issue)
-
----
-
-### Option C: Run Regression Check
-**Purpose:** Verify all fixes don't break server startup
-```bash
-cd tests/qa_benchmark
-./check_regression.sh
-```
-
-**Expected:** All 4 configs should show PASS (no diffs from baseline)
-
----
-
-## 🚀 Ready to Start!
-
-Open Port.cpp and let's fix those 5 bugs:
-```bash
-code src/domain/http/value_objects/Port.cpp
-```
 
 See [SMALL_FIXES_STRATEGY.md](SMALL_FIXES_STRATEGY.md) for detailed fix guidance.
