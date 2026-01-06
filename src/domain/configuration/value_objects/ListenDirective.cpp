@@ -6,12 +6,14 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 03:21:29 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/05 20:36:27 by umeneses         ###   ########.fr       */
+/*   Updated: 2026/01/05 20:59:48 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "domain/configuration/exceptions/ListenDirectiveException.hpp"
 #include "domain/configuration/value_objects/ListenDirective.hpp"
+#include "domain/http/exceptions/HostException.hpp"
+#include "domain/http/exceptions/PortException.hpp"
 #include "domain/http/value_objects/Host.hpp"
 #include "domain/http/value_objects/Port.hpp"
 #include "domain/shared/utils/StringUtils.hpp"
@@ -45,7 +47,6 @@ ListenDirective::ListenDirective(const std::string& directiveString)
   std::string hostStr = normalizeHostString(parts.first);
   std::string portStr = normalizePortString(parts.second);
 
-  // Check for invalid formats: trailing colon with no port
   if (directiveString.find(':') != std::string::npos &&
       directiveString[directiveString.length() - 1] == ':') {
     throw exceptions::ListenDirectiveException(
@@ -53,12 +54,19 @@ ListenDirective::ListenDirective(const std::string& directiveString)
         exceptions::ListenDirectiveException::INVALID_FORMAT);
   }
 
-  // Format must include colon separator (host:port or [ipv6]:port)
   if (directiveString.find(':') == std::string::npos) {
     throw exceptions::ListenDirectiveException(
         "Invalid listen directive (missing colon separator): " +
             directiveString,
         exceptions::ListenDirectiveException::INVALID_FORMAT);
+  }
+
+  if (!portStr.empty()) {
+    if (!shared::utils::StringUtils::isAllDigits(portStr)) {
+      throw exceptions::ListenDirectiveException(
+          "Invalid listen directive format: " + directiveString,
+          exceptions::ListenDirectiveException::INVALID_FORMAT);
+    }
   }
 
   try {
@@ -71,6 +79,10 @@ ListenDirective::ListenDirective(const std::string& directiveString)
     if (!portStr.empty()) {
       m_port = http::value_objects::Port::fromString(portStr);
     }
+  } catch (const http::exceptions::PortException&) {
+    throw;
+  } catch (const http::exceptions::HostException&) {
+    throw;
   } catch (const std::exception& e) {
     throw exceptions::ListenDirectiveException(
         "Invalid listen directive: " + directiveString + " (" + e.what() + ")",
@@ -138,6 +150,14 @@ bool ListenDirective::isValidDirective(const std::string& directiveString) {
 
   std::string trimmed = shared::utils::StringUtils::trim(directiveString);
   if (trimmed.empty()) {
+    return false;
+  }
+
+  if (directiveString.find(':') == std::string::npos) {
+    return false;
+  }
+
+  if (directiveString[directiveString.length() - 1] == ':') {
     return false;
   }
 
