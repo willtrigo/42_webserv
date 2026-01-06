@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 11:09:48 by umeneses          #+#    #+#             */
-/*   Updated: 2025/12/30 12:40:20 by umeneses         ###   ########.fr       */
+/*   Updated: 2026/01/05 20:51:32 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -389,7 +389,7 @@ TEST_F(ListenDirectiveTest, PortBoundaryZero) {
   EXPECT_THROW(ListenDirective("localhost:0"), PortException);
 }
 
-TEST_F(ListenDirectiveTest, PortBoundaryMaxPlus) {
+TEST_F(ListenDirectiveTest, PortBoundaryMaxPlusOne) {
   EXPECT_THROW(ListenDirective("localhost:65536"), PortException);
 }
 

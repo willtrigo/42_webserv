@@ -98,58 +98,6 @@ Server Runtime (depends on everything)
 
 ---
 
-## 📊 WHAT WE NEED TO TEST (9 Value Objects)
-
-### Currently Tested (5/14) ✅
-- ✅ **ErrorCode** (50/50 tests) - HTTP status codes
-- ✅ **HttpMethod** (5/5 tests) - GET/POST/DELETE  
-- ✅ **Path** (25/25 tests) - Filesystem paths
-- ✅ **Size** (44/44 tests) - File sizes
-- ⚠️ **Port** (8/10 tests) - Needs 2 test fixes
-
-### MUST TEST BEFORE SERVER (9 untested)
-
-**Priority 1 - HTTP Layer (3 value objects):**
-1. **Uri** - Used by: RequestParser, RouteMatcher, ALL request handling
-2. **Host** - Used by: ServerConfig, ListenDirective, multi-server routing
-3. **QueryStringBuilder** - Used by: RequestParser, CGI parameter passing
-
-**Priority 2 - Configuration Layer (4 value objects):**
-4. **ListenDirective** - Used by: ServerConfig, port binding
-5. **ErrorPage** - Used by: ServerConfig, error responses
-6. **Route** - Used by: RouteMatcher, routing logic
-7. **RegexPattern** - Used by: Route, LocationConfig (currently crashes!)
-
-**Priority 3 - Filesystem Layer (2 value objects):**
-8. **Permission** - Used by: FileHandler, upload validation
-9. **UploadAccess** - Used by: LocationConfig, security
-
-**Total Effort:** ~40 hours (20h each = 4h/day for 5 days)
-
----
-
-## 🎯 GUT-LEVEL DETERMINATION - UPDATED
-
-### The New Math
-
-You have **10 days**. That's **240 hours** of calendar time for two people.
-
-**Option 1: Skip foundation testing (DON'T DO THIS):**
-- Build server immediately: 60 hours
-- Debug foundation bugs in server: 40 hours  
-- Total: 100 hours ÷ 2 = 50h each = 5h/day
-- **BUT:** 60% success rate (foundation bugs kill you)
-
-**Option 2: Foundation-first (THIS PLAN):**
-- Test 9 value objects: 40 hours (Days 1-5)
-- Build server on solid base: 60 hours (Days 6-10)
-- Total: 100 hours ÷ 2 = 50h each = 5h/day
-- **AND:** 85% success rate (no foundation surprises)
-
-**The difference:** Same time, but 25% higher success rate with foundation-first.
-
----
-
 ## 🚀 REVISED 10-DAY PLAN
 
 ### Phase 1: Foundation Testing (Days 1-5)
