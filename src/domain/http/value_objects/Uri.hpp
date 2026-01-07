@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Uri.hpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/21 12:45:08 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/02 01:20:33 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/06 19:22:31 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -138,14 +138,22 @@ class Uri {
   std::string m_query;
   std::string m_fragment;
   bool m_isAbsolute;
+  bool m_hasExplicitPort;
 
   void parseUriString(const std::string& uriString);
+  void validateUriStringFormat(const std::string& uriString);
+  void parseSchemeAndAuthority(const std::string& uriString,
+                               std::size_t& position);
+  void parsePathQueryFragment(const std::string& uriString,
+                              std::size_t& position);
   void validate() const;
   static void validateUriComponent(const std::string& component,
                                    const std::string& componentName);
   static bool containsVariablePlaceholders(const std::string& str);
   static bool isValidScheme(const std::string& scheme);
   static bool isValidHost(const std::string& host);
+  static bool isValidIPv4(const std::string& host);
+  static bool isValidIPv6(const std::string& host);
   static bool isValidPath(const std::string& path);
   static bool isValidQuery(const std::string& query);
   static bool isValidFragment(const std::string& fragment);
@@ -187,7 +195,9 @@ class Uri {
   static std::string parseScheme(const std::string& uriString,
                                  std::size_t& position);
   static std::string parseAuthorityComponent(const std::string& authorityString,
-                                             std::string& host, Port& port);
+                                             std::string& host, Port& port,
+                                             bool& hasExplicitPort,
+                                             const std::string& scheme = "");
   static std::string parsePath(const std::string& uriString,
                                std::size_t& position);
   static std::string parseQuery(const std::string& uriString,

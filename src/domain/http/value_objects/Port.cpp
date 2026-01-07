@@ -6,12 +6,12 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 19:13:44 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/03 14:04:44 by umeneses         ###   ########.fr       */
+/*   Updated: 2026/01/05 22:37:10 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "domain/http/value_objects/Port.hpp"
 #include "domain/http/exceptions/PortException.hpp"
+#include "domain/http/value_objects/Port.hpp"
 #include "domain/shared/utils/StringUtils.hpp"
 
 #include <cctype>
@@ -26,16 +26,14 @@ Port::Port() : m_value(DEFAULT_PORT) {}
 
 Port::Port(unsigned int port) : m_value(port) {
   if (port == 0) {
-    throw exceptions::PortException(
-        "Port cannot be zero",
-        exceptions::PortException::OUT_OF_RANGE);
+    throw exceptions::PortException("Port cannot be zero",
+                                    exceptions::PortException::OUT_OF_RANGE);
   }
   if (port > MAX_PORT) {
     std::ostringstream oss;
     oss << "Port must be between " << MIN_PORT << " and " << MAX_PORT;
-    throw exceptions::PortException(
-        oss.str(),
-        exceptions::PortException::OUT_OF_RANGE);
+    throw exceptions::PortException(oss.str(),
+                                    exceptions::PortException::OUT_OF_RANGE);
   }
   validate();
 }
@@ -67,8 +65,8 @@ void Port::validate() const {
     std::ostringstream oss;
     oss << "Port value out of range: " << m_value
         << " (valid range: " << MIN_PORT << "-" << MAX_PORT << ")";
-    throw exceptions::PortException(
-        oss.str(), exceptions::PortException::OUT_OF_RANGE);
+    throw exceptions::PortException(oss.str(),
+                                    exceptions::PortException::OUT_OF_RANGE);
   }
 }
 
@@ -128,9 +126,8 @@ bool Port::isAllDigits(const std::string& str) {
 
 unsigned int Port::parsePortString(const std::string& portString) {
   if (portString.empty()) {
-    throw exceptions::PortException(
-        "Port string cannot be empty",
-        exceptions::PortException::EMPTY_STRING);
+    throw exceptions::PortException("Port string cannot be empty",
+                                    exceptions::PortException::EMPTY_STRING);
   }
 
   if (!isAllDigits(portString)) {
@@ -147,8 +144,8 @@ unsigned int Port::parsePortString(const std::string& portString) {
       std::ostringstream oss;
       oss << "Port value out of range: '" << portString
           << "' (valid range: " << MIN_PORT << "-" << MAX_PORT << ")";
-      throw exceptions::PortException(
-          oss.str(), exceptions::PortException::OUT_OF_RANGE);
+      throw exceptions::PortException(oss.str(),
+                                      exceptions::PortException::OUT_OF_RANGE);
     }
 
     return static_cast<unsigned int>(result);
@@ -160,8 +157,8 @@ unsigned int Port::parsePortString(const std::string& portString) {
     std::ostringstream oss;
     oss << "Port value out of range: '" << portString << "' (max: " << MAX_PORT
         << ")";
-    throw exceptions::PortException(
-        oss.str(), exceptions::PortException::OUT_OF_RANGE);
+    throw exceptions::PortException(oss.str(),
+                                    exceptions::PortException::OUT_OF_RANGE);
   }
 }
 
