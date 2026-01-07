@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 12:43:15 by umeneses          #+#    #+#             */
-/*   Updated: 2025/12/30 12:50:58 by umeneses         ###   ########.fr       */
+/*   Updated: 2026/01/06 19:39:51 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,7 @@ class RouteTest : public ::testing::Test {
 TEST_F(RouteTest, DefaultConstructor) {
   Route* route = NULL;
   EXPECT_NO_THROW(route = new Route());
-  if (route) delete route;
+  if (route != NULL) delete route;
 }
 
 TEST_F(RouteTest, ConstructWithPathAndMethods) {

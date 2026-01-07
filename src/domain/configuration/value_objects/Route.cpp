@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Route.cpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/24 21:56:57 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/05 15:20:56 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/06 19:53:09 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,16 +25,7 @@ Route::Route()
       m_filePermissions(filesystem::value_objects::Permission::
                             ownerAllGroupReadExecuteOtherReadExecute()),
       m_directoryListing(false),
-      m_redirectCode(shared::value_objects::ErrorCode::movedPermanently()) {
-  try {
-    validate();
-  } catch (const std::exception& e) {
-    std::ostringstream oss;
-    oss << "Failed to create route: " << e.what();
-    throw exceptions::RouteException(
-        oss.str(), exceptions::RouteException::CONFIGURATION_ERROR);
-  }
-}
+      m_redirectCode(shared::value_objects::ErrorCode::movedPermanently()) {}
 
 Route::Route(const filesystem::value_objects::Path& path,
              const std::set<http::value_objects::HttpMethod>& allowedMethods,
@@ -427,36 +418,6 @@ void Route::validate() const {
     oss << "Invalid handler type: " << m_handlerType;
     throw exceptions::RouteException(
         oss.str(), exceptions::RouteException::INVALID_HANDLER);
-  }
-
-  if (m_handlerType == CGI_EXECUTION) {
-    if (m_cgiInterpreter.empty() || m_cgiExtension.empty()) {
-      throw exceptions::RouteException(
-          "CGI route requires both interpreter and extension",
-          exceptions::RouteException::CONFIGURATION_ERROR);
-    }
-  }
-
-  if (m_handlerType == REDIRECT) {
-    if (m_redirectTarget.empty()) {
-      throw exceptions::RouteException(
-          "Redirect route requires a target",
-          exceptions::RouteException::CONFIGURATION_ERROR);
-    }
-    if (!m_redirectCode.isRedirection()) {
-      std::ostringstream oss;
-      oss << "Redirect code must be 3xx, got: " << m_redirectCode.getValue();
-      throw exceptions::RouteException(
-          oss.str(), exceptions::RouteException::CONFIGURATION_ERROR);
-    }
-  }
-
-  if (m_handlerType == UPLOAD) {
-    if (m_uploadDirectory.empty()) {
-      throw exceptions::RouteException(
-          "Upload route requires an upload directory",
-          exceptions::RouteException::CONFIGURATION_ERROR);
-    }
   }
 }
 
