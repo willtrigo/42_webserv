@@ -2,90 +2,91 @@ name: Unit Tests - Host
 
 on:
   push:
-    branches: [ main, master, develop, "**feat**" ]
+    branches: [main, master, develop, "**feat**"]
   pull_request:
-    branches: [ main, master, develop ]
+    branches: [main, master, develop]
   workflow_call:
 
 jobs:
   unit-host:
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 4
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v6
-      with:
-        submodules: recursive
-    
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential cmake valgrind
-    
-    - name: Cache Google Test
-      id: cache-gtest
-      uses: actions/cache@v5
-      with:
-        path: |
-          /usr/local/lib/libgtest.a
-          /usr/local/lib/libgtest_main.a
-          /usr/local/include/gtest
-        key: gtest-1.8.1-${{ runner.os }}
-    
-    - name: Install Google Test 1.8.1 (C++98 compatible)
-      if: steps.cache-gtest.outputs.cache-hit != 'true'
-      run: |
-        cd tests/
-        sudo ./install_gtest.sh
-    
-    - name: Cache project build (webserver)
-      uses: actions/cache@v5
-      with:
-        path: |
-          build
-          bin
-        key: project-${{ runner.os }}-${{ hashFiles('src/**/*.cpp', 'src/**/*.hpp', 'Makefile') }}
-        restore-keys: |
-          project-${{ runner.os }}-
-    
-    - name: Cache test build
-      uses: actions/cache@v5
-      with:
-        path: tests/build
-        key: tests-${{ runner.os }}-${{ hashFiles('tests/**/*.cpp', 'tests/**/*.hpp', 'tests/Makefile', 'src/**/*.hpp') }}
-        restore-keys: |
-          tests-${{ runner.os }}-
-    
-    - name: Build project and tests
-      run: |
-        make
-        cd tests/
-        make
-    
-    - name: Run Host tests
-      run: |
-        cd tests/
-        ./bin/test_runner --gtest_filter='HostTest.*' --gtest_output=xml:test-results-host.xml
-    
-    - name: Run Host tests with Valgrind
-      run: |
-        cd tests/
-        valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --error-exitcode=1 --log-file=valgrind-host.txt ./bin/test_runner --gtest_filter='HostTest.*'
-    
-    - name: Upload test results
-      if: always()
-      uses: actions/upload-artifact@v6
-      with:
-        name: test-results-host
-        path: |
-          tests/test-results-host.xml
-          tests/valgrind-host.txt
-    
-    - name: Test Summary
-      if: always()
-      run: |
-        echo "## Host Test Results" >> $GITHUB_STEP_SUMMARY
-        cd tests/
-        if [ -f test-results-host.xml ]; then
-          echo "✅ Host tests completed" >> $GITHUB_STEP_SUMMARY
-        fi
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake valgrind
+
+      - name: Cache Google Test
+        id: cache-gtest
+        uses: actions/cache@v5
+        with:
+          path: |
+            /usr/local/lib/libgtest.a
+            /usr/local/lib/libgtest_main.a
+            /usr/local/include/gtest
+          key: gtest-1.8.1-${{ runner.os }}
+
+      - name: Install Google Test 1.8.1 (C++98 compatible)
+        if: steps.cache-gtest.outputs.cache-hit != 'true'
+        run: |
+          cd tests/
+          sudo ./install_gtest.sh
+
+      - name: Cache project build (webserver)
+        uses: actions/cache@v5
+        with:
+          path: |
+            build
+            bin
+          key: project-${{ runner.os }}-${{ hashFiles('src/**/*.cpp', 'src/**/*.hpp', 'Makefile') }}
+          restore-keys: |
+            project-${{ runner.os }}-
+
+      - name: Cache test build
+        uses: actions/cache@v5
+        with:
+          path: tests/build
+          key: tests-${{ runner.os }}-${{ hashFiles('tests/**/*.cpp', 'tests/**/*.hpp', 'tests/Makefile', 'src/**/*.hpp') }}
+          restore-keys: |
+            tests-${{ runner.os }}-
+
+      - name: Build project and tests
+        run: |
+          make
+          cd tests/
+          make
+
+      - name: Run Host tests
+        run: |
+          cd tests/
+          ./bin/test_runner --gtest_filter='HostTest.*' --gtest_output=xml:test-results-host.xml
+
+      - name: Run Host tests with Valgrind
+        run: |
+          cd tests/
+          valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --error-exitcode=1 --log-file=valgrind-host.txt ./bin/test_runner --gtest_filter='HostTest.*'
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: test-results-host
+          path: |
+            tests/test-results-host.xml
+            tests/valgrind-host.txt
+
+      - name: Test Summary
+        if: always()
+        run: |
+          echo "## Host Test Results" >> $GITHUB_STEP_SUMMARY
+          cd tests/
+          if [ -f test-results-host.xml ]; then
+            echo "✅ Host tests completed" >> $GITHUB_STEP_SUMMARY
+          fi
