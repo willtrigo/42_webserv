@@ -1,4 +1,5 @@
 [32m[INFO] [0mLogger initialized.
+[32m[INFO] [0mLoading configuration from: ./conf/default.conf
 [36m[DEBUG] [0mConfigLexer initialized.
 [36m[DEBUG] [0mConfigParser initialized.
 [32m[INFO] [0mConfigProvider initialized with parser.
@@ -177,12 +178,26 @@
 [36m[DEBUG] [0mEnd of server block, added server with 1 listen directives
 [32m[INFO] [0mSuccessfully parsed configuration from ./conf/default.conf with 1 servers
 [32m[INFO] [0mConfiguration loaded successfully from ./conf/default.conf with 1 servers
-[32m[INFO] [0mConfiguration loaded successfully:
-  Worker processes: 1
-  Worker connections: 1024
-  Servers: 1
+[32m[INFO] [0mConfiguration loaded and validated successfully
+[32m[INFO] [0m
+=== Configuration Summary ===
+Worker processes: 1
+Worker connections: 1024
+Keepalive timeout: 75s
+Send timeout: 60s
+Total servers: 1
 
-  Server 1:
-    Server names: localhost
-    Locations: 4
+--- Server 1 (default) ---
+  Listen: 0.0.0.0:80
+  Server names: localhost
+  Root: default
+  Locations: 4
+  Max body size: 1048576 bytes
 
+=============================
+
+[32m[INFO] [0mInitializing socket orchestrator
+[32m[INFO] [0mInitializing SocketOrchestrator
+[32m[INFO] [0mCreating server sockets from configuration
+[31m[ERROR] [0mInitialization failed: Permission denied: 0.0.0.0:80 (Permission denied [errno=13])
+[31m[ERROR] [0mServer initialization failed: Permission denied: 0.0.0.0:80 (Permission denied [errno=13])

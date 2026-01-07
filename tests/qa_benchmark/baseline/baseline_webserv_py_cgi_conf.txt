@@ -1,4 +1,5 @@
 [32m[INFO] [0mLogger initialized.
+[32m[INFO] [0mLoading configuration from: ./conf/webserv_py_cgi.conf
 [36m[DEBUG] [0mConfigLexer initialized.
 [36m[DEBUG] [0mConfigParser initialized.
 [32m[INFO] [0mConfigProvider initialized with parser.
@@ -310,4 +311,4 @@
 [36m[DEBUG] [0mProcessed directive 'listen' with 1 arguments at line 13
 [36m[DEBUG] [0mAdded listen directive '[::]:80' at line 14
 [36m[DEBUG] [0mProcessed directive 'listen' with 1 arguments at line 14
-[31m[ERROR] [0munexpected error during configuration load: invalid directive: Invalid listen directive format: Invalid listen directive format: 80 - Duplicate listen directive: 80 at line 15
+[31m[ERROR] [0mConfiguration error: unexpected error during configuration load: invalid directive: Invalid listen directive format: Invalid listen directive format: 80 - Duplicate listen directive: 80 at line 15
