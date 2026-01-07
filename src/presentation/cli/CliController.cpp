@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/12 16:08:17 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/07 01:15:17 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/07 01:58:57 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -215,10 +215,7 @@ void CliController::runServerLoop() {
   try {
     m_view.getLogger().info("Starting event loop");
 
-    while (m_orchestrator->isRunning() &&
-           !shared::utils::SignalHandler::isShutdownRequested()) {
-      m_orchestrator->run();
-    }
+    m_orchestrator->run();
 
     if (shared::utils::SignalHandler::isShutdownRequested()) {
       m_view.getLogger().info("Shutdown signal received");
@@ -246,6 +243,8 @@ void CliController::stopServer() {
     std::ostringstream oss;
     oss << "Closed " << activeConnections << " active connection(s)";
     m_view.getLogger().info(oss.str());
+
+    shared::utils::SignalHandler::cleanup();
 
   } catch (const std::exception& ex) {
     std::ostringstream oss;

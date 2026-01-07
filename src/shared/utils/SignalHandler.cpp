@@ -6,100 +6,62 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/06 18:38:58 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/06 19:04:36 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/07 01:43:49 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "shared/utils/SignalHandler.hpp"
-
-// ============================================================================
-// Static Storage (File-Scope, Accessible from C Functions)
-// ============================================================================
-
-static volatile sig_atomic_t g_shutdownRequested = 0;
-static bool g_initialized = false;
-
-// ============================================================================
-// C Linkage Signal Handler Functions (OUTSIDE NAMESPACE)
-// ============================================================================
-
-extern "C" {
-
-static void handleSignalInt(int signal) {
-  (void)signal;
-  g_shutdownRequested = 1;
-}
-
-static void handleSignalTerm(int signal) {
-  (void)signal;
-  g_shutdownRequested = 1;
-}
-
-}  // extern "C"
-
-// ============================================================================
-// SignalHandler Implementation
-// ============================================================================
+#include <cstdlib>  // std::exit
 
 namespace shared {
 namespace utils {
 
-// ============================================================================
-// Static Member Initialization
-// ============================================================================
-
+// Static initialization.
 volatile sig_atomic_t SignalHandler::s_shutdownRequested = 0;
 bool SignalHandler::s_initialized = false;
 
-// ============================================================================
-// Public Static Methods
-// ============================================================================
+extern "C" void handleSignal(int signal) {
+  // Async-signal-safe: only atomic ops, no complex logic.
+  if (signal == SIGINT || signal == SIGTERM || signal == SIGQUIT) {
+    SignalHandler::s_shutdownRequested = 1;
+  }
+}
 
 void SignalHandler::initialize() {
-  if (g_initialized) {
-    return;
-  }
-
-  std::signal(SIGINT, handleSignalInt);
-  std::signal(SIGTERM, handleSignalTerm);
-  std::signal(SIGPIPE, SIG_IGN);
-
-  g_initialized = true;
-  g_shutdownRequested = 0;
+  if (s_initialized) return;
+  std::signal(SIGINT, handleSignal);
+  std::signal(SIGTERM, handleSignal);
+  std::signal(SIGQUIT, handleSignal);  // Handle Ctrl+\ for graceful quit.
+  std::signal(SIGPIPE, SIG_IGN);       // Ignore broken pipes (per RFC).
+  s_initialized = true;
+  s_shutdownRequested = 0;
 }
 
 void SignalHandler::cleanup() {
-  if (!g_initialized) {
-    return;
-  }
-
+  if (!s_initialized) return;
   std::signal(SIGINT, SIG_DFL);
   std::signal(SIGTERM, SIG_DFL);
+  std::signal(SIGQUIT, SIG_DFL);
   std::signal(SIGPIPE, SIG_DFL);
-
-  g_initialized = false;
-  g_shutdownRequested = 0;
+  s_initialized = false;
+  s_shutdownRequested = 0;
 }
 
 bool SignalHandler::isShutdownRequested() {
-  return g_shutdownRequested != 0;
+  return s_shutdownRequested != 0;
 }
 
 void SignalHandler::resetShutdownFlag() {
-  g_shutdownRequested = 0;
+  s_shutdownRequested = 0;
 }
 
 volatile sig_atomic_t* SignalHandler::getShutdownFlagPtr() {
-  return &g_shutdownRequested;
+  return &s_shutdownRequested;
 }
 
-// ============================================================================
-// Private Constructor (Prevent Instantiation)
-// ============================================================================
-
+// Prevent instantiation.
 SignalHandler::SignalHandler() {}
-
 SignalHandler::~SignalHandler() {}
 
-}  // namespace utils
-}  // namespace shared
+} // utils
+} // shared

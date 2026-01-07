@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 06:49:26 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/07 01:25:27 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/07 01:56:12 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,9 +16,11 @@
 #include "infrastructure/network/adapters/SocketOrchestrator.hpp"
 #include "infrastructure/network/adapters/TcpSocket.hpp"
 #include "infrastructure/network/primitives/SocketEvent.hpp"
+#include "shared/utils/SignalHandler.hpp"
 
 #include <cerrno>
 #include <cstring>
+#include <ctime>
 #include <sstream>
 #include <stdexcept>
 
@@ -140,13 +142,19 @@ void SocketOrchestrator::run() {
 
   m_logger.info("Starting event loop");
 
-  while (m_isRunning && !m_shutdownRequested) {
+  while (m_isRunning && !m_shutdownRequested &&
+         !shared::utils::SignalHandler::isShutdownRequested()) {
     try {
       processEventLoopIteration();
     } catch (const std::exception& ex) {
       std::ostringstream oss;
       oss << "Event loop iteration failed: " << ex.what();
       m_logger.error(oss.str());
+    }
+
+    if (shared::utils::SignalHandler::isShutdownRequested()) {
+      m_logger.info("Shutdown signal detected post-iteration; exiting loop");
+      break;
     }
   }
 
@@ -318,9 +326,20 @@ void SocketOrchestrator::associateServerConfigsWithListenSockets() {
 // ============================================================================
 
 void SocketOrchestrator::processEventLoopIteration() {
+  if (shared::utils::SignalHandler::isShutdownRequested()) {
+    m_logger.debug("Shutdown requested pre-wait; skipping iteration");
+    return;
+  }
+
   const std::vector<primitives::SocketEvent> readyEvents =
       m_multiplexer->wait(K_EVENT_LOOP_TIMEOUT_MS);
 
+  if (shared::utils::SignalHandler::isShutdownRequested()) {
+    m_logger.info("Shutdown signal during wait(); processing final events");
+    processReadyEvents(readyEvents);  // Graceful drain.
+    return;
+  }
+  
   processReadyEvents(readyEvents);
 
   const time_t currentTime = std::time(NULL);

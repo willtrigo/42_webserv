@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/06 18:38:31 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/06 19:04:04 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/07 01:43:40 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,11 +22,12 @@ class SignalHandler {
  public:
   static void initialize();
   static void cleanup();
-
   static bool isShutdownRequested();
   static void resetShutdownFlag();
-
   static volatile sig_atomic_t* getShutdownFlagPtr();
+
+  // Public static for safe, qualified access from global handler.
+  static volatile sig_atomic_t s_shutdownRequested;
 
  private:
   SignalHandler();
@@ -34,11 +35,13 @@ class SignalHandler {
   SignalHandler& operator=(const SignalHandler&);
   ~SignalHandler();
 
-  static volatile sig_atomic_t s_shutdownRequested;
   static bool s_initialized;
 };
 
-}  // namespace utils
-}  // namespace shared
+} // namespace utils
+} // namespace shared
 
-#endif  // SIGNALHANDLER_HPP
+// Global C-linkage for std::signal compatibility.
+extern "C" void handleSignal(int signal);
+
+#endif // SIGNALHANDLER_HPP
