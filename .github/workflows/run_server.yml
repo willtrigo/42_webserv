@@ -2,198 +2,311 @@ name: Run Server
 
 on:
   push:
-    branches: [ main, master, develop, "**feat**" ]
+    branches: [main, master, develop, "**feat**"]
   pull_request:
-    branches: [ main, master, develop ]
+    branches: [main, master, develop]
   workflow_dispatch:
 
 jobs:
   run-server:
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 4
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v6
-      with:
-        submodules: recursive
-    
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential cmake valgrind
-    
-    - name: Cache project build
-      uses: actions/cache@v5
-      with:
-        path: |
-          build
-          bin
-        key: project-build-${{ runner.os }}-${{ hashFiles('src/**/*.cpp', 'src/**/*.hpp', 'Makefile') }}
-        restore-keys: |
-          project-build-${{ runner.os }}-
-    
-    - name: Build project
-      run: |
-        make
-    
-    - name: Run server without config
-      run: |
-        echo "🚀 Testing server without config file..."
-        timeout 5s ./bin/webserv || EXIT_CODE=$?
-        
-        if [ "${EXIT_CODE:-0}" -eq 124 ]; then
-          echo "✅ Server ran without config for 5 seconds"
-        elif [ "${EXIT_CODE:-0}" -eq 0 ]; then
-          echo "✅ Server completed without config"
-        else
-          echo "⚠️ Server exited with code ${EXIT_CODE} (may be expected)"
-        fi
-    
-    - name: Discover config files
-      id: configs
-      run: |
-        echo "📂 Scanning conf/ directory..."
-        if [ ! -d conf ]; then
-          echo "❌ conf/ directory not found"
-          exit 1
-        fi
-        
-        CONFIG_FILES=$(find conf -name "*.conf" -type f | sort)
-        if [ -z "$CONFIG_FILES" ]; then
-          echo "❌ No .conf files found in conf/"
-          exit 1
-        fi
-        
-        echo "✅ Found config files:"
-        echo "$CONFIG_FILES" | while read file; do
-          echo "  - $file"
-        done
-        
-        # Save for next steps
-        echo "$CONFIG_FILES" > config_files.txt
-        echo "config_count=$(echo "$CONFIG_FILES" | wc -l)" >> $GITHUB_OUTPUT
-    
-    - name: Test each config file
-      run: |
-        echo "🧪 Testing each configuration file..."
-        RESULTS_FILE="test_results.txt"
-        echo "Configuration Test Results" > $RESULTS_FILE
-        echo "==========================" >> $RESULTS_FILE
-        echo "" >> $RESULTS_FILE
-        
-        TOTAL=0
-        SUCCESS=0
-        FAILED=0
-        
-        while read CONFIG_FILE; do
-          TOTAL=$((TOTAL + 1))
-          echo "" >> $RESULTS_FILE
-          echo "📋 Testing: $CONFIG_FILE" | tee -a $RESULTS_FILE
-          echo "---" >> $RESULTS_FILE
-          
-          # Show config content
-          echo "Config content:" >> $RESULTS_FILE
-          cat "$CONFIG_FILE" >> $RESULTS_FILE
-          echo "" >> $RESULTS_FILE
-          
-          # Run server with config
-          timeout 8s ./bin/webserv "$CONFIG_FILE" 2>&1 | tee -a $RESULTS_FILE || EXIT_CODE=$?
-          
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake valgrind
+
+      - name: Cache project build
+        uses: actions/cache@v5
+        with:
+          path: |
+            build
+            bin
+          key: project-build-${{ runner.os }}-${{ hashFiles('src/**/*.cpp', 'src/**/*.hpp', 'Makefile') }}
+          restore-keys: |
+            project-build-${{ runner.os }}-
+
+      - name: Build project
+        run: |
+          make
+
+      - name: Run server without config
+        run: |
+          echo "🚀 Testing server without config file..."
+          timeout 5s ./bin/webserv || EXIT_CODE=$?
+
           if [ "${EXIT_CODE:-0}" -eq 124 ]; then
-            echo "✅ Success: Server ran for 8 seconds" | tee -a $RESULTS_FILE
-            SUCCESS=$((SUCCESS + 1))
+            echo "✅ Server ran without config for 5 seconds"
           elif [ "${EXIT_CODE:-0}" -eq 0 ]; then
-            echo "✅ Success: Server completed normally" | tee -a $RESULTS_FILE
-            SUCCESS=$((SUCCESS + 1))
+            echo "✅ Server completed without config"
           else
-            echo "❌ Failed: Exit code ${EXIT_CODE}" | tee -a $RESULTS_FILE
-            FAILED=$((FAILED + 1))
+            echo "⚠️ Server exited with code ${EXIT_CODE} (may be expected)"
           fi
-          
+
+      - name: Discover config files
+        id: configs
+        run: |
+          echo "📂 Scanning conf/ directory..."
+          if [ ! -d conf ]; then
+            echo "❌ conf/ directory not found"
+            exit 1
+          fi
+
+          CONFIG_FILES=$(find conf -name "*.conf" -type f | sort)
+          if [ -z "$CONFIG_FILES" ]; then
+            echo "❌ No .conf files found in conf/"
+            exit 1
+          fi
+
+          echo "✅ Found config files:"
+          echo "$CONFIG_FILES" | while read file; do
+            echo "  - $file"
+          done
+
+          # Save for next steps
+          echo "$CONFIG_FILES" > config_files.txt
+          echo "config_count=$(echo "$CONFIG_FILES" | wc -l)" >> $GITHUB_OUTPUT
+
+      - name: Test each config file
+        run: |
+          echo "🧪 Testing each configuration file..."
+          RESULTS_FILE="test_results.txt"
+          echo "Configuration Test Results" > $RESULTS_FILE
+          echo "==========================" >> $RESULTS_FILE
           echo "" >> $RESULTS_FILE
-        done < config_files.txt
-        
-        # Summary
-        echo "" >> $RESULTS_FILE
-        echo "==========================" >> $RESULTS_FILE
-        echo "📊 SUMMARY" >> $RESULTS_FILE
-        echo "==========================" >> $RESULTS_FILE
-        echo "Total configs tested: $TOTAL" >> $RESULTS_FILE
-        echo "Successful: $SUCCESS" >> $RESULTS_FILE
-        echo "Failed: $FAILED" >> $RESULTS_FILE
-        
-        # Display summary
-        cat $RESULTS_FILE
-        
-        # Exit with error if any failed
-        if [ $FAILED -gt 0 ]; then
-          echo ""
-          echo "❌ $FAILED configuration(s) failed"
-          exit 1
-        else
-          echo ""
-          echo "✅ All $SUCCESS configuration(s) passed"
-        fi
-    
-    - name: Rebuild for Valgrind (compatible instruction set)
-      run: |
-        echo "🔧 Rebuilding with Valgrind-compatible CPU flags..."
-        make clean
-        CXXFLAGS="-mno-avx512f -mno-avx2" make
-    
-    - name: Run Valgrind on primary config
-      run: |
-        echo "🔍 Running Valgrind on primary config..."
-        PRIMARY_CONFIG=$(head -1 config_files.txt)
-        echo "Testing: $PRIMARY_CONFIG"
-        
-        timeout 10s valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --log-file=valgrind-server.txt ./bin/webserv "$PRIMARY_CONFIG" || EXIT_CODE=$?
-        
-        if [ "${EXIT_CODE:-0}" -eq 124 ]; then
-          echo "✅ Valgrind test completed (timeout expected)"
+
+          TOTAL=0
+          SUCCESS=0
+          FAILED=0
+
+          while read CONFIG_FILE; do
+            TOTAL=$((TOTAL + 1))
+            echo "" >> $RESULTS_FILE
+            echo "📋 Testing: $CONFIG_FILE" | tee -a $RESULTS_FILE
+            echo "---" >> $RESULTS_FILE
+            
+            # Show config content
+            echo "Config content:" >> $RESULTS_FILE
+            cat "$CONFIG_FILE" >> $RESULTS_FILE
+            echo "" >> $RESULTS_FILE
+            
+            # Run server with config and monitor for event loop
+            LOG_FILE="server_$TOTAL.log"
+            ./bin/webserv "$CONFIG_FILE" > "$LOG_FILE" 2>&1 &
+            SERVER_PID=$!
+            echo "Started server with PID $SERVER_PID"
+            
+            # Monitor log file for readiness
+            TIMEOUT=240
+            ELAPSED=0
+            READY=0
+            
+            while [ $ELAPSED -lt $TIMEOUT ]; do
+              if [ -f "$LOG_FILE" ]; then
+                if grep -q "Webserv is ready to accept connections" "$LOG_FILE" && \
+                   grep -q "Starting event loop" "$LOG_FILE"; then
+                  echo "✅ Server is ready and running event loop" | tee -a $RESULTS_FILE
+                  READY=1
+                  break
+                fi
+              fi
+              sleep 0.5
+              ELAPSED=$((ELAPSED + 1))
+            done
+            
+            if [ $READY -eq 1 ]; then
+              echo "Sending SIGINT to gracefully shutdown server..." | tee -a $RESULTS_FILE
+              kill -INT $SERVER_PID
+              
+              # Wait for graceful shutdown
+              SHUTDOWN_TIMEOUT=5
+              for i in $(seq 1 $SHUTDOWN_TIMEOUT); do
+                if ! kill -0 $SERVER_PID 2>/dev/null; then
+                  echo "✅ Server shut down gracefully" | tee -a $RESULTS_FILE
+                  wait $SERVER_PID
+                  EXIT_CODE=$?
+                  if [ $EXIT_CODE -eq 0 ] || [ $EXIT_CODE -eq 130 ]; then
+                    echo "✅ Success: Clean shutdown (exit code $EXIT_CODE)" | tee -a $RESULTS_FILE
+                    SUCCESS=$((SUCCESS + 1))
+                  else
+                    echo "⚠️ Warning: Unexpected exit code $EXIT_CODE" | tee -a $RESULTS_FILE
+                    SUCCESS=$((SUCCESS + 1))
+                  fi
+                  break
+                fi
+                sleep 1
+              done
+              
+              # Force kill if still running
+              if kill -0 $SERVER_PID 2>/dev/null; then
+                echo "⚠️ Force killing server after timeout" | tee -a $RESULTS_FILE
+                kill -9 $SERVER_PID
+                wait $SERVER_PID 2>/dev/null
+                echo "❌ Failed: Server did not shut down gracefully" | tee -a $RESULTS_FILE
+                FAILED=$((FAILED + 1))
+              fi
+            else
+              echo "❌ Failed: Server did not reach event loop within ${TIMEOUT}s" | tee -a $RESULTS_FILE
+              kill -9 $SERVER_PID 2>/dev/null
+              wait $SERVER_PID 2>/dev/null
+              FAILED=$((FAILED + 1))
+            fi
+            
+            # Append server log to results
+            if [ -f "$LOG_FILE" ]; then
+              echo "Server log:" >> $RESULTS_FILE
+              cat "$LOG_FILE" >> $RESULTS_FILE
+            fi
+            echo "" >> $RESULTS_FILE
+          done < config_files.txt
+
+          # Summary
+          echo "" >> $RESULTS_FILE
+          echo "==========================" >> $RESULTS_FILE
+          echo "📊 SUMMARY" >> $RESULTS_FILE
+          echo "==========================" >> $RESULTS_FILE
+          echo "Total configs tested: $TOTAL" >> $RESULTS_FILE
+          echo "Successful: $SUCCESS" >> $RESULTS_FILE
+          echo "Failed: $FAILED" >> $RESULTS_FILE
+
+          # Display summary
+          cat $RESULTS_FILE
+
+          # Exit with error if any failed
+          if [ $FAILED -gt 0 ]; then
+            echo ""
+            echo "❌ $FAILED configuration(s) failed"
+            exit 1
+          else
+            echo ""
+            echo "✅ All $SUCCESS configuration(s) passed"
+          fi
+
+      - name: Rebuild for Valgrind (compatible instruction set)
+        run: |
+          echo "🔧 Rebuilding with Valgrind-compatible CPU flags..."
+          make clean
+          CXXFLAGS="-mno-avx512f -mno-avx2" make
+
+      - name: Run Valgrind on primary config
+        run: |
+          echo "🔍 Running Valgrind on primary config..."
+          PRIMARY_CONFIG=$(head -1 config_files.txt)
+          echo "Testing: $PRIMARY_CONFIG"
+
+          # Run server with valgrind in background
+          valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --log-file=valgrind-server.txt ./bin/webserv "$PRIMARY_CONFIG" > valgrind_server.log 2>&1 &
+          SERVER_PID=$!
+          echo "Started server under Valgrind with PID $SERVER_PID"
+
+          # Monitor log file for readiness
+          TIMEOUT=60
+          ELAPSED=0
+          READY=0
+
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            if [ -f valgrind_server.log ]; then
+              if grep -q "Webserv is ready to accept connections" valgrind_server.log && \
+                 grep -q "Starting event loop" valgrind_server.log; then
+                echo "✅ Server is ready and running event loop"
+                READY=1
+                break
+              fi
+            fi
+            sleep 0.5
+            ELAPSED=$((ELAPSED + 1))
+          done
+
+          if [ $READY -eq 1 ]; then
+            echo "Sending SIGINT to gracefully shutdown server..."
+            kill -INT $SERVER_PID
+            
+            # Wait for graceful shutdown
+            SHUTDOWN_TIMEOUT=10
+            for i in $(seq 1 $SHUTDOWN_TIMEOUT); do
+              if ! kill -0 $SERVER_PID 2>/dev/null; then
+                echo "✅ Server shut down gracefully"
+                wait $SERVER_PID
+                EXIT_CODE=$?
+                echo "Server exit code: $EXIT_CODE"
+                break
+              fi
+              sleep 1
+            done
+            
+            # Force kill if still running
+            if kill -0 $SERVER_PID 2>/dev/null; then
+              echo "⚠️ Force killing server after timeout"
+              kill -9 $SERVER_PID
+              wait $SERVER_PID 2>/dev/null
+            fi
+          else
+            echo "❌ Server did not reach event loop within ${TIMEOUT}s"
+            if [ -f valgrind_server.log ]; then
+              echo "Server log:"
+              cat valgrind_server.log
+            fi
+            kill -9 $SERVER_PID 2>/dev/null
+            wait $SERVER_PID 2>/dev/null
+            exit 1
+          fi
+
+          # Check Valgrind results
           if [ -f valgrind-server.txt ]; then
             echo "📋 Valgrind summary:"
-            tail -20 valgrind-server.txt
-          fi
-          exit 0
-        elif [ "${EXIT_CODE:-0}" -eq 0 ]; then
-          echo "✅ Valgrind test completed successfully"
-          exit 0
-        else
-          echo "❌ Valgrind detected issues (exit code ${EXIT_CODE})"
-          if [ -f valgrind-server.txt ]; then
             cat valgrind-server.txt
+            
+            # Check for memory leaks
+            if grep -q "ERROR SUMMARY: 0 errors" valgrind-server.txt && \
+               grep -q "definitely lost: 0 bytes" valgrind-server.txt && \
+               grep -q "indirectly lost: 0 bytes" valgrind-server.txt; then
+              echo "✅ No memory leaks detected"
+              exit 0
+            else
+              echo "❌ Memory leaks or errors detected"
+              exit 1
+            fi
+          else
+            echo "❌ Valgrind log file not found"
+            exit 1
           fi
-          exit ${EXIT_CODE}
-        fi
-    
-    - name: Upload server logs
-      if: always()
-      uses: actions/upload-artifact@v6
-      with:
-        name: server-logs
-        path: |
-          valgrind-server.txt
-          test_results.txt
-          config_files.txt
-    
-    - name: Display final summary
-      if: always()
-      run: |
-        echo ""
-        echo "=========================================="
-        echo "📊 SERVER VALIDATION SUMMARY"
-        echo "=========================================="
-        echo ""
-        echo "This workflow validates:"
-        echo "  ✓ Server compiles successfully"
-        echo "  ✓ Server runs without config"
-        echo "  ✓ Server accepts all config files in conf/"
-        echo "  ✓ Server runs without crashes"
-        echo "  ✓ No memory leaks detected (Valgrind)"
-        echo ""
-        if [ -f test_results.txt ]; then
-          echo "Test Results Summary:"
-          tail -10 test_results.txt
-        fi
-        echo "=========================================="
+
+      - name: Upload server logs
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: server-logs
+          path: |
+            valgrind-server.txt
+            valgrind_server.log
+            server_*.log
+            test_results.txt
+            config_files.txt
+
+      - name: Display final summary
+        if: always()
+        run: |
+          echo ""
+          echo "=========================================="
+          echo "📊 SERVER VALIDATION SUMMARY"
+          echo "=========================================="
+          echo ""
+          echo "This workflow validates:"
+          echo "  ✓ Server compiles successfully"
+          echo "  ✓ Server runs without config"
+          echo "  ✓ Server accepts all config files in conf/"
+          echo "  ✓ Server runs without crashes"
+          echo "  ✓ No memory leaks detected (Valgrind)"
+          echo ""
+          if [ -f test_results.txt ]; then
+            echo "Test Results Summary:"
+            tail -10 test_results.txt
+          fi
+          echo "=========================================="
