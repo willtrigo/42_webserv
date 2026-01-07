@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 12:01:14 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/07 04:23:30 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/07 06:47:08 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,6 @@
 #include "infrastructure/filesystem/adapters/FileHandler.hpp"
 #include "infrastructure/filesystem/adapters/FileSystemHelper.hpp"
 #include "infrastructure/filesystem/adapters/PathResolver.hpp"
-#include "infrastructure/filesystem/exceptions/FileHandlerException.hpp"
 #include "infrastructure/http/RequestParser.hpp"
 #include "infrastructure/network/adapters/ConnectionHandler.hpp"
 #include "infrastructure/network/adapters/TcpSocket.hpp"
@@ -39,13 +38,14 @@
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
+#include <fstream>
 #include <sstream>
+#include <sys/stat.h>
+#include <unistd.h>
 
 namespace infrastructure {
 namespace network {
 namespace adapters {
-
-// ========== CONSTRUCTOR & DESTRUCTOR ==========
 
 ConnectionHandler::ConnectionHandler(
     TcpSocket* socket,
@@ -86,8 +86,6 @@ ConnectionHandler::~ConnectionHandler() {
   delete m_socket;
   m_socket = NULL;
 }
-
-// ========== PUBLIC INTERFACE ==========
 
 void ConnectionHandler::processEvent() {
   updateLastActivity(std::time(NULL));
@@ -177,8 +175,6 @@ bool ConnectionHandler::isTimedOut(time_t currentTime) const {
 void ConnectionHandler::updateLastActivity(time_t currentTime) {
   m_lastActivityTime = currentTime;
 }
-
-// ========== CORE EVENT HANDLING ==========
 
 void ConnectionHandler::handleRead() {
   char buffer[K_READ_BUFFER_SIZE];
@@ -298,21 +294,15 @@ bool ConnectionHandler::parseRequest() {
   return true;
 }
 
-// ========== REQUEST PROCESSING ==========
-
 domain::filesystem::value_objects::Path
 ConnectionHandler::resolvePathWithServerFallback(
     const domain::configuration::entities::LocationConfig& location,
     const std::string& requestPath) const {
-  // Check if location root is still the default "/" (meaning it wasn't
-  // explicitly set) In this case, use the server's root instead
   const domain::filesystem::value_objects::Path& locationRoot =
       location.getRoot();
 
   if (locationRoot.toString() == "/" && m_serverConfig != NULL &&
       !m_serverConfig->getRoot().isEmpty()) {
-    // Location root is default, use server root instead
-    // Strip leading slash from request path to make it relative
     std::string relativeRequestPath = requestPath;
     if (!relativeRequestPath.empty() && relativeRequestPath[0] == '/') {
       relativeRequestPath = relativeRequestPath.substr(1);
@@ -321,7 +311,6 @@ ConnectionHandler::resolvePathWithServerFallback(
     return m_serverConfig->getRoot().join(relativeRequestPath);
   }
 
-  // Otherwise use location's own resolve logic
   return location.resolvePath(requestPath);
 }
 
@@ -427,8 +416,6 @@ ConnectionHandler::resolveVirtualHost() {
   return m_serverConfig;
 }
 
-// ========== LOCATION MATCHING ==========
-
 const domain::configuration::entities::LocationConfig*
 ConnectionHandler::findMatchingLocation(
     const domain::configuration::entities::ServerConfig* serverConfig,
@@ -512,13 +499,10 @@ ConnectionHandler::findMatchingLocation(
   return NULL;
 }
 
-// ========== HTTP METHOD HANDLERS ==========
-
 void ConnectionHandler::handleGetRequest(
     const domain::configuration::value_objects::Route& /* route */,
     const domain::configuration::entities::LocationConfig& location,
     const domain::filesystem::value_objects::Path& requestPath) {
-  // Resolve path, using server root if location root is default
   domain::filesystem::value_objects::Path resolvedPath =
       resolvePathWithServerFallback(location, requestPath.toString());
 
@@ -526,8 +510,15 @@ void ConnectionHandler::handleGetRequest(
   debugMsg << "GET request - resolved path: " << resolvedPath.toString();
   m_logger.debug(debugMsg.str());
 
-  if (!filesystem::adapters::FileSystemHelper::exists(
-          resolvedPath.toString())) {
+  bool pathExists = false;
+  try {
+    filesystem::adapters::FileSystemHelper::exists(resolvedPath.toString());
+    pathExists = true;
+  } catch (const std::exception&) {
+    pathExists = false;
+  }
+
+  if (!pathExists) {
     if (!location.getTryFiles().empty()) {
       resolvedPath = tryFindFile(location, requestPath);
       if (resolvedPath.isEmpty()) {
@@ -540,8 +531,16 @@ void ConnectionHandler::handleGetRequest(
     }
   }
 
-  if (filesystem::adapters::FileSystemHelper::isDirectory(
-          resolvedPath.toString())) {
+  bool isDir = false;
+  try {
+    filesystem::adapters::FileSystemHelper::isDirectory(
+        resolvedPath.toString());
+    isDir = true;
+  } catch (const std::exception&) {
+    isDir = false;
+  }
+
+  if (isDir) {
     handleDirectoryRequest(location, resolvedPath, requestPath);
     return;
   }
@@ -615,30 +614,90 @@ void ConnectionHandler::handleDeleteRequest(
   }
 }
 
-// ========== RESOURCE HANDLERS ==========
-
 void ConnectionHandler::handleDirectoryRequest(
     const domain::configuration::entities::LocationConfig& location,
     const domain::filesystem::value_objects::Path& directoryPath,
     const domain::filesystem::value_objects::Path& requestPath) {
   const std::vector<std::string>& indexFiles = location.getIndexFiles();
+
+  std::ostringstream debugDirPath;
+  debugDirPath << "handleDirectoryRequest called with directory: "
+               << directoryPath.toString() << ", checking " << indexFiles.size()
+               << " index files";
+  m_logger.debug(debugDirPath.str());
+
   for (std::vector<std::string>::const_iterator it = indexFiles.begin();
        it != indexFiles.end(); ++it) {
-    domain::filesystem::value_objects::Path indexPath = directoryPath.join(*it);
+    try {
+      m_logger.debug("About to join path: " + directoryPath.toString() +
+                     " with: " + *it);
 
-    if (filesystem::adapters::FileSystemHelper::exists(indexPath.toString()) &&
-        !filesystem::adapters::FileSystemHelper::isDirectory(
-            indexPath.toString())) {
-      if (location.hasCgiConfig() &&
-          location.getCgiConfig().matchesExtension(indexPath.toString())) {
-        handleCgiRequest(location, indexPath);
-        return;
+      domain::filesystem::value_objects::Path indexPath =
+          directoryPath.join(*it);
+
+      m_logger.debug("Successfully created path: " + indexPath.toString());
+
+      bool pathExists = false;
+      bool pathIsDir = false;
+
+      try {
+        m_logger.debug("About to check if path exists...");
+        filesystem::adapters::FileSystemHelper::exists(indexPath.toString());
+        pathExists = true;
+        m_logger.debug("Path exists: YES");
+      } catch (const std::exception&) {
+        m_logger.debug("Path exists: NO");
+        pathExists = false;
       }
 
-      handleStaticFileRequest(location, indexPath);
-      return;
+      if (pathExists) {
+        try {
+          m_logger.debug("About to check if path is directory...");
+          filesystem::adapters::FileSystemHelper::isDirectory(
+              indexPath.toString());
+          pathIsDir = true;
+          m_logger.debug("Path is directory: YES");
+        } catch (const std::exception&) {
+          m_logger.debug("Path is directory: NO (it's a file)");
+          pathIsDir = false;
+        }
+      }
+
+      std::ostringstream debugIndexPath;
+      debugIndexPath << "Checking index file: " << indexPath.toString()
+                     << " - exists: " << (pathExists ? "YES" : "NO")
+                     << " - isDir: " << (pathIsDir ? "YES" : "NO");
+      m_logger.debug(debugIndexPath.str());
+
+      if (pathExists && !pathIsDir) {
+        if (!filesystem::adapters::FileSystemHelper::isReadable(
+                indexPath.toString())) {
+          m_logger.error("Index file exists but is not readable: " +
+                         indexPath.toString());
+          continue;
+        }
+
+        m_logger.debug("Found valid index file: " + indexPath.toString());
+
+        if (location.hasCgiConfig() &&
+            location.getCgiConfig().matchesExtension(indexPath.toString())) {
+          handleCgiRequest(location, indexPath);
+          return;
+        }
+
+        handleStaticFileRequest(location, indexPath);
+        return;
+      }
+    } catch (const std::exception& ex) {
+      m_logger.error(std::string("Exception during path join: ") + ex.what() +
+                     " (directory: " + directoryPath.toString() +
+                     ", index: " + *it + ")");
+      throw;
     }
   }
+
+  m_logger.debug("No index file found, checking autoindex: " +
+                 std::string(location.getAutoIndex() ? "enabled" : "disabled"));
 
   if (location.getAutoIndex()) {
     handleDirectoryListing(directoryPath, requestPath);
@@ -653,43 +712,104 @@ void ConnectionHandler::handleStaticFileRequest(
     const domain::configuration::entities::LocationConfig& /* location */,
     const domain::filesystem::value_objects::Path& filePath) {
   try {
-    filesystem::adapters::PathResolver pathResolver(NULL);
-    filesystem::adapters::FileHandler fileHandler(NULL, &pathResolver);
+    std::string pathStr = filePath.toString();
 
-    filesystem::adapters::FileMetadata metadata =
-        fileHandler.getMetadata(filePath);
+    m_logger.debug("handleStaticFileRequest: Attempting to serve file: " +
+                   pathStr);
 
-    std::vector<char> content = fileHandler.readFile(filePath);
-
-    m_response = domain::http::entities::HttpResponse::ok(
-        std::string(content.begin(), content.end()));
-    m_response.setContentType(metadata.mimeType);
-
-    std::ostringstream contentLength;
-    contentLength << metadata.size.getBytes();
-    m_response.addHeader("Content-Length", contentLength.str());
-
-    if (!metadata.lastModified.empty()) {
-      m_response.addHeader("Last-Modified", metadata.lastModified);
-    }
-
-  } catch (const filesystem::exceptions::FileHandlerException& ex) {
-    m_logger.error(std::string("File handler error: ") + ex.what());
-    std::string errorMsg = ex.what();
-    if (errorMsg.find("not found") != std::string::npos ||
-        errorMsg.find("Not found") != std::string::npos) {
+    struct stat fileStat;
+    if (stat(pathStr.c_str(), &fileStat) != 0) {
+      m_logger.error("File not found (stat failed): " + pathStr);
       generateErrorResponse(
           domain::shared::value_objects::ErrorCode::notFound(), "Not Found");
-    } else if (errorMsg.find("not readable") != std::string::npos ||
-               errorMsg.find("Not readable") != std::string::npos) {
+      return;
+    }
+
+    if (S_ISDIR(fileStat.st_mode)) {
+      m_logger.error("Path is a directory, not a file: " + pathStr);
+      generateErrorResponse(
+          domain::shared::value_objects::ErrorCode::forbidden(),
+          "Path is a directory");
+      return;
+    }
+
+    if (access(pathStr.c_str(), R_OK) != 0) {
+      m_logger.error("File not readable: " + pathStr);
       generateErrorResponse(
           domain::shared::value_objects::ErrorCode::forbidden(),
           "File not readable");
-    } else {
+      return;
+    }
+
+    std::ifstream file(pathStr.c_str(), std::ios::binary);
+    if (!file.is_open()) {
+      m_logger.error("Failed to open file: " + pathStr);
       generateErrorResponse(
           domain::shared::value_objects::ErrorCode::internalServerError(),
-          "Internal Server Error");
+          "Failed to open file");
+      return;
     }
+
+    std::string content((std::istreambuf_iterator<char>(file)),
+                        std::istreambuf_iterator<char>());
+    file.close();
+
+    std::ostringstream oss;
+    oss << "Successfully read file: " << pathStr << " (" << content.length()
+        << " bytes)";
+    m_logger.debug(oss.str());
+
+    std::string mimeType = "application/octet-stream";
+    std::string filename = filePath.getFilename();
+    std::size_t dotPos = filename.find_last_of('.');
+    if (dotPos != std::string::npos) {
+      std::string ext = filename.substr(dotPos);
+      if (ext == ".html" || ext == ".htm")
+        mimeType = "text/html; charset=utf-8";
+      else if (ext == ".css")
+        mimeType = "text/css";
+      else if (ext == ".js")
+        mimeType = "application/javascript";
+      else if (ext == ".json")
+        mimeType = "application/json";
+      else if (ext == ".png")
+        mimeType = "image/png";
+      else if (ext == ".jpg" || ext == ".jpeg")
+        mimeType = "image/jpeg";
+      else if (ext == ".gif")
+        mimeType = "image/gif";
+      else if (ext == ".svg")
+        mimeType = "image/svg+xml";
+      else if (ext == ".ico")
+        mimeType = "image/x-icon";
+      else if (ext == ".txt")
+        mimeType = "text/plain";
+      else if (ext == ".xml")
+        mimeType = "application/xml";
+      else if (ext == ".pdf")
+        mimeType = "application/pdf";
+      else if (ext == ".zip")
+        mimeType = "application/zip";
+    }
+
+    // Create response
+    m_response = domain::http::entities::HttpResponse::ok(content);
+    m_response.setContentType(mimeType);
+
+    std::ostringstream contentLength;
+    contentLength << content.length();
+    m_response.addHeader("Content-Length", contentLength.str());
+
+    char timeBuffer[80];
+    struct tm* timeinfo = localtime(&fileStat.st_mtime);
+    if (timeinfo != NULL) {
+      strftime(timeBuffer, sizeof(timeBuffer), "%a, %d %b %Y %H:%M:%S GMT",
+               timeinfo);
+      m_response.addHeader("Last-Modified", std::string(timeBuffer));
+    }
+
+    m_logger.debug("Response prepared successfully for: " + pathStr);
+
   } catch (const std::exception& ex) {
     m_logger.error(std::string("Static file error: ") + ex.what());
     generateErrorResponse(
@@ -821,8 +941,6 @@ void ConnectionHandler::handleFileUpload(
   }
 }
 
-// ========== SPECIAL DIRECTIVE HANDLERS ==========
-
 void ConnectionHandler::handleRedirect(
     const domain::configuration::entities::LocationConfig& location) {
   const domain::http::value_objects::Uri& redirectUri =
@@ -851,8 +969,6 @@ void ConnectionHandler::handleReturnContent(
   m_response = domain::http::entities::HttpResponse(returnCode, content);
   m_response.setContentType("text/plain");
 }
-
-// ========== ERROR HANDLING ==========
 
 void ConnectionHandler::generateErrorResponse(
     const domain::shared::value_objects::ErrorCode& statusCode,
@@ -925,8 +1041,6 @@ void ConnectionHandler::serveErrorPage(
     generateErrorResponse(statusCode, "Internal Server Error");
   }
 }
-
-// ========== VALIDATION & UTILITIES ==========
 
 bool ConnectionHandler::validateRequestBodySize(
     const domain::configuration::entities::LocationConfig& location) const {
