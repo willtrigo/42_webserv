@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>500 Internal Server Error - 42 Webserv</title>
+
+    <link rel="stylesheet" href="reset.css">
+    <link rel="stylesheet" href="500.css">
+    <link rel="stylesheet" href="errors.css">
+</head>
+<body>
+    <div class="error-container">
+        <div class="server-icon">💥</div>
+        <div class="error-code">500</div>
+        <h1 class="error-title">Internal Server Error</h1>
+        
+        <div class="error-message">
+            The server encountered an unexpected condition that prevented it from fulfilling the request.
+            This is usually a temporary issue on our end.
+        </div>
+        
+        <div class="error-details">
+            <h3>🔧 Technical Details:</h3>
+            <p>The server failed to process your request due to an internal error.</p>
+            
+            <div class="error-log">
+                <div class="log-line"><span class="timestamp">[ERROR]</span> Server encountered unexpected exception</div>
+                <div class="log-line"><span class="timestamp">[DEBUG]</span> Failed to process request at handler</div>
+                <div class="log-line"><span class="timestamp">[INFO]</span> Error logged to server logs</div>
+                <div class="log-line"><span class="timestamp">[WARN]</span> Administrative notification sent</div>
+            </div>
+            
+            <p><small>Error ID: <span id="errorId">ERR-500-</span></small></p>
+        </div>
+        
+        <div class="recovery-steps">
+            <h3>🔄 What You Can Do:</h3>
+            <div class="steps">
+                <div class="step">
+                    <span class="step-number">1</span>
+                    Refresh the page in a few moments
+                </div>
+                
+                <div class="step">
+                    <span class="step-number">2</span>
+                    Clear your browser cache and cookies
+                </div>
+                
+                <div class="step">
+                    <span class="step-number">3</span>
+                    Try accessing a different page
+                </div>
+                
+                <div class="step">
+                    <span class="step-number">4</span>
+                    Contact support if the issue persists
+                </div>
+            </div>
+        </div>
+        
+        <div class="btn-container">
+            <a href="/static/index.html" class="btn">🏠 Go to Homepage</a>
+            <button onclick="location.reload()" class="btn">🔄 Refresh Page</button>
+            <button onclick="clearCache()" class="btn btn-secondary">🧹 Clear Cache</button>
+        </div>
+        
+        <div class="server-info">
+            <p>42 Webserv v1.0 | HTTP/1.1 | Error 500 - Internal Server Error</p>
+            <p><small>Our team has been notified. Please try again in a few minutes.</small></p>
+            <p><small>Need help? Contact: <span class="contact">webserv-admin@42sp.org.br</span></small></p>
+        </div>
+    </div>
+    
+    <script>
+        // Generate a random error ID
+        document.getElementById('errorId').textContent += 
+            Date.now().toString(36) + Math.random().toString(36).substr(2, 5).toUpperCase();
+        
+        function clearCache() {
+            if (confirm("Clear browser cache and cookies?\n\nYou will need to log in again to any sites you're logged into.")) {
+                alert("Cache clearing simulated.\n\nIn a real browser, this would clear cached data.");
+                location.reload();
+            }
+        }
+        
+        // Simulate server recovery
+        let recoveryTime = 30;
+        const recoveryTimer = document.createElement('div');
+        recoveryTimer.innerHTML = `<small>Estimated recovery: <span id="recoveryTime">${recoveryTime}</span> seconds</small>`;
+        recoveryTimer.style.marginTop = '1rem';
+        recoveryTimer.style.color = '#4ecdc4';
+        document.querySelector('.server-info').appendChild(recoveryTimer);
+        
+        const recoveryInterval = setInterval(() => {
+            recoveryTime--;
+            document.getElementById('recoveryTime').textContent = recoveryTime;
+            
+            if (recoveryTime <= 0) {
+                clearInterval(recoveryInterval);
+                recoveryTimer.innerHTML = '<small>✅ Server should be recovered. Please try again.</small>';
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

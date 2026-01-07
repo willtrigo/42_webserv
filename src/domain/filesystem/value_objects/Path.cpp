@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 01:10:52 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/03 15:47:53 by umeneses         ###   ########.fr       */
+/*   Updated: 2026/01/07 03:42:57 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -164,14 +164,25 @@ Path Path::join(const std::string& subpath) const {
     return *this;
   }
 
+  // If subpath is absolute (starts with /), treat it as an absolute path replacement
   if (!subpath.empty() && subpath[0] == PATH_SEPARATOR) {
-    return Path(subpath, m_isAbsolute);
+    // If subpath starts with /, it should be treated as absolute
+    return Path(subpath, true);
+  }
+
+  // Handle empty base path
+  if (m_path.empty()) {
+    // Join with empty base: return subpath with same absolute/relative status
+    return Path(subpath, true);
   }
 
   std::string newPath = m_path;
-  if (!newPath.empty() && newPath[newPath.size() - 1] != PATH_SEPARATOR) {
+  
+  // Add separator if base path doesn't end with one
+  if (newPath[newPath.size() - 1] != PATH_SEPARATOR) {
     newPath += PATH_SEPARATOR;
   }
+  
   newPath += subpath;
 
   return Path(newPath, m_isAbsolute);
@@ -267,11 +278,6 @@ void Path::validateBasicProperties(const std::string& path,
   if (mustBeAbsolute && (path.empty() || path[0] != PATH_SEPARATOR)) {
     throw exceptions::PathException("Path must be absolute: '" + path + "'",
                                     exceptions::PathException::NOT_ABSOLUTE);
-  }
-
-  if (!mustBeAbsolute && !path.empty() && path[0] == PATH_SEPARATOR) {
-    throw exceptions::PathException("Path must be relative: '" + path + "'",
-                                    exceptions::PathException::NOT_RELATIVE);
   }
 }
 

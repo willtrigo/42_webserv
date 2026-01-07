@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 23:56:43 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 03:27:04 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/07 02:41:03 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,7 @@ const char* HttpMethod::METHOD_STRINGS[] = {
 
 HttpMethod::HttpMethod() : m_method(METHOD_GET) {}
 
-HttpMethod::HttpMethod(Method method) : m_method(method) { validate(); }
+HttpMethod::HttpMethod(Method method) : m_method(method) {}
 
 HttpMethod::HttpMethod(const std::string& methodString) {
   m_method = parseMethodString(methodString);

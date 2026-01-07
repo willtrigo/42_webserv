@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 12:01:14 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/06 05:09:06 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/07 04:23:30 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -93,28 +93,40 @@ void ConnectionHandler::processEvent() {
   updateLastActivity(std::time(NULL));
 
   try {
-    switch (m_state) {
-      case STATE_READING_REQUEST:
-        handleRead();
-        break;
+    bool continueProcessing = true;
+    while (continueProcessing) {
+      continueProcessing = false;
 
-      case STATE_PROCESSING:
-        processRequest();
-        m_responseBuffer = m_response.serialize();
-        m_responseOffset = 0;
-        m_state = STATE_WRITING_RESPONSE;
-        break;
+      switch (m_state) {
+        case STATE_READING_REQUEST:
+          handleRead();
+          if (m_state == STATE_PROCESSING) {
+            continueProcessing = true;
+          }
+          break;
 
-      case STATE_WRITING_RESPONSE:
-        handleWrite();
-        break;
+        case STATE_PROCESSING:
+          processRequest();
+          m_responseBuffer = m_response.serialize();
+          m_responseOffset = 0;
+          m_state = STATE_WRITING_RESPONSE;
+          continueProcessing = true;
+          break;
 
-      case STATE_KEEP_ALIVE:
-        handleRead();
-        break;
+        case STATE_WRITING_RESPONSE:
+          handleWrite();
+          break;
 
-      case STATE_CLOSING:
-        break;
+        case STATE_KEEP_ALIVE:
+          handleRead();
+          if (m_state == STATE_PROCESSING) {
+            continueProcessing = true;
+          }
+          break;
+
+        case STATE_CLOSING:
+          break;
+      }
     }
   } catch (const domain::http::exceptions::HttpRequestException& ex) {
     m_logger.error(std::string("Request error: ") + ex.what());
@@ -287,6 +299,31 @@ bool ConnectionHandler::parseRequest() {
 }
 
 // ========== REQUEST PROCESSING ==========
+
+domain::filesystem::value_objects::Path
+ConnectionHandler::resolvePathWithServerFallback(
+    const domain::configuration::entities::LocationConfig& location,
+    const std::string& requestPath) const {
+  // Check if location root is still the default "/" (meaning it wasn't
+  // explicitly set) In this case, use the server's root instead
+  const domain::filesystem::value_objects::Path& locationRoot =
+      location.getRoot();
+
+  if (locationRoot.toString() == "/" && m_serverConfig != NULL &&
+      !m_serverConfig->getRoot().isEmpty()) {
+    // Location root is default, use server root instead
+    // Strip leading slash from request path to make it relative
+    std::string relativeRequestPath = requestPath;
+    if (!relativeRequestPath.empty() && relativeRequestPath[0] == '/') {
+      relativeRequestPath = relativeRequestPath.substr(1);
+    }
+
+    return m_serverConfig->getRoot().join(relativeRequestPath);
+  }
+
+  // Otherwise use location's own resolve logic
+  return location.resolvePath(requestPath);
+}
 
 void ConnectionHandler::processRequest() {
   try {
@@ -481,8 +518,9 @@ void ConnectionHandler::handleGetRequest(
     const domain::configuration::value_objects::Route& /* route */,
     const domain::configuration::entities::LocationConfig& location,
     const domain::filesystem::value_objects::Path& requestPath) {
+  // Resolve path, using server root if location root is default
   domain::filesystem::value_objects::Path resolvedPath =
-      location.resolvePath(requestPath.toString());
+      resolvePathWithServerFallback(location, requestPath.toString());
 
   std::ostringstream debugMsg;
   debugMsg << "GET request - resolved path: " << resolvedPath.toString();
@@ -528,7 +566,7 @@ void ConnectionHandler::handlePostRequest(
 
   if (location.hasCgiConfig()) {
     domain::filesystem::value_objects::Path resolvedPath =
-        location.resolvePath(requestPath.toString());
+        resolvePathWithServerFallback(location, requestPath.toString());
 
     if (location.getCgiConfig().matchesExtension(resolvedPath.toString())) {
       handleCgiRequest(location, resolvedPath);
@@ -546,7 +584,7 @@ void ConnectionHandler::handleDeleteRequest(
     const domain::configuration::entities::LocationConfig& location,
     const domain::filesystem::value_objects::Path& requestPath) {
   domain::filesystem::value_objects::Path resolvedPath =
-      location.resolvePath(requestPath.toString());
+      resolvePathWithServerFallback(location, requestPath.toString());
 
   if (!filesystem::adapters::FileSystemHelper::exists(
           resolvedPath.toString())) {

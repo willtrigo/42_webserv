@@ -1,0 +1,132 @@
+.method-icon {
+    font-size: 6rem;
+    margin-bottom: 1rem;
+    animation: spin 10s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.error-code {
+    font-size: 6rem;
+    margin-bottom: 0.5rem;
+    color: #ffdd59;
+}
+
+.error-title {
+    color: #ffdd59;
+}
+
+.methods-container {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 15px;
+    padding: 2rem;
+    margin: 2rem 0;
+}
+
+.methods-container h3 {
+    color: #ffdd59;
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+}
+
+.methods-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+
+.method-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.method-card.allowed {
+    border: 2px solid #00ff9d;
+    box-shadow: 0 0 20px rgba(0, 255, 157, 0.3);
+}
+
+.method-card.not-allowed {
+    border: 2px solid #ff6b6b;
+    opacity: 0.7;
+}
+
+.method-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.method-name {
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    font-family: 'Courier New', monospace;
+}
+
+.method-desc {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.method-status {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 1.5rem;
+}
+
+.btn {
+    background: #ffdd59;
+}
+
+.btn:hover {
+    color: #ffdd59;
+    border-color: #ffdd59;
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: white;
+}
+
+.http-info {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin: 2rem 0;
+    text-align: left;
+    border-left: 4px solid #ffdd59;
+}
+
+.http-info h3 {
+    color: #ffdd59;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+    .method-icon {
+        font-size: 4rem;
+    }
+
+    .methods-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .methods-grid {
+        grid-template-columns: 1fr;
+    }
+}

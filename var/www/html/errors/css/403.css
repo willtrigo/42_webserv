@@ -1,0 +1,80 @@
+
+.error-icon {
+    font-size: 6rem;
+    margin-bottom: 1rem;
+    filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.3));
+}
+
+.error-code {
+    font-size: 6rem;
+    margin-bottom: 1rem;
+    color: #ffdd59;
+}
+
+.error-title {
+    color: #ffdd59;
+}
+
+.access-denied {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin: 2rem 0;
+    border-left: 4px solid #ffdd59;
+}
+
+.access-denied h3 {
+    color: #ffdd59;
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+}
+
+.permission-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin: 1.5rem 0;
+    text-align: left;
+}
+
+.permission-item {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 1rem;
+    border-radius: 8px;
+    transition: transform 0.3s ease;
+}
+
+.permission-item:hover {
+    transform: translateY(-5px);
+}
+
+.permission-item h4 {
+    color: #ffdd59;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.btn {
+    background: #ffdd59;
+}
+
+.btn:hover {
+    color: #ffdd59;
+    border-color: #ffdd59;
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: white;
+}
+
+@media (max-width: 768px) {
+    .permission-list {
+        grid-template-columns: 1fr;
+    }
+}

@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 12:23:41 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/02 13:24:52 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/07 03:59:38 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -968,9 +968,21 @@ filesystem::value_objects::Path LocationConfig::resolvePath(
     const std::string& requestPath) const {
   if (hasAlias()) {
     std::string relativePath = requestPath.substr(m_path.length());
+    // Strip leading slash for proper joining
+    if (!relativePath.empty() && relativePath[0] == '/') {
+      relativePath = relativePath.substr(1);
+    }
     return m_alias.join(relativePath);
   }
-  return m_root.join(requestPath);
+
+  // Strip leading slash from request path for proper joining
+  // Web request paths like "/" or "/index.html" are relative to the root
+  std::string relativeRequestPath = requestPath;
+  if (!relativeRequestPath.empty() && relativeRequestPath[0] == '/') {
+    relativeRequestPath = relativeRequestPath.substr(1);
+  }
+
+  return m_root.join(relativeRequestPath);
 }
 
 bool LocationConfig::validateUploadFile(

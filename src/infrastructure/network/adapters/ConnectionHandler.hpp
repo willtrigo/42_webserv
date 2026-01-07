@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 11:57:13 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/06 04:59:04 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/07 04:23:36 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,8 +22,8 @@
 #include "domain/http/entities/HttpRequest.hpp"
 #include "domain/http/entities/HttpResponse.hpp"
 #include "domain/shared/value_objects/ErrorCode.hpp"
-#include "infrastructure/network/adapters/TcpSocket.hpp"
 #include "infrastructure/cgi/primitives/CgiResponse.hpp"
+#include "infrastructure/network/adapters/TcpSocket.hpp"
 
 #include <ctime>
 #include <map>
@@ -148,10 +148,15 @@ class ConnectionHandler {
   void handleNotFound(
       const domain::configuration::entities::LocationConfig& location);
 
-  void serveErrorPage(const std::string& errorPagePath,
-                      const domain::shared::value_objects::ErrorCode& statusCode);
+  void serveErrorPage(
+      const std::string& errorPagePath,
+      const domain::shared::value_objects::ErrorCode& statusCode);
 
   // ========== VALIDATION & UTILITIES ==========
+
+  domain::filesystem::value_objects::Path resolvePathWithServerFallback(
+      const domain::configuration::entities::LocationConfig& location,
+      const std::string& requestPath) const;
 
   bool validateRequestBodySize(
       const domain::configuration::entities::LocationConfig& location) const;
