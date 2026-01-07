@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/21 12:50:29 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/03 14:18:10 by umeneses         ###   ########.fr       */
+/*   Updated: 2026/01/06 19:42:15 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,9 +63,10 @@ Uri::UriParameters& Uri::UriParameters::withFragment(
   return *this;
 }
 
-Uri::Uri() : m_port(Port()), m_isAbsolute(false) {}
+Uri::Uri() : m_port(Port()), m_isAbsolute(false), m_hasExplicitPort(false) {}
 
-Uri::Uri(const std::string& uriString) : m_port(Port()), m_isAbsolute(false) {
+Uri::Uri(const std::string& uriString)
+    : m_port(Port()), m_isAbsolute(false), m_hasExplicitPort(false) {
   parseUriString(uriString);
   validate();
 }
@@ -77,7 +78,8 @@ Uri::Uri(const UriParameters& param)
       m_path(param.m_path),
       m_query(param.m_query),
       m_fragment(param.m_fragment),
-      m_isAbsolute(!param.m_scheme.empty()) {
+      m_isAbsolute(!param.m_scheme.empty()),
+      m_hasExplicitPort(param.m_port.getValue() != Port::DEFAULT_PORT) {
   validate();
 }
 
@@ -88,7 +90,8 @@ Uri::Uri(const Uri& other)
       m_path(other.m_path),
       m_query(other.m_query),
       m_fragment(other.m_fragment),
-      m_isAbsolute(other.m_isAbsolute) {}
+      m_isAbsolute(other.m_isAbsolute),
+      m_hasExplicitPort(other.m_hasExplicitPort) {}
 
 Uri::~Uri() {}
 
@@ -101,6 +104,7 @@ Uri& Uri::operator=(const Uri& other) {
     m_query = other.m_query;
     m_fragment = other.m_fragment;
     m_isAbsolute = other.m_isAbsolute;
+    m_hasExplicitPort = other.m_hasExplicitPort;
   }
   return *this;
 }
@@ -125,7 +129,7 @@ std::string Uri::getAuthority() const {
   std::ostringstream oss;
   oss << m_host;
 
-  if (m_port.getValue() > 0 && !isDefaultPort()) {
+  if (m_hasExplicitPort && !isDefaultPort()) {
     oss << ":" << m_port.getValue();
   }
 
@@ -230,6 +234,11 @@ void Uri::validate() const {
                                      exceptions::UriException::MISSING_SCHEME);
     }
 
+    if (!isValidScheme(m_scheme)) {
+      throw exceptions::UriException("Invalid URI scheme: " + m_scheme,
+                                     exceptions::UriException::INVALID_SCHEME);
+    }
+
     validateUriComponent(m_scheme, "scheme");
     bool hasVariables = containsVariablePlaceholders(m_host) ||
                         containsVariablePlaceholders(m_path);
@@ -251,7 +260,7 @@ void Uri::validate() const {
 }
 
 bool Uri::isEmpty() const {
-  return m_scheme.empty() && m_host.empty() && m_path.empty() && 
+  return m_scheme.empty() && m_host.empty() && m_path.empty() &&
          m_query.empty() && m_fragment.empty();
 }
 
@@ -263,7 +272,7 @@ bool Uri::hasScheme() const { return !m_scheme.empty(); }
 
 bool Uri::hasHost() const { return !m_host.empty(); }
 
-bool Uri::hasPort() const { return m_port.getValue() > 0; }
+bool Uri::hasPort() const { return m_hasExplicitPort; }
 
 bool Uri::hasPath() const { return !m_path.empty(); }
 
@@ -398,13 +407,22 @@ Uri Uri::fromString(const std::string& uriString) { return Uri(uriString); }
 
 Uri Uri::parseAuthority(const std::string& authority) {
   std::string host;
-  Port port(0);
-  std::string remaining = parseAuthorityComponent(authority, host, port);
+  Port port;
+  bool hasExplicitPort = false;
 
-  if (!remaining.empty()) {
+  try {
+    std::string remaining =
+        parseAuthorityComponent(authority, host, port, hasExplicitPort);
+
+    if (!remaining.empty()) {
+      throw exceptions::UriException(
+          "Extra characters in authority string: '" + authority + "'",
+          exceptions::UriException::INVALID_FORMAT);
+    }
+  } catch (const exceptions::PortException& e) {
     throw exceptions::UriException(
-        "Extra characters in authority string: '" + authority + "'",
-        exceptions::UriException::INVALID_FORMAT);
+        "Invalid port in authority: '" + authority + "' - " + e.what(),
+        exceptions::UriException::INVALID_PORT);
   }
 
   return Uri(UriParameters()
@@ -419,7 +437,7 @@ Uri Uri::parseAuthority(const std::string& authority) {
 Uri Uri::createHttp(const std::string& host, const Port& port,
                     const std::string& path) {
   return Uri(UriParameters()
-                 .withScheme(HTTPS_SCHEME)
+                 .withScheme(HTTP_SCHEME)
                  .withHost(host)
                  .withPort(port)
                  .withPath(path)
@@ -442,7 +460,7 @@ Uri Uri::createFile(const std::string& path) {
   return Uri(UriParameters()
                  .withScheme(FILE_SCHEME)
                  .withHost("")
-                 .withPort(Port(0))
+                 .withPort(Port())
                  .withPath(path)
                  .withQuery("")
                  .withFragment(""));
@@ -570,9 +588,35 @@ std::string Uri::getQueryParameter(const std::string& queryString,
 }
 
 void Uri::parseUriString(const std::string& uriString) {
+  validateUriStringFormat(uriString);
+
+  std::size_t position = 0;
+  parseSchemeAndAuthority(uriString, position);
+  parsePathQueryFragment(uriString, position);
+}
+
+void Uri::validateUriStringFormat(const std::string& uriString) {
+  for (std::size_t idx = 0; idx < uriString.length(); idx++) {
+    if (isspace(uriString[idx]) != 0) {
+      throw exceptions::UriException(
+          "URI string contains whitespace characters",
+          exceptions::UriException::INVALID_FORMAT);
+    }
+  }
+
   if (uriString.empty()) {
     throw exceptions::UriException("URI string cannot be empty",
                                    exceptions::UriException::EMPTY_URI);
+  }
+
+  std::size_t doubleSlashPos = uriString.find("//");
+  if (doubleSlashPos != std::string::npos && doubleSlashPos > 0) {
+    std::string beforeSlashes = uriString.substr(0, doubleSlashPos);
+    if (beforeSlashes.find(':') == std::string::npos) {
+      throw exceptions::UriException(
+          "Invalid URI format: missing colon before '//'",
+          exceptions::UriException::INVALID_FORMAT);
+    }
   }
 
   if (uriString.length() > MAX_URI_LENGTH) {
@@ -582,9 +626,10 @@ void Uri::parseUriString(const std::string& uriString) {
     throw exceptions::UriException(oss.str(),
                                    exceptions::UriException::INVALID_FORMAT);
   }
+}
 
-  std::size_t position = 0;
-
+void Uri::parseSchemeAndAuthority(const std::string& uriString,
+                                  std::size_t& position) {
   std::size_t colonPos = findSchemeSeparator(uriString);
   if (colonPos != std::string::npos) {
     m_scheme = parseScheme(uriString, position);
@@ -596,12 +641,16 @@ void Uri::parseUriString(const std::string& uriString) {
       if (authorityEnd > authorityStart) {
         std::string authority =
             uriString.substr(authorityStart, authorityEnd - authorityStart);
-        parseAuthorityComponent(authority, m_host, m_port);
+        parseAuthorityComponent(authority, m_host, m_port, m_hasExplicitPort,
+                                m_scheme);
         position = authorityEnd;
       }
     }
   }
+}
 
+void Uri::parsePathQueryFragment(const std::string& uriString,
+                                 std::size_t& position) {
   m_path = parsePath(uriString, position);
 
   std::size_t queryStart = findQueryStart(uriString, position);
@@ -614,10 +663,6 @@ void Uri::parseUriString(const std::string& uriString) {
   if (fragmentStart != std::string::npos) {
     position = fragmentStart;
     m_fragment = parseFragment(uriString, position);
-  }
-
-  if (m_path.empty() && (m_scheme == HTTP_SCHEME || m_scheme == HTTPS_SCHEME)) {
-    m_path = "/";
   }
 }
 
@@ -671,6 +716,127 @@ bool Uri::isValidHost(const std::string& host) {
     if (chr < ' ' || chr == 'W') {
       return false;
     }
+  }
+
+  return true;
+}
+
+bool Uri::isValidIPv4(const std::string& host) {
+  bool hasDigit = false;
+  bool hasDot = false;
+
+  for (std::size_t i = 0; i < host.length(); ++i) {
+    if (std::isdigit(static_cast<unsigned char>(host[i])) != 0) {
+      hasDigit = true;
+    } else if (host[i] == '.') {
+      hasDot = true;
+    } else {
+      return true;
+    }
+  }
+
+  if (!hasDigit || !hasDot) {
+    return true;
+  }
+
+  std::vector<std::string> octets;
+  std::istringstream stream(host);
+  std::string octet;
+
+  while (std::getline(stream, octet, '.')) {
+    octets.push_back(octet);
+  }
+
+  if (octets.size() != 4) {
+    return false;
+  }
+
+  for (std::size_t i = 0; i < octets.size(); ++i) {
+    if (octets[i].empty()) {
+      return false;
+    }
+
+    for (std::size_t j = 0; j < octets[i].length(); ++j) {
+      if (std::isdigit(static_cast<unsigned char>(octets[i][j])) == 0) {
+        return false;
+      }
+    }
+
+    char* endPtr = NULL;
+    long value = std::strtol(octets[i].c_str(), &endPtr, 10);
+
+    if (endPtr != octets[i].c_str() + octets[i].length()) {
+      return false;
+    }
+
+    if (value < 0 || value > 255) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool Uri::isValidIPv6(const std::string& host) {
+  if (host.length() < 2 || host[0] != '[' || host[host.length() - 1] != ']') {
+    return true;
+  }
+
+  std::string ipv6Content = host.substr(1, host.length() - 2);
+
+  if (ipv6Content.empty()) {
+    return false;
+  }
+
+  bool hasColon = false;
+  bool hasDoubleColon = false;
+  std::size_t colonCount = 0;
+  std::size_t segmentCount = 0;
+  std::string currentSegment;
+
+  for (std::size_t i = 0; i < ipv6Content.length(); ++i) {
+    char chr = ipv6Content[i];
+
+    if (chr == ':') {
+      hasColon = true;
+      colonCount++;
+
+      if (i > 0 && ipv6Content[i - 1] == ':') {
+        if (hasDoubleColon) {
+          return false;
+        }
+        hasDoubleColon = true;
+      }
+
+      if (!currentSegment.empty()) {
+        segmentCount++;
+        currentSegment.clear();
+      }
+    } else if ((chr >= '0' && chr <= '9') || (chr >= 'a' && chr <= 'f') ||
+               (chr >= 'A' && chr <= 'F')) {
+      currentSegment += chr;
+      if (currentSegment.length() > 4) {
+        return false;
+      }
+    } else if (chr == '.') {
+      if (!hasColon) {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  }
+
+  if (!currentSegment.empty()) {
+    segmentCount++;
+  }
+
+  if (!hasColon) {
+    return false;
+  }
+
+  if (!hasDoubleColon && segmentCount != 8) {
+    return false;
   }
 
   return true;
@@ -849,12 +1015,22 @@ std::size_t Uri::findSchemeSeparator(const std::string& uriString) {
       "0123456789"
       "+-.";
 
+  bool hasSchemePattern =
+      (colonPos + 2 < uriString.length() && uriString[colonPos + 1] == '/' &&
+       uriString[colonPos + 2] == '/');
+
   if (!shared::utils::StringUtils::containsOnly(potentialScheme,
                                                 SCHEME_CHARS)) {
+    if (hasSchemePattern) {
+      return colonPos;
+    }
     return std::string::npos;
   }
 
   if (std::isalpha(static_cast<unsigned char>(uriString[0])) == 0) {
+    if (hasSchemePattern) {
+      return colonPos;
+    }
     return std::string::npos;
   }
 
@@ -967,7 +1143,7 @@ std::size_t Uri::findQueryStart(const std::string& uriString,
           position + 2 < length) {
         std::string hex = uriString.substr(position, 2);
         if (shared::utils::StringUtils::isAllHexDigits(hex)) {
-          position += 3;  // Skip %3F
+          position += 3;
           continue;
         }
       }
@@ -1035,8 +1211,64 @@ std::string Uri::parseScheme(const std::string& uriString,
 }
 
 std::string Uri::parseAuthorityComponent(const std::string& authorityString,
-                                         std::string& host, Port& port) {
+                                         std::string& host, Port& port,
+                                         bool& hasExplicitPort,
+                                         const std::string& scheme) {
   if (authorityString.empty()) {
+    hasExplicitPort = false;
+    return "";
+  }
+
+  if (authorityString[0] == '[') {
+    std::size_t closingBracket = authorityString.find(']');
+
+    if (closingBracket == std::string::npos) {
+      throw exceptions::UriException(
+          "Invalid IPv6 address: missing closing bracket in '" +
+              authorityString + "'",
+          exceptions::UriException::INVALID_FORMAT);
+    }
+
+    host = authorityString.substr(0, closingBracket + 1);
+
+    if (!isValidIPv6(host)) {
+      throw exceptions::UriException("Invalid IPv6 address: '" + host + "'",
+                                     exceptions::UriException::INVALID_FORMAT);
+    }
+
+    if (closingBracket + 1 < authorityString.length()) {
+      if (authorityString[closingBracket + 1] == ':') {
+        std::string portStr = authorityString.substr(closingBracket + 2);
+
+        if (portStr.empty()) {
+          throw exceptions::UriException(
+              "Port cannot be empty after colon: '" + authorityString + "'",
+              exceptions::UriException::INVALID_PORT);
+        }
+
+        try {
+          port = Port::fromString(portStr);
+          hasExplicitPort = true;
+        } catch (const exceptions::PortException& e) {
+          throw exceptions::UriException(
+              "Invalid port in authority: '" + authorityString + "' - " +
+                  e.what(),
+              exceptions::UriException::INVALID_PORT);
+        }
+      } else {
+        throw exceptions::UriException(
+            "Invalid character after IPv6 address: '" + authorityString + "'",
+            exceptions::UriException::INVALID_FORMAT);
+      }
+    } else {
+      if (!scheme.empty()) {
+        port = getDefaultPortForScheme(scheme);
+      } else {
+        port = Port();
+      }
+      hasExplicitPort = false;
+    }
+
     return "";
   }
 
@@ -1044,11 +1276,33 @@ std::string Uri::parseAuthorityComponent(const std::string& authorityString,
 
   if (colonPos == std::string::npos) {
     host = authorityString;
-    port = Port();  // Use default port (80) when no port specified
+
+    if (!isValidIPv4(host)) {
+      throw exceptions::UriException("Invalid IPv4 address: '" + host + "'",
+                                     exceptions::UriException::INVALID_FORMAT);
+    }
+
+    if (!scheme.empty()) {
+      port = getDefaultPortForScheme(scheme);
+    } else {
+      port = Port();
+    }
+    hasExplicitPort = false;
     return "";
   }
 
   host = authorityString.substr(0, colonPos);
+
+  if (host.empty() && colonPos == 0) {
+    throw exceptions::UriException(
+        "Invalid authority format: '" + authorityString + "'",
+        exceptions::UriException::INVALID_FORMAT);
+  }
+
+  if (!isValidIPv4(host)) {
+    throw exceptions::UriException("Invalid IPv4 address: '" + host + "'",
+                                   exceptions::UriException::INVALID_FORMAT);
+  }
 
   std::string portStr = authorityString.substr(colonPos + 1);
   if (portStr.empty()) {
@@ -1059,6 +1313,7 @@ std::string Uri::parseAuthorityComponent(const std::string& authorityString,
 
   try {
     port = Port::fromString(portStr);
+    hasExplicitPort = true;
   } catch (const exceptions::PortException& e) {
     throw exceptions::UriException(
         "Invalid port in authority: '" + authorityString + "' - " + e.what(),
