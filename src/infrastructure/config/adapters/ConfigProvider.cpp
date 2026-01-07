@@ -3,20 +3,20 @@
 /*                                                        :::      ::::::::   */
 /*   ConfigProvider.cpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/17 13:53:39 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/02 13:39:19 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/06 20:38:49 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "application/ports/ILogger.hpp"
 #include "infrastructure/config/adapters/ConfigProvider.hpp"
 #include "infrastructure/config/exceptions/ConfigException.hpp"
-#include "infrastructure/config/parsers/ConfigParser.hpp"
 #include "infrastructure/config/exceptions/ParserException.hpp"
 #include "infrastructure/config/exceptions/SyntaxException.hpp"
 #include "infrastructure/config/exceptions/ValidationException.hpp"
+#include "infrastructure/config/parsers/ConfigParser.hpp"
 
 #include <sstream>
 #include <string>
@@ -34,10 +34,7 @@ ConfigProvider::ConfigProvider(application::ports::ILogger& logger)
 ConfigProvider::~ConfigProvider() {}
 
 void ConfigProvider::load(const std::string& configPath) {
-// void ConfigProvider::load(const std::string& configPath,
-//                           const std::string& includePath) {
   this->m_configPath = configPath;
-  // this->m_includePath = includePath;
   this->m_valid = false;
   this->m_serverPtrs.clear();
 
@@ -45,16 +42,10 @@ void ConfigProvider::load(const std::string& configPath) {
     domain::configuration::entities::HttpConfig* httpConfig =
         this->m_parser->parseFile(configPath);
 
-    // if (includePath != configPath) {
-    //   this->m_parser->mergeIncludes(*httpConfig, includePath);
-    // }
-
-    this->m_parser->validateConfiguration(*httpConfig);
-
+    // Transfer ownership immediately to prevent leaks
     this->m_httpConfig.reset(httpConfig);
-
+    this->m_parser->validateConfiguration(*this->m_httpConfig);
     updateServerPointers();
-
     this->m_valid = true;
 
     std::ostringstream oss;
@@ -64,7 +55,7 @@ void ConfigProvider::load(const std::string& configPath) {
 
   } catch (const std::exception& exception) {
     throw exceptions::ConfigException(
-            std::string(exception.what()),
+        std::string(exception.what()),
         exceptions::ConfigException::LOAD_UNEXPECTED);
   }
 }

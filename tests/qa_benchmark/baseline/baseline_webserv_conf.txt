@@ -1,4 +1,5 @@
 [32m[INFO] [0mLogger initialized.
+[32m[INFO] [0mLoading configuration from: ./conf/webserv.conf
 [36m[DEBUG] [0mConfigLexer initialized.
 [36m[DEBUG] [0mConfigParser initialized.
 [32m[INFO] [0mConfigProvider initialized with parser.
@@ -456,16 +457,33 @@
 [36m[DEBUG] [0mEnd of http block
 [32m[INFO] [0mSuccessfully parsed configuration from ./conf/webserv.conf with 2 servers
 [32m[INFO] [0mConfiguration loaded successfully from ./conf/webserv.conf with 2 servers
-[32m[INFO] [0mConfiguration loaded successfully:
-  Worker processes: 1
-  Worker connections: 1024
-  Servers: 2
+[32m[INFO] [0mConfiguration loaded and validated successfully
+[32m[INFO] [0m
+=== Configuration Summary ===
+Worker processes: 1
+Worker connections: 1024
+Keepalive timeout: 75s
+Send timeout: 60s
+Total servers: 2
 
-  Server 1:
-    Server names: webserv.com, www.webserv.com, _
-    Locations: 6
+--- Server 1 (default) ---
+  Listen: 0.0.0.0:80, :::80
+  Server names: webserv.com, www.webserv.com, _
+  Root: html
+  Locations: 6
+  Max body size: 1048576 bytes
 
-  Server 2:
-    Server names: dev.localhost
-    Locations: 5
+--- Server 2 ---
+  Listen: 127.0.0.1:8080, ::1:8080
+  Server names: dev.localhost
+  Root: dev
+  Locations: 5
+  Max body size: 1048576 bytes
 
+=============================
+
+[32m[INFO] [0mInitializing socket orchestrator
+[32m[INFO] [0mInitializing SocketOrchestrator
+[32m[INFO] [0mCreating server sockets from configuration
+[31m[ERROR] [0mInitialization failed: Permission denied: 0.0.0.0:80 (Permission denied [errno=13])
+[31m[ERROR] [0mServer initialization failed: Permission denied: 0.0.0.0:80 (Permission denied [errno=13])
