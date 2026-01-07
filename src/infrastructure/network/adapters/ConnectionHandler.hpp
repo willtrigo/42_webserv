@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 11:57:13 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/07 04:23:36 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/07 16:54:10 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,8 +72,6 @@ class ConnectionHandler {
   ConnectionHandler(const ConnectionHandler&);
   ConnectionHandler& operator=(const ConnectionHandler&);
 
-  // ========== CORE EVENT HANDLING ==========
-
   void handleRead();
   void handleWrite();
 
@@ -81,17 +79,11 @@ class ConnectionHandler {
 
   void processRequest();
 
-  // ========== VIRTUAL HOST RESOLUTION ==========
-
   const domain::configuration::entities::ServerConfig* resolveVirtualHost();
-
-  // ========== LOCATION MATCHING ==========
 
   const domain::configuration::entities::LocationConfig* findMatchingLocation(
       const domain::configuration::entities::ServerConfig* serverConfig,
       const std::string& requestPath) const;
-
-  // ========== HTTP METHOD HANDLERS ==========
 
   void handleGetRequest(
       const domain::configuration::value_objects::Route& route,
@@ -107,8 +99,6 @@ class ConnectionHandler {
       const domain::configuration::value_objects::Route& route,
       const domain::configuration::entities::LocationConfig& location,
       const domain::filesystem::value_objects::Path& requestPath);
-
-  // ========== RESOURCE HANDLERS ==========
 
   void handleDirectoryRequest(
       const domain::configuration::entities::LocationConfig& location,
@@ -131,15 +121,11 @@ class ConnectionHandler {
       const domain::configuration::entities::LocationConfig& location,
       const domain::filesystem::value_objects::Path& requestPath);
 
-  // ========== SPECIAL DIRECTIVE HANDLERS ==========
-
   void handleRedirect(
       const domain::configuration::entities::LocationConfig& location);
 
   void handleReturnContent(
       const domain::configuration::entities::LocationConfig& location);
-
-  // ========== ERROR HANDLING ==========
 
   void generateErrorResponse(
       const domain::shared::value_objects::ErrorCode& statusCode,
@@ -150,9 +136,8 @@ class ConnectionHandler {
 
   void serveErrorPage(
       const std::string& errorPagePath,
-      const domain::shared::value_objects::ErrorCode& statusCode);
-
-  // ========== VALIDATION & UTILITIES ==========
+      const domain::shared::value_objects::ErrorCode& statusCode,
+      const domain::configuration::entities::LocationConfig& location);
 
   domain::filesystem::value_objects::Path resolvePathWithServerFallback(
       const domain::configuration::entities::LocationConfig& location,
@@ -184,8 +169,6 @@ class ConnectionHandler {
 
   void logRequest(const domain::http::entities::HttpRequest& request,
                   const domain::http::entities::HttpResponse& response);
-
-  // ========== MEMBER VARIABLES ==========
 
   application::ports::ILogger& m_logger;
   application::ports::IConfigProvider& m_configProvider;

@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 12:01:14 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/07 06:47:08 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/07 17:39:11 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,9 +27,7 @@
 #include "infrastructure/cgi/primitives/CgiRequest.hpp"
 #include "infrastructure/cgi/primitives/CgiResponse.hpp"
 #include "infrastructure/filesystem/adapters/DirectoryLister.hpp"
-#include "infrastructure/filesystem/adapters/FileHandler.hpp"
 #include "infrastructure/filesystem/adapters/FileSystemHelper.hpp"
-#include "infrastructure/filesystem/adapters/PathResolver.hpp"
 #include "infrastructure/http/RequestParser.hpp"
 #include "infrastructure/network/adapters/ConnectionHandler.hpp"
 #include "infrastructure/network/adapters/TcpSocket.hpp"
@@ -792,7 +790,6 @@ void ConnectionHandler::handleStaticFileRequest(
         mimeType = "application/zip";
     }
 
-    // Create response
     m_response = domain::http::entities::HttpResponse::ok(content);
     m_response.setContentType(mimeType);
 
@@ -998,43 +995,104 @@ void ConnectionHandler::generateErrorResponse(
 
 void ConnectionHandler::handleNotFound(
     const domain::configuration::entities::LocationConfig& location) {
-  const domain::configuration::entities::LocationConfig::ErrorPageMap&
-      errorPages = location.getErrorPages();
-
   domain::shared::value_objects::ErrorCode notFoundCode =
       domain::shared::value_objects::ErrorCode::notFound();
 
-  domain::configuration::entities::LocationConfig::ErrorPageMap::const_iterator
-      it = errorPages.find(notFoundCode);
+  std::ostringstream debugMsg;
+  debugMsg << "handleNotFound: looking for 404 error page";
+  m_logger.debug(debugMsg.str());
 
-  if (it != errorPages.end()) {
-    serveErrorPage(it->second, notFoundCode);
-  } else {
-    generateErrorResponse(notFoundCode, "Not Found");
+  // First, try to find error page in location config
+  const domain::configuration::entities::LocationConfig::ErrorPageMap&
+      locationErrorPages = location.getErrorPages();
+  
+  domain::configuration::entities::LocationConfig::ErrorPageMap::const_iterator
+      locationIt = locationErrorPages.find(notFoundCode);
+
+  if (locationIt != locationErrorPages.end()) {
+    std::ostringstream foundMsg;
+    foundMsg << "handleNotFound: found 404 page in location config: " << locationIt->second;
+    m_logger.debug(foundMsg.str());
+    serveErrorPage(locationIt->second, notFoundCode, location);
+    return;
   }
+
+  // If not found in location, try server config
+  std::ostringstream tryServerMsg;
+  tryServerMsg << "handleNotFound: 404 not in location, checking server config";
+  m_logger.debug(tryServerMsg.str());
+
+  if (m_serverConfig != NULL) {
+    const domain::configuration::entities::ServerConfig::ErrorPageMap&
+        serverErrorPages = m_serverConfig->getErrorPages();
+    
+    domain::configuration::entities::ServerConfig::ErrorPageMap::const_iterator
+        serverIt = serverErrorPages.find(notFoundCode);
+
+    if (serverIt != serverErrorPages.end()) {
+      std::ostringstream foundServerMsg;
+      foundServerMsg << "handleNotFound: found 404 page in server config: " << serverIt->second;
+      m_logger.debug(foundServerMsg.str());
+      serveErrorPage(serverIt->second, notFoundCode, location);
+      return;
+    }
+  }
+
+  // No error page configured, generate default
+  std::ostringstream noErrorPageMsg;
+  noErrorPageMsg << "handleNotFound: no 404 error page configured, generating default";
+  m_logger.debug(noErrorPageMsg.str());
+  generateErrorResponse(notFoundCode, "Not Found");
 }
 
 void ConnectionHandler::serveErrorPage(
     const std::string& errorPagePath,
-    const domain::shared::value_objects::ErrorCode& statusCode) {
+    const domain::shared::value_objects::ErrorCode& statusCode,
+    const domain::configuration::entities::LocationConfig& location) {
   try {
     domain::filesystem::value_objects::Path errorPath =
-        domain::filesystem::value_objects::Path::fromString(errorPagePath,
-                                                            true);
+        resolvePathWithServerFallback(location, errorPagePath);
 
-    if (!filesystem::adapters::FileSystemHelper::exists(errorPath.toString())) {
+    std::ostringstream debugMsg;
+    debugMsg << "Serving error page from: " << errorPath.toString();
+    m_logger.debug(debugMsg.str());
+
+    const std::string errorPathStr = errorPath.toString();
+
+    // Check if file exists
+    if (!filesystem::adapters::FileSystemHelper::exists(errorPathStr)) {
+      m_logger.warn("Error page not found at: " + errorPathStr);
       generateErrorResponse(statusCode, "Error page not found");
       return;
     }
 
-    filesystem::adapters::PathResolver pathResolver(NULL);
-    filesystem::adapters::FileHandler fileHandler(NULL, &pathResolver);
+    // Read file content directly using ifstream
+    std::ifstream file(errorPathStr.c_str(), std::ios::binary);
+    if (!file.is_open()) {
+      m_logger.error("Failed to open error page file: " + errorPathStr);
+      generateErrorResponse(statusCode, "Failed to open error page");
+      return;
+    }
 
-    std::vector<char> content = fileHandler.readFile(errorPath);
-    std::string contentStr(content.begin(), content.end());
+    // Read entire file content
+    std::ostringstream contentStream;
+    contentStream << file.rdbuf();
+    file.close();
 
+    std::string contentStr = contentStream.str();
+
+    std::ostringstream sizeMsg;
+    sizeMsg << "Read error page file: " << contentStr.size() << " bytes";
+    m_logger.debug(sizeMsg.str());
+
+    // Create response with error status code
     m_response = domain::http::entities::HttpResponse(statusCode, contentStr);
     m_response.setContentType("text/html");
+
+    std::ostringstream successMsg;
+    successMsg << "Served error page " << statusCode.getValue()
+               << " from: " << errorPathStr;
+    m_logger.debug(successMsg.str());
 
   } catch (const std::exception& ex) {
     m_logger.error(std::string("Error page serving failed: ") + ex.what());
@@ -1057,20 +1115,72 @@ bool ConnectionHandler::validateRequestBodySize(
 
 domain::filesystem::value_objects::Path ConnectionHandler::tryFindFile(
     const domain::configuration::entities::LocationConfig& location,
-    const domain::filesystem::value_objects::Path& /* requestPath */) const {
+    const domain::filesystem::value_objects::Path& requestPath) const {
   const domain::configuration::entities::LocationConfig::TryFiles& tryFiles =
       location.getTryFiles();
+
+  const std::string requestPathStr = requestPath.toString();
+
+  std::ostringstream debugStart;
+  debugStart << "try_files: starting with " << tryFiles.size() 
+             << " patterns for path: " << requestPathStr;
+  m_logger.debug(debugStart.str());
 
   for (domain::configuration::entities::LocationConfig::TryFiles::const_iterator
            it = tryFiles.begin();
        it != tryFiles.end(); ++it) {
-    domain::filesystem::value_objects::Path tryPath = location.resolvePath(*it);
+    std::string tryFilePattern = *it;
 
-    if (filesystem::adapters::FileSystemHelper::exists(tryPath.toString())) {
-      return tryPath;
+    // Handle special case: =404, =500, etc.
+    if (!tryFilePattern.empty() && tryFilePattern[0] == '=') {
+      std::ostringstream statusMsg;
+      statusMsg << "try_files: reached status code pattern '" << tryFilePattern 
+                << "', returning empty path to trigger error handling";
+      m_logger.debug(statusMsg.str());
+      return domain::filesystem::value_objects::Path();
+    }
+
+    // Substitute $uri with the actual request path
+    std::string substitutedPattern = tryFilePattern;
+    std::size_t uriPos = substitutedPattern.find("$uri");
+    while (uriPos != std::string::npos) {
+      substitutedPattern.replace(uriPos, 4, requestPathStr);
+      uriPos = substitutedPattern.find("$uri", uriPos + requestPathStr.length());
+    }
+
+    std::ostringstream patternMsg;
+    patternMsg << "try_files: processing pattern '" << tryFilePattern 
+               << "' -> '" << substitutedPattern << "'";
+    m_logger.debug(patternMsg.str());
+
+    try {
+      domain::filesystem::value_objects::Path tryPath =
+          resolvePathWithServerFallback(location, substitutedPattern);
+
+      std::ostringstream debugMsg;
+      debugMsg << "try_files: resolved to '" << tryPath.toString() << "'";
+      m_logger.debug(debugMsg.str());
+
+      if (filesystem::adapters::FileSystemHelper::exists(tryPath.toString())) {
+        std::ostringstream foundMsg;
+        foundMsg << "try_files: FOUND file at '" << tryPath.toString() << "'";
+        m_logger.debug(foundMsg.str());
+        return tryPath;
+      } else {
+        std::ostringstream notFoundMsg;
+        notFoundMsg << "try_files: file does not exist: '" << tryPath.toString() << "'";
+        m_logger.debug(notFoundMsg.str());
+      }
+    } catch (const std::exception& ex) {
+      std::ostringstream errMsg;
+      errMsg << "try_files: exception while resolving '" << substitutedPattern 
+             << "': " << ex.what();
+      m_logger.debug(errMsg.str());
+      // Continue to next pattern
     }
   }
 
+  m_logger.debug("try_files: exhausted all patterns, returning empty path");
   return domain::filesystem::value_objects::Path();
 }
 

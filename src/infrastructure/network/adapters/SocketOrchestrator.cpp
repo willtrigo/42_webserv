@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 06:49:26 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/07 01:56:12 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/07 07:15:40 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -339,7 +339,7 @@ void SocketOrchestrator::processEventLoopIteration() {
     processReadyEvents(readyEvents);  // Graceful drain.
     return;
   }
-  
+
   processReadyEvents(readyEvents);
 
   const time_t currentTime = std::time(NULL);
