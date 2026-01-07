@@ -6,16 +6,16 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 06:49:26 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/06 05:29:39 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/07 01:25:27 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "infrastructure/network/adapters/SocketOrchestrator.hpp"
+#include "domain/configuration/value_objects/ListenDirective.hpp"
 #include "infrastructure/network/adapters/ConnectionHandler.hpp"
 #include "infrastructure/network/adapters/EventMultiplexer.hpp"
+#include "infrastructure/network/adapters/SocketOrchestrator.hpp"
 #include "infrastructure/network/adapters/TcpSocket.hpp"
 #include "infrastructure/network/primitives/SocketEvent.hpp"
-#include "domain/configuration/value_objects/ListenDirective.hpp"
 
 #include <cerrno>
 #include <cstring>
@@ -30,12 +30,11 @@ namespace adapters {
 // ListenSocket Implementation
 // ============================================================================
 
-SocketOrchestrator::ListenSocket::ListenSocket()
-    : socket(NULL), bindPort(0) {}
+SocketOrchestrator::ListenSocket::ListenSocket() : socket(NULL), bindPort(0) {}
 
 SocketOrchestrator::ListenSocket::ListenSocket(TcpSocket* sock,
-                                                const std::string& address,
-                                                unsigned int port)
+                                               const std::string& address,
+                                               unsigned int port)
     : socket(sock), bindAddress(address), bindPort(port) {}
 
 SocketOrchestrator::ListenSocket::~ListenSocket() {
@@ -276,8 +275,8 @@ void SocketOrchestrator::createListenSocketsFromBindings(
       m_listenSockets[socket->getFd()] = listenSocket;
 
       std::ostringstream oss;
-      oss << "Bound listen socket to " << binding
-          << " (fd=" << socket->getFd() << ")";
+      oss << "Bound listen socket to " << binding << " (fd=" << socket->getFd()
+          << ")";
       m_logger.info(oss.str());
 
     } catch (const std::exception& ex) {
@@ -382,7 +381,8 @@ void SocketOrchestrator::performConnectionSweep(time_t currentTime) {
 
   if (!timedOutConnections.empty()) {
     std::ostringstream oss;
-    oss << "Closed " << timedOutConnections.size() << " timed-out connection(s)";
+    oss << "Closed " << timedOutConnections.size()
+        << " timed-out connection(s)";
     m_logger.info(oss.str());
   }
 }
@@ -401,8 +401,7 @@ void SocketOrchestrator::handleNewConnection(int serverSocketFd) {
   }
 
   if (!canAcceptNewConnection()) {
-    m_logger.warn(
-        "Connection limit reached; rejecting new connection attempt");
+    m_logger.warn("Connection limit reached; rejecting new connection attempt");
     return;
   }
 
@@ -445,8 +444,7 @@ void SocketOrchestrator::handleNewConnection(int serverSocketFd) {
 }
 
 void SocketOrchestrator::handleClientEvent(int clientSocketFd) {
-  ConnectionHandlerMap::iterator it =
-      m_connectionHandlers.find(clientSocketFd);
+  ConnectionHandlerMap::iterator it = m_connectionHandlers.find(clientSocketFd);
 
   if (it == m_connectionHandlers.end()) {
     std::ostringstream oss;
@@ -475,8 +473,7 @@ void SocketOrchestrator::handleClientEvent(int clientSocketFd) {
 }
 
 void SocketOrchestrator::closeConnection(int clientSocketFd) {
-  ConnectionHandlerMap::iterator it =
-      m_connectionHandlers.find(clientSocketFd);
+  ConnectionHandlerMap::iterator it = m_connectionHandlers.find(clientSocketFd);
 
   if (it == m_connectionHandlers.end()) {
     return;
@@ -488,8 +485,8 @@ void SocketOrchestrator::closeConnection(int clientSocketFd) {
   m_connectionHandlers.erase(it);
 
   std::ostringstream oss;
-  oss << "Closed connection fd=" << clientSocketFd << " (active="
-      << m_connectionHandlers.size() << ")";
+  oss << "Closed connection fd=" << clientSocketFd
+      << " (active=" << m_connectionHandlers.size() << ")";
   m_logger.debug(oss.str());
 }
 
@@ -498,7 +495,7 @@ bool SocketOrchestrator::canAcceptNewConnection() const {
 }
 
 void SocketOrchestrator::registerClientSocket(int clientFd,
-                                               ConnectionHandler* handler) {
+                                              ConnectionHandler* handler) {
   m_connectionHandlers[clientFd] = handler;
   m_multiplexer->registerSocket(clientFd, primitives::SocketEvent::EVENT_READ);
 }
@@ -512,7 +509,8 @@ void SocketOrchestrator::deregisterClientSocket(int clientFd) {
 // ============================================================================
 
 const domain::configuration::entities::ServerConfig*
-SocketOrchestrator::resolveServerConfig(const ListenSocket* listenSocket) const {
+SocketOrchestrator::resolveServerConfig(
+    const ListenSocket* listenSocket) const {
   if (listenSocket == NULL) {
     return NULL;
   }

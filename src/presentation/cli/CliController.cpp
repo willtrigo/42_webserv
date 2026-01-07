@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/12 16:08:17 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/06 19:12:03 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/07 01:15:17 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,48 +74,6 @@ bool CliController::run(int argc, char** argv) {
   m_view.getLogger().info("Webserv shutdown complete");
   return true;
 }
-// try {
-//   std::auto_ptr<application::ports::IConfigProvider> configProvider(
-//       new infrastructure::config::adapters::ConfigProvider(
-//           this->m_view.getLogger()));
-//   configProvider->load(configPath);
-//   if (configProvider->isValid()) {
-//     const domain::configuration::entities::HttpConfig& config =
-//         configProvider->getConfiguration();
-//
-//     std::ostringstream oss;
-//     oss << "Configuration loaded successfully:\n";
-//     oss << "  Worker processes: " << config.getWorkerProcesses() << "\n";
-//     oss << "  Worker connections: " << config.getWorkerConnections() <<
-//     "\n"; oss << "  Servers: " << config.getServerConfigs().size() << "\n";
-//
-//     const std::vector<const
-//     domain::configuration::entities::ServerConfig*>&
-//         servers = configProvider->getAllServers();
-//     for (size_t i = 0; i < servers.size(); ++i) {
-//       const domain::configuration::entities::ServerConfig* server =
-//           servers[i];
-//       oss << "\n  Server " << (i + 1) << ":\n";
-//       if (!server->getServerNames().empty()) {
-//         oss << "    Server names: ";
-//         const domain::configuration::entities::ServerConfig::ServerNames&
-//             names = server->getServerNames();
-//         for (size_t j = 0; j < names.size(); ++j) {
-//           if (j > 0) oss << ", ";
-//           oss << names[j];
-//         }
-//         oss << "\n";
-//       }
-//       oss << "    Locations: " << server->getLocations().size() << "\n";
-//     }
-//
-//     this->m_view.getLogger().info(oss.str());
-//   }
-// } catch (const std::exception& exception) {
-//   this->m_view.displayError(exception.what());
-//   return false;
-// }
-// return true;
 
 bool CliController::parseArguments(int argc, char** argv) {
   if (argc > K_MAX_SIZE_ARGS) {

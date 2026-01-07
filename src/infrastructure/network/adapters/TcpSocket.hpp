@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 06:58:42 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/03 23:55:38 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/07 00:50:19 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 #include "application/ports/ILogger.hpp"
 #include "domain/http/value_objects/Host.hpp"
 #include "domain/http/value_objects/Port.hpp"
+#include "infrastructure/network/exceptions/SocketException.hpp"
 
 #include <cstdio>
 #include <string>
@@ -67,6 +68,9 @@ class TcpSocket {
 
   void setSocketOption(int level, int optname, const void* optval,
                        socklen_t optlen) const;
+
+  static exceptions::SocketException::ErrorCode classifyBindError(
+      int errorNumber);
 
   application::ports::ILogger& m_logger;
   int m_fd;

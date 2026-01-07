@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 08:52:55 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/03 23:46:49 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/07 00:50:24 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -103,9 +103,7 @@ void TcpSocket::bind() {
   if (::bind(m_fd, reinterpret_cast<const sockaddr*>(addr),
              sizeof(sockaddr_in)) == K_SOCKET_ERROR) {
     const exceptions::SocketException::ErrorCode errorCode =
-        (errno == EADDRINUSE) ? exceptions::SocketException::ADDRESS_IN_USE
-        : (errno == EACCES)   ? exceptions::SocketException::PERMISSION_DENIED
-                              : exceptions::SocketException::BIND_FAILED; // TODO: refactor this logic
+        classifyBindError(errno);
 
     std::ostringstream oss;
     oss << m_host.getValue() << ":" << m_port.getValue();
@@ -376,7 +374,7 @@ void TcpSocket::initializeAddress() {
     }
   } else {
     struct addrinfo hints;
-    struct addrinfo *result = NULL;
+    struct addrinfo* result = NULL;
     std::memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
@@ -409,6 +407,18 @@ void TcpSocket::setSocketOption(int level, int optname, const void* optval,
     throw exceptions::SocketException(
         "Failed to set socket option",
         exceptions::SocketException::SETSOCKOPT_FAILED, errno);
+  }
+}
+
+exceptions::SocketException::ErrorCode TcpSocket::classifyBindError(
+    int errorNumber) {
+  switch (errorNumber) {
+    case EADDRINUSE:
+      return exceptions::SocketException::ADDRESS_IN_USE;
+    case EACCES:
+      return exceptions::SocketException::PERMISSION_DENIED;
+    default:
+      return exceptions::SocketException::BIND_FAILED;
   }
 }
 
