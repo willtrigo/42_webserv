@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ConfigParser.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/18 18:26:50 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/31 04:17:43 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/06 20:33:02 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,14 +32,15 @@ ConfigParser::~ConfigParser() {}
 
 domain::configuration::entities::HttpConfig* ConfigParser::parseFile(
     const std::string& configPath) {
+  domain::configuration::entities::HttpConfig* httpConfig = NULL;
+
   try {
     initializeParser(configPath);
 
     std::vector<lexer::Token> tokens = m_lexer.tokenizeFile(configPath);
     parser::ParserContext context(tokens, configPath);
 
-    domain::configuration::entities::HttpConfig* httpConfig =
-        new domain::configuration::entities::HttpConfig(configPath);
+    httpConfig = new domain::configuration::entities::HttpConfig(configPath);
 
     parseTokens(context, *httpConfig);
     validateConfiguration(*httpConfig);
@@ -52,12 +53,16 @@ domain::configuration::entities::HttpConfig* ConfigParser::parseFile(
     return httpConfig;
 
   } catch (const exceptions::SyntaxException& e) {
+    delete httpConfig;
     throw;
   } catch (const exceptions::ValidationException& e) {
+    delete httpConfig;
     throw;
   } catch (const exceptions::ConfigException& e) {
+    delete httpConfig;
     throw;
   } catch (const std::exception& e) {
+    delete httpConfig;
     throw exceptions::ConfigException(
         std::string("Unexpected error during configuration parse: ") + e.what(),
         exceptions::ConfigException::LOAD_UNEXPECTED);
