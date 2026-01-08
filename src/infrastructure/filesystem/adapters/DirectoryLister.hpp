@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   DirectoryLister.hpp                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 21:42:37 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 23:53:30 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/08 11:50:27 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,13 +59,15 @@ class DirectoryLister {
   DirectoryLister& operator=(const DirectoryLister& other);
 
   static std::vector<DirectoryEntry> listDirectory(
-      const domain::filesystem::value_objects::Path& directoryPath, bool showHidden = false,
-      const std::string& sortBy = "name", bool ascending = true);
+      const domain::filesystem::value_objects::Path& directoryPath,
+      bool showHidden = false, const std::string& sortBy = "name",
+      bool ascending = true);
 
   static std::string generateHtmlListing(
       const domain::filesystem::value_objects::Path& directoryPath,
-      const domain::filesystem::value_objects::Path& requestPath, bool showHidden = false,
-      const std::string& sortBy = "name", bool ascending = true);
+      const domain::filesystem::value_objects::Path& requestPath,
+      bool showHidden = false, const std::string& sortBy = "name",
+      bool ascending = true);
 
   std::string generateJsonListing(
       const domain::filesystem::value_objects::Path& directoryPath,
@@ -89,20 +91,26 @@ class DirectoryLister {
       const domain::filesystem::value_objects::Path& requestPath);
 
   static bool isHiddenFile(const std::string& filename);
-  static bool isExecutableFile(const domain::filesystem::value_objects::Permission& perm);
+  static bool isExecutableFile(
+      const domain::filesystem::value_objects::Permission& perm);
   static bool isImageFile(const std::string& filename);
   static bool isScriptFile(const std::string& filename);
 
-  static bool hasAccess(const DirectoryEntry& entry,
-                        domain::filesystem::value_objects::Permission::Class userClass);
+  static bool hasAccess(
+      const DirectoryEntry& entry,
+      domain::filesystem::value_objects::Permission::Class userClass);
 
  private:
   FileSystemHelper* m_fileSystemHelper;
   PathResolver* m_pathResolver;
 
-  static const domain::shared::value_objects::RegexPattern IMAGE_EXTENSION_PATTERN;
-  static const domain::shared::value_objects::RegexPattern SCRIPT_EXTENSION_PATTERN;
-  static const std::string DEFAULT_INDEX_FILES[];
+  // Meyer's Singleton pattern - static functions returning references to static
+  // locals This fixes the static initialization order fiasco
+  static const domain::shared::value_objects::RegexPattern&
+  getImageExtensionPattern();
+  static const domain::shared::value_objects::RegexPattern&
+  getScriptExtensionPattern();
+  static const std::string* getDefaultIndexFiles();
   static const std::size_t DEFAULT_INDEX_FILES_COUNT = 5;
 
   static const std::size_t PLAIN_TEXT_LINE_WIDTH = 60;
@@ -112,7 +120,8 @@ class DirectoryLister {
   static const std::size_t LAST_MODIFIED_BUFFER_SIZE = 80;
 
   static std::vector<DirectoryEntry> readDirectoryEntries(
-      const domain::filesystem::value_objects::Path& directoryPath, bool showHidden);
+      const domain::filesystem::value_objects::Path& directoryPath,
+      bool showHidden);
 
   static void sortEntries(std::vector<DirectoryEntry>& entries,
                           const std::string& sortBy, bool ascending);
