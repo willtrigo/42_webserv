@@ -2,170 +2,198 @@ name: All Tests Summary
 
 on:
   push:
-    branches: [ main, master, develop, "**feat**" ]
+    branches: [main, master, develop, "**feat**"]
   pull_request:
-    branches: [ main, master, develop ]
+    branches: [main, master, develop]
 
 jobs:
   # Run all unit test workflows
   unit-errorcode:
     uses: ./.github/workflows/unit_ErrorCode.yml
-  
+
   unit-errorpage:
     uses: ./.github/workflows/unit_ErrorPage.yml
-  
+
   unit-httpmethod:
     uses: ./.github/workflows/unit_HttpMethod.yml
-  
+
   unit-path:
     uses: ./.github/workflows/unit_Path.yml
-  
+
   unit-port:
     uses: ./.github/workflows/unit_Port.yml
-  
+
   unit-size:
     uses: ./.github/workflows/unit_Size.yml
-  
+
   unit-uri:
     uses: ./.github/workflows/unit_Uri.yml
-  
+
   unit-querystringbuilder:
     uses: ./.github/workflows/unit_QueryStringBuilder.yml
-  
+
   unit-permission:
     uses: ./.github/workflows/unit_Permission.yml
-  
+
   unit-uploadaccess:
     uses: ./.github/workflows/unit_UploadAccess.yml
-  
+
+  unit-uploadconfig:
+    uses: ./.github/workflows/unit_UploadConfig.yml
+
   unit-host:
     uses: ./.github/workflows/unit_Host.yml
-  
+
   unit-listendirective:
     uses: ./.github/workflows/unit_ListenDirective.yml
-  
+
   unit-route:
     uses: ./.github/workflows/unit_Route.yml
-  
+
   unit-regexpattern:
     uses: ./.github/workflows/unit_RegexPattern.yml
-  
+
   unit-cgiconfig:
     uses: ./.github/workflows/unit_CgiConfig.yml
-  
+
   unit-mocks:
     uses: ./.github/workflows/unit_Mocks.yml
-  
+
   # Summary job that depends on all tests
   test-summary:
     runs-on: ubuntu-latest
-    needs: [unit-errorcode, unit-errorpage, unit-httpmethod, unit-path, unit-port, unit-size, unit-uri, unit-querystringbuilder, unit-permission, unit-uploadaccess, unit-host, unit-listendirective, unit-route, unit-regexpattern, unit-cgiconfig, unit-mocks]
+    needs:
+      [
+        unit-errorcode,
+        unit-errorpage,
+        unit-httpmethod,
+        unit-path,
+        unit-port,
+        unit-size,
+        unit-uri,
+        unit-querystringbuilder,
+        unit-permission,
+        unit-uploadaccess,
+        unit-uploadconfig,
+        unit-host,
+        unit-listendirective,
+        unit-route,
+        unit-regexpattern,
+        unit-cgiconfig,
+        unit-mocks,
+      ]
     if: always()
-    
+
     steps:
-    - name: Download all test results
-      uses: actions/download-artifact@v6
-      with:
-        path: test-results
-    
-    - name: Generate summary
-      run: |
-        echo "## 🧪 Test Suite Summary" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### Individual Test Results:" >> $GITHUB_STEP_SUMMARY
-        
-        if [ -d "test-results/test-results-errorcode" ]; then
-          echo "- ✅ ErrorCode tests" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "- ❌ ErrorCode tests" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        if [ -d "test-results/test-results-errorpage" ]; then
-          echo "- ✅ ErrorPage tests" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "- ❌ ErrorPage tests" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        if [ -d "test-results/test-results-httpmethod" ]; then
-          echo "- ✅ HttpMethod tests" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "- ❌ HttpMethod tests" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        if [ -d "test-results/test-results-path" ]; then
-          echo "- ✅ Path tests" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "- ❌ Path tests" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        if [ -d "test-results/test-results-port" ]; then
-          echo "- ✅ Port tests" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "- ❌ Port tests" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        if [ -d "test-results/test-results-size" ]; then
-          echo "- ✅ Size tests" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "- ❌ Size tests" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        if [ -d "test-results/test-results-uri" ]; then
-          echo "- ✅ Uri tests" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "- ❌ Uri tests" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        if [ -d "test-results/test-results-querystringbuilder" ]; then
-          echo "- ✅ QueryStringBuilder tests" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "- ❌ QueryStringBuilder tests" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        if [ -d "test-results/test-results-permission" ]; then
-          echo "- ✅ Permission tests" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "- ❌ Permission tests" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        if [ -d "test-results/test-results-uploadaccess" ]; then
-          echo "- ✅ UploadAccess tests" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "- ❌ UploadAccess tests" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        if [ -d "test-results/test-results-host" ]; then
-          echo "- ✅ Host tests" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "- ❌ Host tests" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        if [ -d "test-results/test-results-listendirective" ]; then
-          echo "- ✅ ListenDirective tests" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "- ❌ ListenDirective tests" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        if [ -d "test-results/test-results-route" ]; then
-          echo "- ✅ Route tests" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "- ❌ Route tests" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        if [ -d "test-results/test-results-regexpattern" ]; then
-          echo "- ✅ RegexPattern tests" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "- ❌ RegexPattern tests" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        if [ -d "test-results/test-results-cgiconfig" ]; then
-          echo "- ✅ CgiConfig tests" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "- ❌ CgiConfig tests" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        if [ -d "test-results/test-results-mocks" ]; then
-          echo "- ✅ Mock tests" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "- ❌ Mock tests" >> $GITHUB_STEP_SUMMARY
-        fi
+      - name: Download all test results
+        uses: actions/download-artifact@v6
+        with:
+          path: test-results
+
+      - name: Generate summary
+        run: |
+          echo "## 🧪 Test Suite Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Individual Test Results:" >> $GITHUB_STEP_SUMMARY
+
+          if [ -d "test-results/test-results-errorcode" ]; then
+            echo "- ✅ ErrorCode tests" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ ErrorCode tests" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -d "test-results/test-results-errorpage" ]; then
+            echo "- ✅ ErrorPage tests" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ ErrorPage tests" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -d "test-results/test-results-httpmethod" ]; then
+            echo "- ✅ HttpMethod tests" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ HttpMethod tests" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -d "test-results/test-results-path" ]; then
+            echo "- ✅ Path tests" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ Path tests" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -d "test-results/test-results-port" ]; then
+            echo "- ✅ Port tests" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ Port tests" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -d "test-results/test-results-size" ]; then
+            echo "- ✅ Size tests" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ Size tests" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -d "test-results/test-results-uri" ]; then
+            echo "- ✅ Uri tests" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ Uri tests" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -d "test-results/test-results-querystringbuilder" ]; then
+            echo "- ✅ QueryStringBuilder tests" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ QueryStringBuilder tests" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -d "test-results/test-results-permission" ]; then
+            echo "- ✅ Permission tests" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ Permission tests" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -d "test-results/test-results-uploadaccess" ]; then
+            echo "- ✅ UploadAccess tests" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ UploadAccess tests" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -d "test-results/test-results-uploadconfig" ]; then
+            echo "- ✅ UploadConfig tests" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ UploadConfig tests" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -d "test-results/test-results-host" ]; then
+            echo "- ✅ Host tests" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ Host tests" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -d "test-results/test-results-listendirective" ]; then
+            echo "- ✅ ListenDirective tests" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ ListenDirective tests" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -d "test-results/test-results-route" ]; then
+            echo "- ✅ Route tests" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ Route tests" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -d "test-results/test-results-regexpattern" ]; then
+            echo "- ✅ RegexPattern tests" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ RegexPattern tests" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -d "test-results/test-results-cgiconfig" ]; then
+            echo "- ✅ CgiConfig tests" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ CgiConfig tests" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -d "test-results/test-results-mocks" ]; then
+            echo "- ✅ Mock tests" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ Mock tests" >> $GITHUB_STEP_SUMMARY
+          fi
