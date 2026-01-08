@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 08:52:55 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/07 00:50:24 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/08 04:11:49 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,15 +36,17 @@ TcpSocket::TcpSocket(const domain::http::value_objects::Host& host,
       m_port(port),
       m_isServerSocket(true),
       m_address(NULL) {
-  m_fd = socket(AF_INET, SOCK_STREAM, 0);
+  const int addressFamily = m_host.isIpv6() ? AF_INET6 : AF_INET;
+
+  m_fd = socket(addressFamily, SOCK_STREAM, 0);
   if (m_fd == K_INVALID_FD) {
     throw exceptions::SocketException(
         "Failed to create socket",
         exceptions::SocketException::SOCKET_CREATION_FAILED, errno);
   }
 
-  m_address = new sockaddr_in;
-  std::memset(m_address, 0, sizeof(sockaddr_in));
+  m_address = new sockaddr_storage;
+  std::memset(m_address, 0, sizeof(sockaddr_storage));
   initializeAddress();
 }
 
@@ -59,33 +61,46 @@ TcpSocket::TcpSocket(int fileDescriptor, application::ports::ILogger& logger)
         exceptions::SocketException::INVALID_FILE_DESCRIPTOR);
   }
 
-  m_address = new sockaddr_in;
-  std::memset(m_address, 0, sizeof(sockaddr_in));
+  m_address = new sockaddr_storage;
+  std::memset(m_address, 0, sizeof(sockaddr_storage));
 
-  socklen_t addrLen = sizeof(sockaddr_in);
+  socklen_t addrLen = sizeof(sockaddr_storage);
   if (getpeername(m_fd, reinterpret_cast<sockaddr*>(m_address), &addrLen) ==
       K_SOCKET_ERROR) {
     const int savedErrno = errno;
-    delete reinterpret_cast<sockaddr_in*>(m_address);
+    delete reinterpret_cast<sockaddr_storage*>(m_address);
     m_address = NULL;
     throw exceptions::SocketException(
         "Failed to get peer address",
         exceptions::SocketException::GETPEERNAME_FAILED, savedErrno);
   }
 
-  sockaddr_in* addr = reinterpret_cast<sockaddr_in*>(m_address);
-  m_port = domain::http::value_objects::Port(ntohs(addr->sin_port));
+  sockaddr_storage* addr = reinterpret_cast<sockaddr_storage*>(m_address);
 
-  char hostBuffer[K_IPV4_ADDR_STRLEN];
-  if (inet_ntop(AF_INET, &addr->sin_addr, hostBuffer, K_IPV4_ADDR_STRLEN) !=
-      NULL) {
-    m_host = domain::http::value_objects::Host(hostBuffer);
+  if (addr->ss_family == AF_INET) {
+    sockaddr_in* addr4 = reinterpret_cast<sockaddr_in*>(addr);
+    m_port = domain::http::value_objects::Port(ntohs(addr4->sin_port));
+
+    char hostBuffer[K_IPV4_ADDR_STRLEN];
+    if (inet_ntop(AF_INET, &addr4->sin_addr, hostBuffer, K_IPV4_ADDR_STRLEN) !=
+        NULL) {
+      m_host = domain::http::value_objects::Host(hostBuffer);
+    }
+  } else if (addr->ss_family == AF_INET6) {
+    sockaddr_in6* addr6 = reinterpret_cast<sockaddr_in6*>(addr);
+    m_port = domain::http::value_objects::Port(ntohs(addr6->sin6_port));
+
+    char hostBuffer[K_IPV6_ADDR_STRLEN];
+    if (inet_ntop(AF_INET6, &addr6->sin6_addr, hostBuffer,
+                  K_IPV6_ADDR_STRLEN) != NULL) {
+      m_host = domain::http::value_objects::Host(hostBuffer);
+    }
   }
 }
 
 TcpSocket::~TcpSocket() {
   close();
-  delete reinterpret_cast<sockaddr_in*>(m_address);
+  delete reinterpret_cast<sockaddr_storage*>(m_address);
   m_address = NULL;
 }
 
@@ -99,9 +114,28 @@ void TcpSocket::bind() {
   const int enableReuseAddr = 1;
   setSocketOption(SOL_SOCKET, SO_REUSEADDR, &enableReuseAddr, sizeof(int));
 
-  sockaddr_in* addr = reinterpret_cast<sockaddr_in*>(m_address);
-  if (::bind(m_fd, reinterpret_cast<const sockaddr*>(addr),
-             sizeof(sockaddr_in)) == K_SOCKET_ERROR) {
+  if (m_host.isIpv6()) {
+    const int ipv6Only = 1;
+    if (setsockopt(m_fd, IPPROTO_IPV6, IPV6_V6ONLY, &ipv6Only,
+                   sizeof(ipv6Only)) == K_SOCKET_ERROR) {
+      std::ostringstream oss;
+      oss << "Warning: Failed to set IPV6_V6ONLY for " << m_host.getValue()
+          << ":" << m_port.getValue() << " (errno=" << errno << ")";
+      m_logger.warn(oss.str());
+    }
+  }
+
+  sockaddr_storage* addr = reinterpret_cast<sockaddr_storage*>(m_address);
+  socklen_t addrLen;
+
+  if (m_host.isIpv6()) {
+    addrLen = sizeof(sockaddr_in6);
+  } else {
+    addrLen = sizeof(sockaddr_in);
+  }
+
+  if (::bind(m_fd, reinterpret_cast<const sockaddr*>(addr), addrLen) ==
+      K_SOCKET_ERROR) {
     const exceptions::SocketException::ErrorCode errorCode =
         classifyBindError(errno);
 
@@ -142,7 +176,7 @@ TcpSocket* TcpSocket::accept() {
         exceptions::SocketException::INVALID_FILE_DESCRIPTOR);
   }
 
-  sockaddr_in clientAddr;
+  sockaddr_storage clientAddr;
   socklen_t clientAddrLen = sizeof(clientAddr);
   std::memset(&clientAddr, 0, sizeof(clientAddr));
 
@@ -281,7 +315,7 @@ std::string TcpSocket::getLocalAddress() const {
         exceptions::SocketException::INVALID_FILE_DESCRIPTOR);
   }
 
-  sockaddr_in addr;
+  sockaddr_storage addr;
   socklen_t addrLen = sizeof(addr);
   std::memset(&addr, 0, sizeof(addr));
 
@@ -292,17 +326,7 @@ std::string TcpSocket::getLocalAddress() const {
         exceptions::SocketException::GETSOCKNAME_FAILED, errno);
   }
 
-  char hostBuffer[K_IPV4_ADDR_STRLEN];
-  if (inet_ntop(AF_INET, &addr.sin_addr, hostBuffer, K_IPV4_ADDR_STRLEN) ==
-      NULL) {
-    throw exceptions::SocketException(
-        "Failed to convert address to string",
-        exceptions::SocketException::INET_NTOP_FAILED, errno);
-  }
-
-  std::ostringstream oss;
-  oss << hostBuffer << ":" << ntohs(addr.sin_port);
-  return oss.str();
+  return formatAddress(&addr);
 }
 
 std::string TcpSocket::getRemoteAddress() const {
@@ -318,7 +342,7 @@ std::string TcpSocket::getRemoteAddress() const {
         exceptions::SocketException::INVALID_FILE_DESCRIPTOR);
   }
 
-  sockaddr_in addr;
+  sockaddr_storage addr;
   socklen_t addrLen = sizeof(addr);
   std::memset(&addr, 0, sizeof(addr));
 
@@ -329,17 +353,7 @@ std::string TcpSocket::getRemoteAddress() const {
         exceptions::SocketException::GETPEERNAME_FAILED, errno);
   }
 
-  char hostBuffer[K_IPV4_ADDR_STRLEN];
-  if (inet_ntop(AF_INET, &addr.sin_addr, hostBuffer, K_IPV4_ADDR_STRLEN) ==
-      NULL) {
-    throw exceptions::SocketException(
-        "Failed to convert address to string",
-        exceptions::SocketException::INET_NTOP_FAILED, errno);
-  }
-
-  std::ostringstream oss;
-  oss << hostBuffer << ":" << ntohs(addr.sin_port);
-  return oss.str();
+  return formatAddress(&addr);
 }
 
 bool TcpSocket::isValid() const { return m_fd >= 0; }
@@ -356,47 +370,67 @@ void TcpSocket::close() {
 }
 
 void TcpSocket::initializeAddress() {
-  sockaddr_in* addr = reinterpret_cast<sockaddr_in*>(m_address);
-  addr->sin_family = AF_INET;
-  addr->sin_port = htons(static_cast<uint16_t>(m_port.getValue()));
-
+  sockaddr_storage* addr = reinterpret_cast<sockaddr_storage*>(m_address);
   const std::string hostValue = m_host.getValue();
 
-  if (m_host.isWildcard()) {
-    addr->sin_addr.s_addr = INADDR_ANY;
-  } else if (m_host.isLocalhost()) {
-    addr->sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-  } else if (m_host.isIpv4()) {
-    if (inet_pton(AF_INET, hostValue.c_str(), &addr->sin_addr) != 1) {
-      throw exceptions::SocketException(
-          "Failed to parse IPv4 address: " + hostValue,
-          exceptions::SocketException::INET_PTON_FAILED, errno);
+  if (m_host.isIpv6()) {
+    sockaddr_in6* addr6 = reinterpret_cast<sockaddr_in6*>(addr);
+    addr6->sin6_family = AF_INET6;
+    addr6->sin6_port = htons(static_cast<uint16_t>(m_port.getValue()));
+
+    if (m_host.isWildcard()) {
+      addr6->sin6_addr = in6addr_any;
+    } else if (m_host.isLocalhost()) {
+      addr6->sin6_addr = in6addr_loopback;
+    } else {
+      if (inet_pton(AF_INET6, hostValue.c_str(), &addr6->sin6_addr) != 1) {
+        throw exceptions::SocketException(
+            "Failed to parse IPv6 address: " + hostValue,
+            exceptions::SocketException::INET_PTON_FAILED, errno);
+      }
     }
   } else {
-    struct addrinfo hints;
-    struct addrinfo* result = NULL;
-    std::memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
+    sockaddr_in* addr4 = reinterpret_cast<sockaddr_in*>(addr);
+    addr4->sin_family = AF_INET;
+    addr4->sin_port = htons(static_cast<uint16_t>(m_port.getValue()));
 
-    const int status = getaddrinfo(hostValue.c_str(), NULL, &hints, &result);
-    if (status != 0) {
-      std::ostringstream oss;
-      oss << "Failed to resolve hostname: " << hostValue << " ("
-          << gai_strerror(status) << ")";
-      throw exceptions::SocketException(
-          oss.str(), exceptions::SocketException::GETADDRINFO_FAILED);
-    }
-
-    if (result != NULL) {
-      std::memcpy(&addr->sin_addr,
-                  &(reinterpret_cast<sockaddr_in*>(result->ai_addr))->sin_addr,
-                  sizeof(struct in_addr));
-      freeaddrinfo(result);
+    if (m_host.isWildcard()) {
+      addr4->sin_addr.s_addr = INADDR_ANY;
+    } else if (m_host.isLocalhost()) {
+      addr4->sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    } else if (m_host.isIpv4()) {
+      if (inet_pton(AF_INET, hostValue.c_str(), &addr4->sin_addr) != 1) {
+        throw exceptions::SocketException(
+            "Failed to parse IPv4 address: " + hostValue,
+            exceptions::SocketException::INET_PTON_FAILED, errno);
+      }
     } else {
-      throw exceptions::SocketException(
-          "Failed to resolve host: " + hostValue,
-          exceptions::SocketException::GETADDRINFO_FAILED);
+      struct addrinfo hints;
+      struct addrinfo* result = NULL;
+      std::memset(&hints, 0, sizeof(hints));
+      hints.ai_family = AF_INET;
+      hints.ai_socktype = SOCK_STREAM;
+
+      const int status = getaddrinfo(hostValue.c_str(), NULL, &hints, &result);
+      if (status != 0) {
+        std::ostringstream oss;
+        oss << "Failed to resolve hostname: " << hostValue << " ("
+            << gai_strerror(status) << ")";
+        throw exceptions::SocketException(
+            oss.str(), exceptions::SocketException::GETADDRINFO_FAILED);
+      }
+
+      if (result != NULL) {
+        std::memcpy(
+            &addr4->sin_addr,
+            &(reinterpret_cast<sockaddr_in*>(result->ai_addr))->sin_addr,
+            sizeof(struct in_addr));
+        freeaddrinfo(result);
+      } else {
+        throw exceptions::SocketException(
+            "Failed to resolve host: " + hostValue,
+            exceptions::SocketException::GETADDRINFO_FAILED);
+      }
     }
   }
 }
@@ -408,6 +442,38 @@ void TcpSocket::setSocketOption(int level, int optname, const void* optval,
         "Failed to set socket option",
         exceptions::SocketException::SETSOCKOPT_FAILED, errno);
   }
+}
+
+std::string TcpSocket::formatAddress(const sockaddr_storage* addr) {
+  std::ostringstream oss;
+
+  if (addr->ss_family == AF_INET) {
+    const sockaddr_in* addr4 = reinterpret_cast<const sockaddr_in*>(addr);
+    char hostBuffer[K_IPV4_ADDR_STRLEN];
+
+    if (inet_ntop(AF_INET, &addr4->sin_addr, hostBuffer, K_IPV4_ADDR_STRLEN) ==
+        NULL) {
+      throw exceptions::SocketException(
+          "Failed to convert IPv4 address to string",
+          exceptions::SocketException::INET_NTOP_FAILED, errno);
+    }
+
+    oss << hostBuffer << ":" << ntohs(addr4->sin_port);
+  } else if (addr->ss_family == AF_INET6) {
+    const sockaddr_in6* addr6 = reinterpret_cast<const sockaddr_in6*>(addr);
+    char hostBuffer[K_IPV6_ADDR_STRLEN];
+
+    if (inet_ntop(AF_INET6, &addr6->sin6_addr, hostBuffer,
+                  K_IPV6_ADDR_STRLEN) == NULL) {
+      throw exceptions::SocketException(
+          "Failed to convert IPv6 address to string",
+          exceptions::SocketException::INET_NTOP_FAILED, errno);
+    }
+
+    oss << "[" << hostBuffer << "]:" << ntohs(addr6->sin6_port);
+  }
+
+  return oss.str();
 }
 
 exceptions::SocketException::ErrorCode TcpSocket::classifyBindError(

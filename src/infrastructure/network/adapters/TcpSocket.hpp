@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 06:58:42 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/07 00:50:19 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/08 03:39:18 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@
 
 #include <cstdio>
 #include <string>
+#include <sys/socket.h>
 #include <unistd.h>
 
 namespace infrastructure {
@@ -33,6 +34,7 @@ class TcpSocket {
   static const int K_DEFAULT_BACKLOG = 128;
   static const size_t K_READ_BUFFER_SIZE = 8192;
   static const size_t K_IPV4_ADDR_STRLEN = 16;
+  static const size_t K_IPV6_ADDR_STRLEN = 46;
 
   TcpSocket(const domain::http::value_objects::Host& host,
             const domain::http::value_objects::Port& port,
@@ -68,6 +70,8 @@ class TcpSocket {
 
   void setSocketOption(int level, int optname, const void* optval,
                        socklen_t optlen) const;
+
+  static std::string formatAddress(const sockaddr_storage* addr);
 
   static exceptions::SocketException::ErrorCode classifyBindError(
       int errorNumber);

@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 06:49:26 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/07 07:15:40 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/08 04:11:54 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,10 +27,6 @@
 namespace infrastructure {
 namespace network {
 namespace adapters {
-
-// ============================================================================
-// ListenSocket Implementation
-// ============================================================================
 
 SocketOrchestrator::ListenSocket::ListenSocket() : socket(NULL), bindPort(0) {}
 
@@ -76,10 +72,6 @@ SocketOrchestrator::ListenSocket::resolveDefaultServer() const {
   return serverConfigs.empty() ? NULL : serverConfigs[0];
 }
 
-// ============================================================================
-// SocketOrchestrator Implementation
-// ============================================================================
-
 SocketOrchestrator::SocketOrchestrator(
     application::ports::ILogger& logger,
     application::ports::IConfigProvider& configProvider)
@@ -101,10 +93,6 @@ SocketOrchestrator::~SocketOrchestrator() {
   }
   cleanupResources();
 }
-
-// ============================================================================
-// Public Interface Implementation
-// ============================================================================
 
 void SocketOrchestrator::initialize() {
   if (m_isRunning) {
@@ -185,10 +173,6 @@ size_t SocketOrchestrator::getServerSocketCount() const {
   return m_listenSockets.size();
 }
 
-// ============================================================================
-// Initialization Methods
-// ============================================================================
-
 void SocketOrchestrator::initializeServerSockets() {
   const std::vector<const domain::configuration::entities::ServerConfig*>&
       serverConfigs = m_configProvider.getAllServers();
@@ -243,9 +227,17 @@ void SocketOrchestrator::collectUniqueBindings(
       const domain::configuration::entities::ListenDirective& directive =
           listenDirectives[j];
 
+      const std::string hostValue = directive.getHost().getValue();
       std::ostringstream bindKey;
-      bindKey << directive.getHost().getValue() << ":"
-              << directive.getPort().getValue();
+
+      // Wrap IPv6 addresses in brackets for consistent parsing
+      if (directive.getHost().isIpv6()) {
+        bindKey << "[" << hostValue << "]";
+      } else {
+        bindKey << hostValue;
+      }
+
+      bindKey << ":" << directive.getPort().getValue();
 
       uniqueBindings.insert(bindKey.str());
     }
@@ -257,16 +249,39 @@ void SocketOrchestrator::createListenSocketsFromBindings(
   for (UniqueBindingSet::const_iterator it = bindings.begin();
        it != bindings.end(); ++it) {
     const std::string& binding = *it;
-    const size_t colonPos = binding.find(':');
+    size_t colonPos;
+    std::string hostStr;
+    std::string portStr;
 
-    if (colonPos == std::string::npos) {
-      std::ostringstream oss;
-      oss << "Invalid binding format: " << binding;
-      throw std::runtime_error(oss.str());
+    if (!binding.empty() && binding[0] == '[') {
+      const size_t closeBracketPos = binding.find(']');
+      if (closeBracketPos == std::string::npos) {
+        std::ostringstream oss;
+        oss << "Invalid IPv6 binding format (missing ']'): " << binding;
+        throw std::runtime_error(oss.str());
+      }
+
+      hostStr = binding.substr(1, closeBracketPos - 1);
+
+      colonPos = binding.find(':', closeBracketPos);
+      if (colonPos == std::string::npos) {
+        std::ostringstream oss;
+        oss << "Invalid binding format (missing port): " << binding;
+        throw std::runtime_error(oss.str());
+      }
+
+      portStr = binding.substr(colonPos + 1);
+    } else {
+      colonPos = binding.find(':');
+      if (colonPos == std::string::npos) {
+        std::ostringstream oss;
+        oss << "Invalid binding format (missing ':'): " << binding;
+        throw std::runtime_error(oss.str());
+      }
+
+      hostStr = binding.substr(0, colonPos);
+      portStr = binding.substr(colonPos + 1);
     }
-
-    const std::string hostStr = binding.substr(0, colonPos);
-    const std::string portStr = binding.substr(colonPos + 1);
 
     const domain::http::value_objects::Host host(hostStr);
     const domain::http::value_objects::Port port(portStr);
@@ -320,10 +335,6 @@ void SocketOrchestrator::associateServerConfigsWithListenSockets() {
     }
   }
 }
-
-// ============================================================================
-// Event Loop Methods
-// ============================================================================
 
 void SocketOrchestrator::processEventLoopIteration() {
   if (shared::utils::SignalHandler::isShutdownRequested()) {
@@ -405,10 +416,6 @@ void SocketOrchestrator::performConnectionSweep(time_t currentTime) {
     m_logger.info(oss.str());
   }
 }
-
-// ============================================================================
-// Connection Management Methods
-// ============================================================================
 
 void SocketOrchestrator::handleNewConnection(int serverSocketFd) {
   ListenSocket* listenSocket = findListenSocket(serverSocketFd);
@@ -523,10 +530,6 @@ void SocketOrchestrator::deregisterClientSocket(int clientFd) {
   m_multiplexer->deregisterSocket(clientFd);
 }
 
-// ============================================================================
-// Server Resolution Methods
-// ============================================================================
-
 const domain::configuration::entities::ServerConfig*
 SocketOrchestrator::resolveServerConfig(
     const ListenSocket* listenSocket) const {
@@ -546,10 +549,6 @@ SocketOrchestrator::ListenSocket* SocketOrchestrator::findListenSocket(
 bool SocketOrchestrator::isServerSocket(int fileDescriptor) const {
   return m_listenSockets.find(fileDescriptor) != m_listenSockets.end();
 }
-
-// ============================================================================
-// State Management Methods
-// ============================================================================
 
 void SocketOrchestrator::validateInitializationState() const {
   if (!m_isRunning) {
