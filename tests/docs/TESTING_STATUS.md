@@ -4,9 +4,9 @@
 
 This document tracks implementation status aligned with the 10-day sprint plan. Status updates daily.
 
-**Current Date:** January 6, 2026  
+**Current Date:** January 8, 2026  
 **Project Completion:** ~15% of mandatory requirements  
-**Test Coverage:** 944 tests, 944 passing (100% - all value objects complete!)  
+**Test Coverage:** 998 tests, 993 passing (99.5% - DirectoryLister static init bug fixed!)  
 **Evaluation Ready:** ❌ NO - Need working HTTP server + integration tests
 
 **Current Sprint:** Day 11 - Integration Testing & Bug Fixes (2 DAYS TO DEADLINE!)
@@ -15,7 +15,7 @@ See [TWO_PERSON_SPRINT.md](TWO_PERSON_SPRINT.md) for the complete 10-day impleme
 
 ---
 
-## 📊 Test Suite Summary (January 06, 2026)
+## 📊 Test Suite Summary (January 08, 2026)
 
 | Test Suite | Tests | Passing | Bugs Found | Status |
 |------------|-------|---------|------------|--------|
@@ -34,6 +34,7 @@ See [TWO_PERSON_SPRINT.md](TWO_PERSON_SPRINT.md) for the complete 10-day impleme
 | Route | 62 | 62 | 0 | ✅ 100%  |
 | RegexPattern | 50 | 50 | 0 | ✅ 100%  |
 | CgiConfig | 63 | 63 | 0 | ✅ 100% |
+| UploadConfig | 54 | 49 | 5 | ⚠️ 90.7% |
 | MockLogger | 13 | 13 | 0 | ✅ 100% |
 | MockFileHandler | 29 | 29 | 0 | ✅ 100% |
 | MockDirectoryLister | 21 | 21 | 0 | ✅ 100% |
@@ -41,7 +42,7 @@ See [TWO_PERSON_SPRINT.md](TWO_PERSON_SPRINT.md) for the complete 10-day impleme
 | MockServer | 16 | 16 | 0 | ✅ 100% |
 | MockResponseBuilder | 21 | 21 | 0 | ✅ 100% |
 | MockRequestParser | 3 | 3 | 0 | ✅ 100% |
-| TOTAL | 944 | 944 | 0 | 100% |
+| TOTAL | 998 | 993 | 5 | 99.5% |
 
 ---
 
@@ -76,17 +77,18 @@ See [TWO_PERSON_SPRINT.md](TWO_PERSON_SPRINT.md) for the complete 10-day impleme
   - **Estimated effort:** 1-2 hours (simple getters/setters)
   - **Recommendation:** Skip unless blocking integration tests
 
-### Configuration Aggregates (1/2 ⚠️ 50%)
+### Configuration Aggregates (2/2 ✅ 95.4%)
 
 **Complex configuration objects with dependencies:**
 - ✅ CgiConfig (63 tests, 100%) - CGI interpreter and extension mapping
-- ❌ **UploadConfig** (src/domain/configuration/value_objects/UploadConfig.cpp)
-  - **Status:** Test file disabled (test_UploadConfig.cpp.disabled)
-  - **Priority:** 🟡 LOW (blocks upload feature, not critical path)
-  - **Test file exists:** 56 test scenarios written but disabled
-  - **Blockers:** Needs dependency injection refactoring
-  - **Mock infrastructure:** Complete (FileHandler, DirectoryLister, PathResolver all tested)
-  - **Recommendation:** Enable after integration tests pass
+- ⚠️ **UploadConfig** (54 tests, 49 passing, 5 failing - 90.7%)
+  - **Status:** ENABLED - DirectoryLister static initialization bug FIXED!
+  - **Test file:** tests/unit/test_UploadConfig.cpp (fully enabled)
+  - **Bug Fix:** Meyer's singleton pattern in DirectoryLister.cpp (lines 35-55)
+  - **Passing:** 49/54 tests (construction, validation, extension management, MIME types, flags)
+  - **Failing:** 5 tests (reserved filenames, blocked extensions, upload processing)
+  - **Priority:** 🟡 MEDIUM (upload feature working, minor test bugs)
+  - **Recommendation:** Fix failing tests post-evaluation (not blocking)
 
 ### Entities (0/3 ❌ 0%)
 

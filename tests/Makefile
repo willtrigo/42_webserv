@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/24 09:42:14 by umeneses          #+#    #+#              #
-#    Updated: 2026/01/04 11:41:20 by umeneses         ###   ########.fr        #
+#    Updated: 2026/01/08 11:50:27 by umeneses         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -41,52 +41,24 @@ MOCKS_DIR                       := mocks
 NAME                            := $(BIN_DIR)/test_runner
 
 # ============================================================================
-# SOURCE FILE EXCLUSIONS (Static Initialization & Dependency Issues)
+# SOURCE FILE EXCLUSIONS
 # ============================================================================
-# Files excluded due to:
-#  1. Static initialization order fiasco (DirectoryLister + RegexPattern)
-#  2. Deep dependency chains not yet tested (Config entities/handlers)
-#  3. Main entry point conflicts (main.cpp)
-#  4. CLI presentation layer (CliController, CliView)
-#  5. Unimplemented features (RouteMatcher, RequestParser)
+# SOURCE FILE EXCLUSIONS
+# ============================================================================
+# Files excluded:
+#  1. main.cpp - tests have test_main.cpp
+#  2. IncludeProcessor.cpp - tests use MockIncludeProcessor
 # ============================================================================
 
-PROJECT_SRCS                    := $(shell find $(SRC_DIR) -name '*.cpp' \
-											! -name 'main.cpp' \
-											! -name 'ConnectionHandler.cpp' \
-											! -name 'SocketOrchestrator.cpp' \
-											! -name 'CliController.cpp' \
-											! -name 'CliView.cpp' \
-											! -name 'RouteMatcher.cpp' \
-											! -name 'RouteMatcherException.cpp' \
-											! -name 'RequestParser.cpp' \
-											! -name 'RequestParserException.cpp' \
-											! -name 'ConfigParser.cpp' \
-											! -name 'ConfigProvider.cpp' \
-											! -name 'ConfigException.cpp' \
-											! -name 'BlockParser.cpp' \
-											! -name 'ParserContext.cpp' \
-											! -name 'ParserState.cpp' \
-											! -name 'IncludeProcessor.cpp' \
-											! -name 'GlobalDirectiveHandler.cpp' \
-											! -name 'ServerDirectiveHandler.cpp' \
-											! -name 'LocationDirectiveHandler.cpp' \
-											! -name 'ADirectiveHandler.cpp' \
-											! -name 'DirectoryLister.cpp' \
-											! -name 'FileHandler.cpp' \
-											! -name 'PathResolver.cpp' \
-											! -name 'FileSystemHelper.cpp' \
-											! -name 'DirectoryEntryComparators.cpp' \
-											! -name 'RouteConfigAdapter.cpp' \
-											! -name 'HttpConfig.cpp' \
-											! -name 'HttpConfigException.cpp' \
-											! -name 'ServerConfig.cpp' \
-											! -name 'ServerConfigException.cpp' \
-											! -name 'LocationConfig.cpp' \
-											! -name 'LocationConfigException.cpp' \
-											! -name 'UploadConfig.cpp' \
-											! -name 'UploadConfigException.cpp' \
-											)
+# Get all project source files
+PROJECT_SRCS_ALL                := $(shell find $(SRC_DIR) -name '*.cpp')
+
+# Exclude files that conflict with test environment
+EXCLUDED_FILES                  := $(SRC_DIR)/main.cpp
+EXCLUDED_FILES                  += $(SRC_DIR)/infrastructure/config/parsers/IncludeProcessor.cpp
+
+# Filter out excluded files
+PROJECT_SRCS                    := $(filter-out $(EXCLUDED_FILES),$(PROJECT_SRCS_ALL))
 
 
 # Test files

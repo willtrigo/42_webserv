@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   DirectoryLister.cpp                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 21:48:36 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/28 00:00:45 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/08 11:50:27 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,16 +32,28 @@ namespace infrastructure {
 namespace filesystem {
 namespace adapters {
 
-const domain::shared::value_objects::RegexPattern
-    DirectoryLister::IMAGE_EXTENSION_PATTERN =
-        domain::shared::value_objects::RegexPattern::imageExtensions();
-const domain::shared::value_objects::RegexPattern
-    DirectoryLister::SCRIPT_EXTENSION_PATTERN =
-        domain::shared::value_objects::RegexPattern(
-            "\\.(php|py|pl|sh|cgi)$",
-            domain::shared::value_objects::RegexPattern::FLAG_CASE_INSENSITIVE);
-const std::string DirectoryLister::DEFAULT_INDEX_FILES[] = {
-    "index.html", "index.htm", "index.php", "default.html", "default.htm"};
+// Meyer's Singleton pattern - guarantees initialization on first use
+// This fixes the static initialization order fiasco
+const domain::shared::value_objects::RegexPattern&
+DirectoryLister::getImageExtensionPattern() {
+  static const domain::shared::value_objects::RegexPattern pattern =
+      domain::shared::value_objects::RegexPattern::imageExtensions();
+  return pattern;
+}
+
+const domain::shared::value_objects::RegexPattern&
+DirectoryLister::getScriptExtensionPattern() {
+  static const domain::shared::value_objects::RegexPattern pattern(
+      "\\.(php|py|pl|sh|cgi)$",
+      domain::shared::value_objects::RegexPattern::FLAG_CASE_INSENSITIVE);
+  return pattern;
+}
+
+const std::string* DirectoryLister::getDefaultIndexFiles() {
+  static const std::string files[] = {"index.html", "index.htm", "index.php",
+                                      "default.html", "default.htm"};
+  return files;
+}
 
 DirectoryLister::DirectoryLister(FileSystemHelper* fileSystemHelper,
                                  PathResolver* pathResolver)
@@ -334,38 +346,32 @@ bool DirectoryLister::isDirectoryListingEnabled(
     const domain::filesystem::value_objects::Path& directoryPath) {
   // In a real implementation, this would check configuration
   // For now, we'll assume it's enabled if directory exists and is readable
-  if (!FileSystemHelper::exists(
-          directoryPath.toString())) {
+  if (!FileSystemHelper::exists(directoryPath.toString())) {
     return false;
   }
 
-  if (!FileSystemHelper::isDirectory(
-          directoryPath.toString())) {
+  if (!FileSystemHelper::isDirectory(directoryPath.toString())) {
     return false;
   }
 
-  return FileSystemHelper::isReadable(
-      directoryPath.toString());
+  return FileSystemHelper::isReadable(directoryPath.toString());
 }
 
 bool DirectoryLister::validateDirectoryForListing(
     const domain::filesystem::value_objects::Path& directoryPath) {
-  if (!FileSystemHelper::exists(
-          directoryPath.toString())) {
+  if (!FileSystemHelper::exists(directoryPath.toString())) {
     throw exceptions::DirectoryListerException(
         "Directory does not exist: " + directoryPath.toString(),
         exceptions::DirectoryListerException::DIRECTORY_NOT_FOUND);
   }
 
-  if (!FileSystemHelper::isDirectory(
-          directoryPath.toString())) {
+  if (!FileSystemHelper::isDirectory(directoryPath.toString())) {
     throw exceptions::DirectoryListerException(
         "Path is not a directory: " + directoryPath.toString(),
         exceptions::DirectoryListerException::NOT_A_DIRECTORY);
   }
 
-  if (!FileSystemHelper::isReadable(
-          directoryPath.toString())) {
+  if (!FileSystemHelper::isReadable(directoryPath.toString())) {
     throw exceptions::DirectoryListerException(
         "Directory not readable: " + directoryPath.toString(),
         exceptions::DirectoryListerException::PERMISSION_DENIED);
@@ -445,11 +451,11 @@ bool DirectoryLister::isExecutableFile(
 }
 
 bool DirectoryLister::isImageFile(const std::string& filename) {
-  return IMAGE_EXTENSION_PATTERN.matches(filename);
+  return getImageExtensionPattern().matches(filename);
 }
 
 bool DirectoryLister::isScriptFile(const std::string& filename) {
-  return SCRIPT_EXTENSION_PATTERN.matches(filename);
+  return getScriptExtensionPattern().matches(filename);
 }
 
 bool DirectoryLister::hasAccess(
@@ -740,7 +746,8 @@ std::string DirectoryLister::generateSortUrl(
     const domain::filesystem::value_objects::Path& requestPath,
     const std::string& currentSortBy, const std::string& columnToSort,
     bool isAscending) {
-  domain::http::value_objects::QueryStringBuilder builder(requestPath.toString());
+  domain::http::value_objects::QueryStringBuilder builder(
+      requestPath.toString());
 
   builder.setParameter("sort", columnToSort);
 
