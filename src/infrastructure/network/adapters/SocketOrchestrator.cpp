@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 06:49:26 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/08 04:11:54 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/08 10:40:54 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -507,8 +507,14 @@ void SocketOrchestrator::closeConnection(int clientSocketFd) {
 
   deregisterClientSocket(clientSocketFd);
 
-  delete it->second;
+  ConnectionHandler* handler = it->second;
   m_connectionHandlers.erase(it);
+
+  try {
+    delete handler;
+  } catch (...) {
+    m_logger.warn("Exception during connection handler destruction");
+  }
 
   std::ostringstream oss;
   oss << "Closed connection fd=" << clientSocketFd

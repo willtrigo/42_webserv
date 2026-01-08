@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 12:01:14 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/08 06:08:25 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/08 10:40:32 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,8 +77,15 @@ ConnectionHandler::ConnectionHandler(
 }
 
 ConnectionHandler::~ConnectionHandler() {
+  std::string remoteAddr;
+  try {
+    remoteAddr = getRemoteAddress();
+  } catch (...) {
+    remoteAddr = "unknown (disconnected)";
+  }
+
   std::ostringstream oss;
-  oss << "ConnectionHandler destroyed for " << getRemoteAddress();
+  oss << "ConnectionHandler destroyed for " << remoteAddr;
   m_logger.debug(oss.str());
 
   delete m_socket;
@@ -133,9 +140,15 @@ void ConnectionHandler::processEvent() {
     m_state = STATE_WRITING_RESPONSE;
   } catch (const exceptions::ConnectionException& ex) {
     m_logger.error(std::string("Connection error: ") + ex.what());
-    generateErrorResponse(
-        domain::shared::value_objects::ErrorCode::internalServerError(),
-        "Internal Server Error");
+    domain::shared::value_objects::ErrorCode errorCode =
+        domain::shared::value_objects::ErrorCode::internalServerError();
+    std::string errorMsg = ex.what();
+    if (errorMsg.find("Request size exceeds") != std::string::npos ||
+        errorMsg.find("too large") != std::string::npos ||
+        errorMsg.find("Request entity too large") != std::string::npos) {
+      errorCode = domain::shared::value_objects::ErrorCode::payloadTooLarge();
+    }
+    generateErrorResponse(errorCode, ex.what());
     m_responseBuffer = m_response.serialize();
     m_responseOffset = 0;
     m_state = STATE_WRITING_RESPONSE;
@@ -626,29 +639,24 @@ void ConnectionHandler::handleDeleteRequest(
     m_logger.debug(debugMsg.str());
   }
 
-  // Check if path exists (exists() throws if path not found)
   m_logger.debug("before make path exist");
   try {
     filesystem::adapters::FileSystemHelper::exists(resolvedPath.toString());
   } catch (const std::exception&) {
-    // Path does not exist
     m_logger.debug("path does not exist");
     handleNotFound(location);
     return;
   }
   m_logger.debug("after make path exist");
 
-  // Check if path is a directory (isDirectory() throws if NOT a directory)
   m_logger.debug("before make path isDirectory");
   try {
     filesystem::adapters::FileSystemHelper::isDirectory(resolvedPath.toString());
-    // If we reach here, it IS a directory - reject deletion
     m_logger.debug("path is a directory - forbidden");
     generateErrorResponse(domain::shared::value_objects::ErrorCode::forbidden(),
                           "Directory deletion not allowed");
     return;
   } catch (const std::exception&) {
-    // Path is NOT a directory (it's a file) - this is what we want
     m_logger.debug("path is not a directory (it's a file) - proceeding");
   }
   m_logger.debug("after make path isDirectory");
@@ -966,9 +974,20 @@ void ConnectionHandler::handleFileUpload(
       return;
     }
 
-    const domain::http::entities::HttpRequest::Body& body = m_request.getBody();
-    domain::filesystem::value_objects::Size bodySize(body.size());
+    std::string boundary = extractBoundary(contentType);
+    if (boundary.empty()) {
+      generateErrorResponse(
+          domain::shared::value_objects::ErrorCode::badRequest(),
+          "Missing boundary in Content-Type");
+      return;
+    }
 
+    m_logger.debug("Upload boundary: " + boundary);
+
+    const domain::http::entities::HttpRequest::Body& body = m_request.getBody();
+    std::string bodyStr(body.begin(), body.end());
+
+    domain::filesystem::value_objects::Size bodySize(body.size());
     if (!uploadConfig.validateFileSize(bodySize)) {
       generateErrorResponse(
           domain::shared::value_objects::ErrorCode::payloadTooLarge(),
@@ -976,22 +995,216 @@ void ConnectionHandler::handleFileUpload(
       return;
     }
 
-    domain::filesystem::value_objects::Path uploadPath =
+    std::string filename;
+    std::vector<char> fileContent;
+    if (!parseMultipartFormData(bodyStr, boundary, filename, fileContent)) {
+      generateErrorResponse(
+          domain::shared::value_objects::ErrorCode::badRequest(),
+          "Invalid multipart format");
+      return;
+    }
+
+    if (filename.empty()) {
+      std::ostringstream defaultName;
+      defaultName << "upload_" << std::time(NULL);
+      filename = defaultName.str();
+    }
+
+    filename = sanitizeFilename(filename);
+    m_logger.debug("Upload filename: " + filename);
+
+    std::ostringstream sizeMsg;
+    sizeMsg << "Upload content size: " << fileContent.size();
+    m_logger.debug(sizeMsg.str());
+
+    domain::filesystem::value_objects::Path uploadDir =
         uploadConfig.getUploadDirectory();
+    domain::filesystem::value_objects::Path filePath = uploadDir.join(filename);
+
+    m_logger.debug("Upload destination: " + filePath.toString());
+
+    ensureDirectoryExists(uploadDir);
+    writeUploadedFile(filePath, fileContent);
+
+    m_logger.info("File uploaded successfully: " + filePath.toString());
 
     m_response = domain::http::entities::HttpResponse(
-        domain::shared::value_objects::ErrorCode::created(), "File uploaded");
-    m_response.setContentType("text/plain");
+        domain::shared::value_objects::ErrorCode::created(),
+        "File uploaded successfully");
+    m_response.setContentType("text/html");
 
-    std::ostringstream successMsg;
-    successMsg << "File uploaded successfully to " << uploadPath.toString();
-    m_response.setBody(successMsg.str());
+    std::ostringstream successBody;
+    successBody << "<!DOCTYPE html>\n"
+                << "<html><head><title>Upload Success</title></head>\n"
+                << "<body>\n"
+                << "<h1>File Uploaded Successfully</h1>\n"
+                << "<p>Filename: " << filename << "</p>\n"
+                << "<p>Size: " << fileContent.size() << " bytes</p>\n"
+                << "<p><a href=\"/\">Back to Home</a></p>\n"
+                << "</body></html>\n";
+    m_response.setBody(successBody.str());
 
   } catch (const std::exception& ex) {
     m_logger.error(std::string("File upload error: ") + ex.what());
     generateErrorResponse(
         domain::shared::value_objects::ErrorCode::internalServerError(),
         "Upload failed");
+  }
+}
+
+std::string ConnectionHandler::extractBoundary(
+    const std::string& contentType) const {
+  std::size_t boundaryPos = contentType.find("boundary=");
+  if (boundaryPos == std::string::npos) {
+    return "";
+  }
+
+  std::string boundary = contentType.substr(boundaryPos + 9);
+
+  if (!boundary.empty() && boundary[0] == '"') {
+    boundary = boundary.substr(1);
+    std::size_t endQuote = boundary.find('"');
+    if (endQuote != std::string::npos) {
+      boundary = boundary.substr(0, endQuote);
+    }
+  }
+
+  std::size_t semicolonPos = boundary.find(';');
+  if (semicolonPos != std::string::npos) {
+    boundary = boundary.substr(0, semicolonPos);
+  }
+
+  return boundary;
+}
+
+bool ConnectionHandler::parseMultipartFormData(
+    const std::string& body,
+    const std::string& boundary,
+    std::string& outFilename,
+    std::vector<char>& outContent) const {
+  std::string delimiter = "--" + boundary;
+
+  std::size_t pos = body.find(delimiter);
+  if (pos == std::string::npos) {
+    return false;
+  }
+
+  pos += delimiter.length();
+  if (pos < body.length() && body[pos] == '\r') pos++;
+  if (pos < body.length() && body[pos] == '\n') pos++;
+
+  std::size_t nextDelimiter = body.find(delimiter, pos);
+  if (nextDelimiter == std::string::npos) {
+    return false;
+  }
+
+  std::string part = body.substr(pos, nextDelimiter - pos);
+
+  std::size_t headerEnd = part.find("\r\n\r\n");
+  std::size_t headerSeparatorLen = 4;
+  if (headerEnd == std::string::npos) {
+    headerEnd = part.find("\n\n");
+    headerSeparatorLen = 2;
+    if (headerEnd == std::string::npos) {
+      return false;
+    }
+  }
+
+  std::string headers = part.substr(0, headerEnd);
+  std::string content = part.substr(headerEnd + headerSeparatorLen);
+
+  while (!content.empty() &&
+         (content[content.length() - 1] == '\n' ||
+          content[content.length() - 1] == '\r')) {
+    content = content.substr(0, content.length() - 1);
+  }
+
+  outFilename = extractFilenameFromHeaders(headers);
+  outContent.assign(content.begin(), content.end());
+
+  return true;
+}
+
+std::string ConnectionHandler::extractFilenameFromHeaders(
+    const std::string& headers) const {
+  std::string filename;
+
+  std::size_t dispositionPos = headers.find("Content-Disposition:");
+  if (dispositionPos == std::string::npos) {
+    dispositionPos = headers.find("content-disposition:");
+  }
+
+  if (dispositionPos != std::string::npos) {
+    std::size_t filenamePos = headers.find("filename=\"", dispositionPos);
+    if (filenamePos != std::string::npos) {
+      filenamePos += 10;
+      std::size_t filenameEnd = headers.find('"', filenamePos);
+      if (filenameEnd != std::string::npos) {
+        filename = headers.substr(filenamePos, filenameEnd - filenamePos);
+      }
+    }
+  }
+
+  return filename;
+}
+
+std::string ConnectionHandler::sanitizeFilename(
+    const std::string& filename) const {
+  std::string sanitized = filename;
+
+  std::size_t lastSlash = sanitized.find_last_of("/\\");
+  if (lastSlash != std::string::npos) {
+    sanitized = sanitized.substr(lastSlash + 1);
+  }
+
+  std::string result;
+  for (std::size_t i = 0; i < sanitized.length(); ++i) {
+    char c = sanitized[i];
+    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+        (c >= '0' && c <= '9') || c == '.' || c == '-' || c == '_') {
+      result += c;
+    } else if (c == ' ') {
+      result += '_';
+    }
+  }
+
+  if (result.empty()) {
+    std::ostringstream defaultName;
+    defaultName << "file_" << std::time(NULL);
+    result = defaultName.str();
+  }
+
+  return result;
+}
+
+void ConnectionHandler::ensureDirectoryExists(
+    const domain::filesystem::value_objects::Path& dirPath) const {
+  try {
+    filesystem::adapters::FileSystemHelper::isDirectory(dirPath.toString());
+  } catch (const std::exception&) {
+    if (!filesystem::adapters::FileSystemHelper::createDirectoryRecursive(
+            dirPath.toString())) {
+      throw std::runtime_error(
+          "Failed to create upload directory: " + dirPath.toString());
+    }
+  }
+}
+
+void ConnectionHandler::writeUploadedFile(
+    const domain::filesystem::value_objects::Path& filePath,
+    const std::vector<char>& content) const {
+  std::ofstream outFile(filePath.toString().c_str(), std::ios::binary);
+  if (!outFile.is_open()) {
+    throw std::runtime_error(
+        "Failed to open file for writing: " + filePath.toString());
+  }
+
+  outFile.write(content.data(), static_cast<std::streamsize>(content.size()));
+  outFile.close();
+
+  if (outFile.fail()) {
+    throw std::runtime_error(
+        "Failed to write file: " + filePath.toString());
   }
 }
 

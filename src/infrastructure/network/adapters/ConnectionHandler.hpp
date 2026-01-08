@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 11:57:13 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/07 16:54:10 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/08 10:20:23 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,7 @@
 #include <ctime>
 #include <map>
 #include <string>
+#include <vector>
 
 namespace infrastructure {
 namespace network {
@@ -169,6 +170,24 @@ class ConnectionHandler {
 
   void logRequest(const domain::http::entities::HttpRequest& request,
                   const domain::http::entities::HttpResponse& response);
+
+  std::string extractBoundary(const std::string& contentType) const;
+
+  bool parseMultipartFormData(const std::string& body,
+                              const std::string& boundary,
+                              std::string& outFilename,
+                              std::vector<char>& outContent) const;
+
+  std::string extractFilenameFromHeaders(const std::string& headers) const;
+
+  std::string sanitizeFilename(const std::string& filename) const;
+
+  void ensureDirectoryExists(
+      const domain::filesystem::value_objects::Path& dirPath) const;
+
+  void writeUploadedFile(
+      const domain::filesystem::value_objects::Path& filePath,
+      const std::vector<char>& content) const;
 
   application::ports::ILogger& m_logger;
   application::ports::IConfigProvider& m_configProvider;
