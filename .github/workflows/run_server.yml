@@ -59,7 +59,7 @@ jobs:
             exit 1
           fi
 
-          CONFIG_FILES=$(find conf -name "*.conf" -type f | sort)
+          CONFIG_FILES=$(find conf -maxdepth 1 -name "*.conf" -type f | sort)
           if [ -z "$CONFIG_FILES" ]; then
             echo "❌ No .conf files found in conf/"
             exit 1

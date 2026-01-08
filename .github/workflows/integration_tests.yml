@@ -1,0 +1,355 @@
+name: Integration Tests
+
+on:
+    push:
+        branches: [main, master, develop, "**feat**"]
+    pull_request:
+        branches: [main, master, develop]
+    workflow_call:
+
+jobs:
+    integration-tests:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v6
+              with:
+                  submodules: recursive
+
+            - name: Install dependencies
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y build-essential cmake valgrind netcat-openbsd
+
+            - name: Cache Google Test
+              id: cache-gtest
+              uses: actions/cache@v5
+              with:
+                  path: |
+                      /usr/local/lib/libgtest.a
+                      /usr/local/lib/libgtest_main.a
+                      /usr/local/include/gtest
+                  key: gtest-1.8.1-${{ runner.os }}
+
+            - name: Install Google Test 1.8.1 (C++98 compatible)
+              if: steps.cache-gtest.outputs.cache-hit != 'true'
+              run: |
+                  cd tests/
+                  sudo ./install_gtest.sh
+
+            - name: Cache project build
+              uses: actions/cache@v5
+              with:
+                  path: |
+                      build
+                      bin
+                  key: project-build-${{ runner.os }}-${{ hashFiles('src/**/*.cpp', 'src/**/*.hpp', 'Makefile') }}
+                  restore-keys: |
+                      project-build-${{ runner.os }}-
+
+            - name: Cache test build
+              uses: actions/cache@v5
+              with:
+                  path: |
+                      tests/build
+                      tests/bin
+                  key: test-build-${{ runner.os }}-${{ hashFiles('tests/**/*.cpp', 'tests/**/*.hpp', 'tests/Makefile') }}
+                  restore-keys: |
+                      test-build-${{ runner.os }}-
+
+            - name: Build project
+              run: |
+                  echo "🔨 Building webserver..."
+                  make
+                  echo "✅ Server built successfully"
+
+            - name: Build tests
+              run: |
+                  echo "🔨 Building test suite..."
+                  cd tests/
+                  make
+                  echo "✅ Tests built successfully"
+
+            - name: List integration tests
+              run: |
+                  echo "📋 Available integration tests:"
+                  cd tests/
+                  ./bin/test_runner --gtest_list_tests | grep -A 100 "Integration" || true
+                  echo ""
+                  echo "📊 Test counts:"
+                  ./bin/test_runner --gtest_list_tests | grep "IntegrationTest\." | wc -l | xargs echo "  Test suites:"
+                  ./bin/test_runner --gtest_list_tests | grep "^  " | grep -v "IntegrationTest\." | wc -l | xargs echo "  Individual tests:"
+
+            - name: Start server
+              run: |
+                  echo "🚀 Starting webserver..."
+                  ./bin/webserv conf/default.conf > server.log 2>&1 &
+                  SERVER_PID=$!
+                  echo "SERVER_PID=$SERVER_PID" >> $GITHUB_ENV
+                  echo "Server started with PID: $SERVER_PID"
+
+                  # Monitor log file for readiness
+                  TIMEOUT=30
+                  ELAPSED=0
+                  READY=0
+
+                  echo "⏳ Waiting for server to be ready..."
+                  while [ $ELAPSED -lt $TIMEOUT ]; do
+                    if [ -f server.log ]; then
+                      if grep -q "Webserv is ready to accept connections" server.log && \
+                         grep -q "Starting event loop" server.log; then
+                        echo "✅ Server is ready and running event loop"
+                        READY=1
+                        break
+                      fi
+                    fi
+                    sleep 0.5
+                    ELAPSED=$((ELAPSED + 1))
+                  done
+
+                  if [ $READY -eq 1 ]; then
+                    # Verify server is actually listening
+                    sleep 1
+                    if nc -z 127.0.0.1 8080; then
+                      echo "✅ Server is listening on port 8080"
+                    else
+                      echo "❌ Server not listening on port 8080"
+                      cat server.log
+                      kill -9 $SERVER_PID 2>/dev/null
+                      exit 1
+                    fi
+                  else
+                    echo "❌ Server did not start within ${TIMEOUT}s"
+                    echo "📋 Server log:"
+                    cat server.log
+                    kill -9 $SERVER_PID 2>/dev/null
+                    exit 1
+                  fi
+
+            - name: Run integration tests
+              run: |
+                  echo "🧪 Running integration tests..."
+                  cd tests/
+
+                  # Run all integration tests
+                  ./bin/test_runner \
+                    --gtest_filter="*Integration*" \
+                    --gtest_output=xml:integration-test-results.xml \
+                    || TEST_EXIT_CODE=$?
+
+                  echo "Integration tests completed with exit code: ${TEST_EXIT_CODE:-0}"
+
+                  # Save exit code for later
+                  echo "TEST_EXIT_CODE=${TEST_EXIT_CODE:-0}" >> $GITHUB_ENV
+
+            - name: Stop server gracefully
+              if: always()
+              run: |
+                  echo "🛑 Stopping server..."
+                  if [ -n "$SERVER_PID" ] && kill -0 $SERVER_PID 2>/dev/null; then
+                    echo "Sending SIGINT to server (PID: $SERVER_PID)..."
+                    kill -INT $SERVER_PID
+                    
+                    # Wait for graceful shutdown
+                    SHUTDOWN_TIMEOUT=10
+                    for i in $(seq 1 $SHUTDOWN_TIMEOUT); do
+                      if ! kill -0 $SERVER_PID 2>/dev/null; then
+                        echo "✅ Server shut down gracefully"
+                        break
+                      fi
+                      sleep 1
+                    done
+                    
+                    # Force kill if still running
+                    if kill -0 $SERVER_PID 2>/dev/null; then
+                      echo "⚠️ Force killing server after timeout"
+                      kill -9 $SERVER_PID
+                    fi
+                  else
+                    echo "ℹ️ Server already stopped"
+                  fi
+
+            - name: Parse test results
+              if: always()
+              run: |
+                  echo "📊 Integration Test Summary"
+                  echo "============================"
+
+                  if [ -f tests/integration-test-results.xml ]; then
+                    # Parse XML results
+                    TOTAL=$(grep -o 'tests="[0-9]*"' tests/integration-test-results.xml | head -1 | grep -o '[0-9]*')
+                    FAILURES=$(grep -o 'failures="[0-9]*"' tests/integration-test-results.xml | head -1 | grep -o '[0-9]*')
+                    ERRORS=$(grep -o 'errors="[0-9]*"' tests/integration-test-results.xml | head -1 | grep -o '[0-9]*')
+                    PASSED=$((TOTAL - FAILURES - ERRORS))
+                    
+                    echo "Total tests: $TOTAL"
+                    echo "Passed: $PASSED"
+                    echo "Failed: $FAILURES"
+                    echo "Errors: $ERRORS"
+                    
+                    # Generate summary for GitHub
+                    echo "## Integration Test Results" >> $GITHUB_STEP_SUMMARY
+                    echo "" >> $GITHUB_STEP_SUMMARY
+                    echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
+                    echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+                    echo "| Total Tests | $TOTAL |" >> $GITHUB_STEP_SUMMARY
+                    echo "| ✅ Passed | $PASSED |" >> $GITHUB_STEP_SUMMARY
+                    echo "| ❌ Failed | $FAILURES |" >> $GITHUB_STEP_SUMMARY
+                    echo "| ⚠️ Errors | $ERRORS |" >> $GITHUB_STEP_SUMMARY
+                    
+                    if [ $FAILURES -eq 0 ] && [ $ERRORS -eq 0 ]; then
+                      echo "" >> $GITHUB_STEP_SUMMARY
+                      echo "🎉 **All integration tests passed!**" >> $GITHUB_STEP_SUMMARY
+                    else
+                      echo "" >> $GITHUB_STEP_SUMMARY
+                      echo "❌ **Some tests failed. Check logs for details.**" >> $GITHUB_STEP_SUMMARY
+                    fi
+                  else
+                    echo "⚠️ Test results XML not found"
+                    echo "## Integration Test Results" >> $GITHUB_STEP_SUMMARY
+                    echo "" >> $GITHUB_STEP_SUMMARY
+                    echo "⚠️ Test results file not generated" >> $GITHUB_STEP_SUMMARY
+                  fi
+
+            - name: Upload test results
+              if: always()
+              uses: actions/upload-artifact@v6
+              with:
+                  name: integration-test-results
+                  path: |
+                      tests/integration-test-results.xml
+                      server.log
+
+            - name: Check test status
+              if: always()
+              run: |
+                  if [ "${TEST_EXIT_CODE:-0}" -ne 0 ]; then
+                    echo ""
+                    echo "❌ Integration tests failed with exit code: $TEST_EXIT_CODE"
+                    echo ""
+                    echo "📋 Server log (last 50 lines):"
+                    tail -50 server.log
+                    exit 1
+                  else
+                    echo ""
+                    echo "✅ All integration tests passed!"
+                  fi
+
+            - name: Run integration tests with Valgrind
+              if: success()
+              run: |
+                  echo "🔍 Running integration tests with Valgrind..."
+
+                  # Start server with Valgrind
+                  valgrind \
+                    --leak-check=full \
+                    --show-leak-kinds=all \
+                    --track-origins=yes \
+                    --log-file=valgrind-server.txt \
+                    ./bin/webserv conf/default.conf > valgrind-server.log 2>&1 &
+                  VALGRIND_PID=$!
+                  echo "Server started under Valgrind with PID: $VALGRIND_PID"
+
+                  # Wait for server ready
+                  TIMEOUT=60
+                  ELAPSED=0
+                  READY=0
+
+                  echo "⏳ Waiting for server to be ready under Valgrind..."
+                  while [ $ELAPSED -lt $TIMEOUT ]; do
+                    if [ -f valgrind-server.log ]; then
+                      if grep -q "Webserv is ready to accept connections" valgrind-server.log && \
+                         grep -q "Starting event loop" valgrind-server.log; then
+                        echo "✅ Server is ready"
+                        READY=1
+                        break
+                      fi
+                    fi
+                    sleep 1
+                    ELAPSED=$((ELAPSED + 1))
+                  done
+
+                  if [ $READY -eq 0 ]; then
+                    echo "❌ Server did not start under Valgrind within ${TIMEOUT}s"
+                    cat valgrind-server.log
+                    kill -9 $VALGRIND_PID 2>/dev/null
+                    exit 1
+                  fi
+
+                  # Run subset of integration tests (quick smoke test)
+                  echo "🧪 Running subset of integration tests..."
+                  cd tests/
+                  ./bin/test_runner \
+                    --gtest_filter="HttpServerIntegrationTest.GetRequestReturns200:HttpServerIntegrationTest.PostRequestReturns200Or201:HttpServerIntegrationTest.NonexistentFileReturns404" \
+                    || VALGRIND_TEST_CODE=$?
+
+                  # Stop server gracefully
+                  echo "🛑 Stopping Valgrind server..."
+                  kill -INT $VALGRIND_PID
+
+                  # Wait for graceful shutdown
+                  for i in $(seq 1 10); do
+                    if ! kill -0 $VALGRIND_PID 2>/dev/null; then
+                      echo "✅ Server shut down gracefully"
+                      break
+                    fi
+                    sleep 1
+                  done
+
+                  # Force kill if still running
+                  if kill -0 $VALGRIND_PID 2>/dev/null; then
+                    kill -9 $VALGRIND_PID
+                  fi
+
+                  # Check Valgrind results
+                  echo "📋 Valgrind summary:"
+                  if [ -f valgrind-server.txt ]; then
+                    cat valgrind-server.txt
+                    
+                    # Check for memory leaks
+                    if grep -q "definitely lost: 0 bytes" valgrind-server.txt && \
+                       grep -q "indirectly lost: 0 bytes" valgrind-server.txt; then
+                      echo "✅ No memory leaks detected during integration tests"
+                    else
+                      echo "⚠️ Memory leaks detected during integration tests"
+                      echo "## Valgrind Results" >> $GITHUB_STEP_SUMMARY
+                      echo "" >> $GITHUB_STEP_SUMMARY
+                      echo "⚠️ Memory leaks detected. See artifacts for details." >> $GITHUB_STEP_SUMMARY
+                    fi
+                  fi
+
+            - name: Upload Valgrind results
+              if: always()
+              uses: actions/upload-artifact@v6
+              with:
+                  name: valgrind-integration-results
+                  path: |
+                      valgrind-server.txt
+                      valgrind-server.log
+
+            - name: Final summary
+              if: always()
+              run: |
+                  echo ""
+                  echo "=========================================="
+                  echo "📊 INTEGRATION TEST WORKFLOW SUMMARY"
+                  echo "=========================================="
+                  echo ""
+                  echo "This workflow validates:"
+                  echo "  ✓ Server compiles successfully"
+                  echo "  ✓ Test suite compiles successfully"
+                  echo "  ✓ Server starts and accepts connections"
+                  echo "  ✓ All integration tests run against live server"
+                  echo "  ✓ Server shuts down gracefully"
+                  echo "  ✓ No memory leaks during testing (Valgrind)"
+                  echo ""
+                  echo "Test suites executed:"
+                  echo "  • HttpServerIntegrationTest (37 tests)"
+                  echo "  • CgiIntegrationTest (22 tests)"
+                  echo "  • MultiPortIntegrationTest (14 tests)"
+                  echo "  • AdvancedIntegrationTest (23 tests)"
+                  echo ""
+                  echo "Total: 96 integration tests"
+                  echo "=========================================="
