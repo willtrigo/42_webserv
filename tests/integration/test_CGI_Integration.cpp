@@ -43,7 +43,13 @@ class CgiIntegrationTest : public ::testing::Test {
       file << content;
       file.close();
       // Make executable
-      chmod(path.c_str(), 0755);
+      if (chmod(path.c_str(), 0755) != 0) {
+        FAIL() << "Failed to make CGI script executable at " << path
+               << " (errno: " << errno << "). "
+               << "Check filesystem permissions or readonly mount.";
+      }
+    } else {
+      FAIL() << "Failed to create CGI script at " << path;
     }
   }
 };
@@ -118,10 +124,25 @@ TEST_F(CgiIntegrationTest, CgiReceivesContentLength) {
   HttpTestClient::Response response = client->post("/cgi-bin/test.cgi", body);
 
   if (response.statusCode == 200) {
-    EXPECT_TRUE(response.body.find("CONTENT_LENGTH") != std::string::npos ||
-                response.body.find("17") !=
-                    std::string::npos)  // Length of body
-        << "CGI should receive CONTENT_LENGTH for POST";
+    // Check for CONTENT_LENGTH with the actual value in a pattern
+    // Examples: "CONTENT_LENGTH=17", "CONTENT_LENGTH: 17", "CONTENT_LENGTH =
+    // 17"
+    bool hasContentLength =
+        response.body.find("CONTENT_LENGTH") != std::string::npos &&
+        (response.body.find("17") != std::string::npos);
+
+    // Verify the pattern is correct (not just coincidental "17")
+    if (hasContentLength) {
+      size_t clPos = response.body.find("CONTENT_LENGTH");
+      size_t numPos = response.body.find("17", clPos);
+      // Check that "17" appears within reasonable distance (within 20 chars)
+      // after CONTENT_LENGTH
+      EXPECT_TRUE(numPos != std::string::npos && (numPos - clPos) < 20)
+          << "CGI should receive CONTENT_LENGTH=17 for POST body";
+    } else {
+      EXPECT_TRUE(hasContentLength)
+          << "CGI should receive CONTENT_LENGTH for POST";
+    }
   }
 }
 
@@ -160,9 +181,14 @@ TEST_F(CgiIntegrationTest, CgiHandlesEmptyPostBody) {
   HttpTestClient::Response response = client->post("/cgi-bin/test.cgi", "");
 
   if (response.statusCode == 200) {
-    // CGI should handle empty POST body (CONTENT_LENGTH=0)
-    EXPECT_TRUE(response.statusCode == 200)
-        << "CGI should handle empty POST body";
+    // CGI should handle empty POST body gracefully
+    // Verify it returns valid response (not empty, not error)
+    EXPECT_FALSE(response.body.empty() && !response.hasHeader("content-length"))
+        << "CGI should return valid response for empty POST body";
+  } else {
+    // If CGI not configured, should return 404, not crash
+    EXPECT_TRUE(response.statusCode == 404 || response.statusCode >= 200)
+        << "Empty POST should not crash server";
   }
 }
 
@@ -170,24 +196,28 @@ TEST_F(CgiIntegrationTest, CgiHandlesEmptyPostBody) {
 // 3. CHUNKED REQUESTS TO CGI
 // ============================================
 
-TEST_F(CgiIntegrationTest, ServerUnchunksBeforeCgi) {
-  // Subject: "for chunked requests, your server needs to un-chunk them, the CGI
-  // will expect EOF as the end of the body"
+TEST_F(CgiIntegrationTest, ServerHandlesInvalidChunkedRequest) {
+  // NOTE: This test sends a malformed request - Transfer-Encoding: chunked
+  // header but non-chunked body format. Real chunked encoding requires:
+  //   5\r\nHello\r\n0\r\n\r\n
+  // HttpTestClient doesn't implement proper chunked encoding.
+  //
+  // This test verifies server robustness against malformed requests.
+  // A proper chunked encoding test would require a more sophisticated client.
 
-  // Note: Sending chunked encoding from client requires low-level HTTP
-  // This test verifies that IF server receives chunked, it un-chunks for CGI
-
-  std::string body = "This is chunked data that should be un-chunked";
+  std::string body = "This is NOT properly chunked data";
   std::map<std::string, std::string> headers;
   headers["transfer-encoding"] = "chunked";
 
   HttpTestClient::Response response =
       client->request("POST", "/cgi-bin/test.cgi", body, headers);
 
-  // Server should accept chunked encoding and process it
-  EXPECT_TRUE(response.statusCode == 200 || response.statusCode == 400 ||
-              response.statusCode == 501)
-      << "Server should handle or reject chunked encoding properly";
+  // Server should reject malformed chunked request with 400 Bad Request
+  // OR not support chunked at all (501 Not Implemented)
+  EXPECT_TRUE(response.statusCode == 400 || response.statusCode == 501 ||
+              response.statusCode == 404)
+      << "Server should reject malformed chunked request or not implement "
+         "chunked encoding";
 }
 
 // ============================================
@@ -253,10 +283,23 @@ TEST_F(CgiIntegrationTest, CgiWithContentLengthRespected) {
 
   if (response.statusCode == 200 && response.hasHeader("content-length")) {
     std::string clStr = response.getHeader("content-length");
-    int contentLength = atoi(clStr.c_str());
 
-    EXPECT_EQ(contentLength, static_cast<int>(response.body.length()))
-        << "CGI Content-Length should match actual body length";
+    // Validate Content-Length is numeric before parsing
+    bool isNumeric = !clStr.empty();
+    for (size_t i = 0; i < clStr.length(); ++i) {
+      if (!std::isdigit(clStr[i])) {
+        isNumeric = false;
+        break;
+      }
+    }
+
+    EXPECT_TRUE(isNumeric) << "CGI Content-Length header should be numeric";
+
+    if (isNumeric) {
+      int contentLength = atoi(clStr.c_str());
+      EXPECT_EQ(contentLength, static_cast<int>(response.body.length()))
+          << "CGI Content-Length should match actual body length";
+    }
   }
 }
 

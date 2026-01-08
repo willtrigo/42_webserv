@@ -125,11 +125,14 @@ class HttpTestClient {
     }
 
     // Parse body (everything after empty line)
+    // Reconstruct body preserving empty lines and line breaks
+    bool firstLine = true;
     for (; i < lines.size(); ++i) {
-      response.body += lines[i];
-      if (i + 1 < lines.size()) {
+      if (!firstLine) {
         response.body += "\n";
       }
+      response.body += lines[i];
+      firstLine = false;
     }
 
     return response;
@@ -157,16 +160,31 @@ class HttpTestClient {
     request << method << " " << path << " HTTP/1.1\r\n";
     request << "Host: " << m_host << "\r\n";
 
+    // Check if Content-Length already provided by caller
+    bool hasContentLength = false;
+    for (std::map<std::string, std::string>::const_iterator it =
+             headers.begin();
+         it != headers.end(); ++it) {
+      std::string lowerKey = it->first;
+      for (size_t i = 0; i < lowerKey.length(); ++i) {
+        lowerKey[i] = std::tolower(lowerKey[i]);
+      }
+      if (lowerKey == "content-length") {
+        hasContentLength = true;
+        break;
+      }
+    }
+
+    // Add content-length if body present and not already provided
+    if (!body.empty() && !hasContentLength) {
+      request << "Content-Length: " << body.length() << "\r\n";
+    }
+
     // Add custom headers
     for (std::map<std::string, std::string>::const_iterator it =
              headers.begin();
          it != headers.end(); ++it) {
       request << it->first << ": " << it->second << "\r\n";
-    }
-
-    // Add content-length if body present
-    if (!body.empty()) {
-      request << "Content-Length: " << body.length() << "\r\n";
     }
 
     request << "\r\n";
@@ -190,10 +208,19 @@ class HttpTestClient {
     std::string rawResponse;
     char buffer[4096];
     ssize_t received;
+    const size_t MAX_RESPONSE_SIZE = 10 * 1024 * 1024;  // 10MB safety limit
 
     while ((received = recv(sockfd, buffer, sizeof(buffer) - 1, 0)) > 0) {
       buffer[received] = '\0';
       rawResponse += buffer;
+
+      // Safety check: prevent infinite loop on malformed responses
+      if (rawResponse.length() > MAX_RESPONSE_SIZE) {
+        close(sockfd);
+        response.statusCode = -1;
+        response.statusText = "Response too large (>10MB)";
+        return response;
+      }
 
       // Check if we received complete response (simple heuristic)
       if (rawResponse.find("\r\n\r\n") != std::string::npos) {
@@ -224,6 +251,11 @@ class HttpTestClient {
             if (rawResponse.length() >= bodyStart + contentLength) {
               break;  // Complete response received
             }
+          } else {
+            // No Content-Length header found after seeing headers
+            // For safety in tests, break after reasonable wait (1 more recv)
+            // This prevents hanging on chunked/streaming responses in tests
+            break;
           }
         }
       }

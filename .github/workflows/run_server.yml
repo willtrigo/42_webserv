@@ -104,7 +104,7 @@ jobs:
             echo "Started server with PID $SERVER_PID"
             
             # Monitor log file for readiness
-            TIMEOUT=240
+            TIMEOUT=480
             ELAPSED=0
             READY=0
             

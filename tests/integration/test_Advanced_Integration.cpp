@@ -4,6 +4,7 @@
 #include <fstream>
 #include <gtest/gtest.h>
 #include <sstream>
+#include <sys/time.h>
 #include <unistd.h>
 
 /**
@@ -34,11 +35,22 @@ class AdvancedIntegrationTest : public ::testing::Test {
 
   // Helper: Create large test file
   std::string createLargeFile(size_t sizeMB) {
+    size_t totalSize = sizeMB * 1024 * 1024;
     std::string content;
-    content.reserve(sizeMB * 1024 * 1024);
-    for (size_t i = 0; i < sizeMB * 1024 * 1024; ++i) {
-      content += static_cast<char>('A' + (i % 26));
+    content.reserve(totalSize);
+
+    // Create a repeating pattern efficiently (26 chars: A-Z)
+    const std::string pattern = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    size_t patternLen = pattern.length();
+
+    // Append pattern repeatedly
+    for (size_t i = 0; i < totalSize / patternLen; ++i) {
+      content += pattern;
     }
+
+    // Add remaining bytes to reach exact size
+    content.append(pattern, 0, totalSize % patternLen);
+
     return content;
   }
 };
@@ -46,9 +58,15 @@ class AdvancedIntegrationTest : public ::testing::Test {
 // ============================================
 // 1. CHUNKED TRANSFER ENCODING
 // ============================================
+// NOTE: These tests only set the Transfer-Encoding header but don't actually
+// format the body with chunk-size prefixes and CRLF terminators as required
+// by RFC 7230. They test whether the server rejects malformed chunked requests,
+// not whether it properly handles valid chunked encoding.
 
-TEST_F(AdvancedIntegrationTest, ServerAcceptsChunkedRequest) {
-  // Subject: "for chunked requests, your server needs to un-chunk them"
+TEST_F(AdvancedIntegrationTest, ServerRejectsMalformedChunkedRequest) {
+  // This test sends "Transfer-Encoding: chunked" header but the body is NOT
+  // properly chunked (missing chunk-size prefixes, CRLF, final 0\r\n\r\n).
+  // A compliant server should reject this as malformed (400/411/501).
 
   std::string body = "This is data sent in chunked transfer encoding";
   std::map<std::string, std::string> headers;
@@ -57,29 +75,30 @@ TEST_F(AdvancedIntegrationTest, ServerAcceptsChunkedRequest) {
   HttpTestClient::Response response =
       client->request("POST", "/files", body, headers);
 
-  // Server should either:
-  // 1. Accept and un-chunk (200/201)
-  // 2. Not support chunked (400/411/501)
-  EXPECT_TRUE(response.statusCode == 200 || response.statusCode == 201 ||
-              response.statusCode == 400 || response.statusCode == 411 ||
+  // Server should reject malformed chunked request
+  EXPECT_TRUE(response.statusCode == 400 || response.statusCode == 411 ||
               response.statusCode == 501)
-      << "Server should handle or reject chunked encoding properly, got "
-      << response.statusCode;
+      << "Server should reject malformed chunked encoding with 400/411/501, "
+         "got "
+      << response.statusCode
+      << " (200/201 would indicate server didn't validate chunk format)";
 }
 
-TEST_F(AdvancedIntegrationTest, ServerUnchunksLargeChunkedRequest) {
-  // Test chunked encoding with larger payload
-  std::string body = createLargeFile(1);  // 1MB chunked
+TEST_F(AdvancedIntegrationTest, ServerRejectsLargeMalformedChunkedRequest) {
+  // Same limitation as above: body is not properly chunked despite header.
+  std::string body = createLargeFile(1);  // 1MB, not actually chunked
   std::map<std::string, std::string> headers;
   headers["transfer-encoding"] = "chunked";
 
   HttpTestClient::Response response =
       client->request("POST", "/files", body, headers);
 
-  EXPECT_TRUE(response.statusCode == 200 || response.statusCode == 201 ||
-              response.statusCode == 400 || response.statusCode == 413 ||
-              response.statusCode == 501)
-      << "Server should handle large chunked request";
+  EXPECT_TRUE(response.statusCode == 400 || response.statusCode == 411 ||
+              response.statusCode == 413 || response.statusCode == 501)
+      << "Server should reject large malformed chunked request with error "
+         "code, "
+         "got "
+      << response.statusCode;
 }
 
 TEST_F(AdvancedIntegrationTest, ChunkedWithContentLengthRejected) {
@@ -108,13 +127,18 @@ TEST_F(AdvancedIntegrationTest, IncompleteRequestTimesOut) {
   // This test verifies server has timeout mechanism by checking it doesn't hang
 
   // Make normal request - should complete quickly
-  time_t start = time(NULL);
+  struct timeval start, end;
+  gettimeofday(&start, NULL);
   HttpTestClient::Response response = client->get("/");
-  time_t end = time(NULL);
+  gettimeofday(&end, NULL);
+
+  long elapsedMs =
+      (end.tv_sec - start.tv_sec) * 1000 + (end.tv_usec - start.tv_usec) / 1000;
 
   EXPECT_EQ(200, response.statusCode);
-  EXPECT_LT(end - start, 10)  // Should complete in < 10 seconds
-      << "Normal request should not take more than 10 seconds";
+  EXPECT_LT(elapsedMs, 10000)  // Should complete in < 10,000 ms (10 seconds)
+      << "Normal request should not take more than 10 seconds, took "
+      << elapsedMs << "ms";
 }
 
 TEST_F(AdvancedIntegrationTest, SlowClientDoesNotBlockServer) {
@@ -135,7 +159,8 @@ TEST_F(AdvancedIntegrationTest, MultipleSlowRequestsHandledConcurrently) {
   const int NUM_SLOW_REQUESTS = 5;
   int successCount = 0;
 
-  time_t start = time(NULL);
+  struct timeval start, end;
+  gettimeofday(&start, NULL);
 
   for (int i = 0; i < NUM_SLOW_REQUESTS; ++i) {
     HttpTestClient::Response response = client->get("/");
@@ -143,11 +168,15 @@ TEST_F(AdvancedIntegrationTest, MultipleSlowRequestsHandledConcurrently) {
     usleep(100000);  // 100ms delay between requests
   }
 
-  time_t end = time(NULL);
+  gettimeofday(&end, NULL);
+
+  long elapsedMs =
+      (end.tv_sec - start.tv_sec) * 1000 + (end.tv_usec - start.tv_usec) / 1000;
 
   EXPECT_EQ(NUM_SLOW_REQUESTS, successCount);
-  EXPECT_LT(end - start, 15)  // All requests in < 15 seconds
-      << "Server should handle slow requests without blocking";
+  EXPECT_LT(elapsedMs, 15000)  // All requests in < 15,000 ms (15 seconds)
+      << "Server should handle slow requests without blocking, took "
+      << elapsedMs << "ms";
 }
 
 // ============================================
@@ -165,9 +194,24 @@ TEST_F(AdvancedIntegrationTest, DownloadLargeFile) {
 
     // Verify Content-Length header matches body
     if (response.hasHeader("content-length")) {
-      int contentLength = atoi(response.getHeader("content-length").c_str());
-      EXPECT_EQ(contentLength, static_cast<int>(response.body.length()))
-          << "Content-Length should match actual body size";
+      std::string clStr = response.getHeader("content-length");
+
+      // Validate Content-Length is numeric before parsing
+      bool isNumeric = !clStr.empty();
+      for (size_t i = 0; i < clStr.length(); ++i) {
+        if (!std::isdigit(clStr[i])) {
+          isNumeric = false;
+          break;
+        }
+      }
+
+      EXPECT_TRUE(isNumeric) << "Content-Length header should be numeric";
+
+      if (isNumeric) {
+        int contentLength = atoi(clStr.c_str());
+        EXPECT_EQ(contentLength, static_cast<int>(response.body.length()))
+            << "Content-Length should match actual body size";
+      }
     }
   } else {
     // Skipped: "Large file not present for testing";
