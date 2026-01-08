@@ -53,14 +53,14 @@
                     <li><a href="/nonexistent">Trigger 404 Error</a></li>
                     <li><a href="/test.php">Test PHP CGI</a> (if configured)</li>
                     <li><a href="/test.py">Test Python CGI</a> (if configured)</li>
-                    <li><a href="/uploads/">View Upload Directory</a></li>
+                    <li><a href="/upload">View Upload Directory</a></li>
                 </ul>
             </div>
             
             <div class="upload-section">
                 <h2 class="section-title">File Upload Test</h2>
                 <p>Test the POST method with file upload functionality:</p>
-                <form action="/uploads/" method="POST" enctype="multipart/form-data">
+                <form action="/upload" method="POST" enctype="multipart/form-data">
                     <input type="file" name="file" style="margin: 1rem 0;">
                     <button type="submit" class="btn">Upload File</button>
                 </form>
@@ -72,7 +72,7 @@
                 <button class="btn btn-danger" onclick="testDelete()">Test DELETE Request</button>
                 <script>
                     function testDelete() {
-                        fetch('/uploads/test.txt', { method: 'DELETE' })
+                        fetch('/upload/test.txt', { method: 'DELETE' })
                             .then(response => alert('DELETE request sent. Check console for response.'))
                             .catch(error => alert('Error: ' + error));
                     }

@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 12:01:14 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/07 17:39:11 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/08 06:08:25 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -510,8 +510,8 @@ void ConnectionHandler::handleGetRequest(
 
   bool pathExists = false;
   try {
-    filesystem::adapters::FileSystemHelper::exists(resolvedPath.toString());
-    pathExists = true;
+    pathExists =
+        filesystem::adapters::FileSystemHelper::exists(resolvedPath.toString());
   } catch (const std::exception&) {
     pathExists = false;
   }
@@ -531,9 +531,8 @@ void ConnectionHandler::handleGetRequest(
 
   bool isDir = false;
   try {
-    filesystem::adapters::FileSystemHelper::isDirectory(
+    isDir = filesystem::adapters::FileSystemHelper::isDirectory(
         resolvedPath.toString());
-    isDir = true;
   } catch (const std::exception&) {
     isDir = false;
   }
@@ -580,21 +579,79 @@ void ConnectionHandler::handleDeleteRequest(
     const domain::configuration::value_objects::Route& /* route */,
     const domain::configuration::entities::LocationConfig& location,
     const domain::filesystem::value_objects::Path& requestPath) {
-  domain::filesystem::value_objects::Path resolvedPath =
-      resolvePathWithServerFallback(location, requestPath.toString());
+  domain::filesystem::value_objects::Path resolvedPath;
 
-  if (!filesystem::adapters::FileSystemHelper::exists(
-          resolvedPath.toString())) {
+  m_logger.debug("enter handler Delete");
+  // For upload locations, resolve path relative to upload_store
+  if (location.isUploadRoute() && location.hasUploadConfig()) {
+    const domain::configuration::value_objects::UploadConfig& uploadConfig =
+        location.getUploadConfig();
+    const domain::filesystem::value_objects::Path& uploadStore =
+        uploadConfig.getUploadDirectory();
+
+    m_logger.debug("uploadConfig => " + uploadConfig.getUploadDirectory().getFilename());
+    m_logger.debug("uploadStore => " + uploadStore.getFilename());
+    // Extract filename from request path (remove location prefix)
+    std::string requestPathStr = requestPath.toString();
+    std::string locationPath = location.getPath();
+
+    std::string relativePath = requestPathStr;
+    if (requestPathStr.length() > locationPath.length() &&
+        requestPathStr.substr(0, locationPath.length()) == locationPath) {
+      relativePath = requestPathStr.substr(locationPath.length());
+      if (!relativePath.empty() && relativePath[0] == '/') {
+        relativePath = relativePath.substr(1);
+      }
+    }
+
+    if (!relativePath.empty()) {
+      resolvedPath = uploadStore.join(relativePath);
+    } else {
+      generateErrorResponse(
+          domain::shared::value_objects::ErrorCode::badRequest(),
+          "Invalid file path for deletion");
+      return;
+    }
+
+    std::ostringstream debugMsg;
+    debugMsg << "DELETE request (upload location) - resolved path: "
+             << resolvedPath.toString();
+    m_logger.debug(debugMsg.str());
+  } else {
+    resolvedPath =
+        resolvePathWithServerFallback(location, requestPath.toString());
+
+    std::ostringstream debugMsg;
+    debugMsg << "DELETE request - resolved path: " << resolvedPath.toString();
+    m_logger.debug(debugMsg.str());
+  }
+
+  // Check if path exists (exists() throws if path not found)
+  m_logger.debug("before make path exist");
+  try {
+    filesystem::adapters::FileSystemHelper::exists(resolvedPath.toString());
+  } catch (const std::exception&) {
+    // Path does not exist
+    m_logger.debug("path does not exist");
     handleNotFound(location);
     return;
   }
+  m_logger.debug("after make path exist");
 
-  if (filesystem::adapters::FileSystemHelper::isDirectory(
-          resolvedPath.toString())) {
+  // Check if path is a directory (isDirectory() throws if NOT a directory)
+  m_logger.debug("before make path isDirectory");
+  try {
+    filesystem::adapters::FileSystemHelper::isDirectory(resolvedPath.toString());
+    // If we reach here, it IS a directory - reject deletion
+    m_logger.debug("path is a directory - forbidden");
     generateErrorResponse(domain::shared::value_objects::ErrorCode::forbidden(),
                           "Directory deletion not allowed");
     return;
+  } catch (const std::exception&) {
+    // Path is NOT a directory (it's a file) - this is what we want
+    m_logger.debug("path is not a directory (it's a file) - proceeding");
   }
+  m_logger.debug("after make path isDirectory");
 
   try {
     if (std::remove(resolvedPath.toString().c_str()) != 0) {
