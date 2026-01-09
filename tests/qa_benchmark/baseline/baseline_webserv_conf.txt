@@ -4,8 +4,8 @@
 [36m[DEBUG] [0mConfigParser initialized.
 [32m[INFO] [0mConfigProvider initialized with parser.
 [36m[DEBUG] [0mInitializing parser for: ./conf/webserv.conf
-[36m[DEBUG] [0mTokenized 169 tokens from ./conf/webserv.conf
-[36m[DEBUG] [0mCurrent tokens (169):
+[36m[DEBUG] [0mTokenized 171 tokens from ./conf/webserv.conf
+[36m[DEBUG] [0mCurrent tokens (171):
   [Line 1] STRING: 'http'
   [Line 1] BLOCK_START: '{'
   [Line 2] STRING: 'error_page'
@@ -37,10 +37,10 @@
   [Line 10] STRING: 'server'
   [Line 10] BLOCK_START: '{'
   [Line 11] STRING: 'listen'
-  [Line 11] STRING: '80'
+  [Line 11] STRING: '8080'
   [Line 11] SEMICOLON: ';'
   [Line 12] STRING: 'listen'
-  [Line 12] STRING: '[::]:80'
+  [Line 12] STRING: '[::]:8080'
   [Line 12] SEMICOLON: ';'
   [Line 13] STRING: 'server_name'
   [Line 13] STRING: 'webserv.com'
@@ -79,7 +79,9 @@
   [Line 26] STRING: '/upload'
   [Line 26] BLOCK_START: '{'
   [Line 27] STRING: 'limit_except'
+  [Line 27] STRING: 'GET'
   [Line 27] STRING: 'POST'
+  [Line 27] STRING: 'DELETE'
   [Line 27] BLOCK_START: '{'
   [Line 27] STRING: 'deny'
   [Line 27] STRING: 'all'
@@ -194,9 +196,9 @@
 [36m[DEBUG] [0mSet client_max_body_size to 10m at line 8
 [36m[DEBUG] [0mProcessed directive 'client_max_body_size' with 1 arguments at line 8
 [36m[DEBUG] [0mParsing server block content
-[36m[DEBUG] [0mAdded listen directive '80' at line 11
+[36m[DEBUG] [0mAdded listen directive '8080' at line 11
 [36m[DEBUG] [0mProcessed directive 'listen' with 1 arguments at line 11
-[36m[DEBUG] [0mAdded listen directive '[::]:80' at line 12
+[36m[DEBUG] [0mAdded listen directive '[::]:8080' at line 12
 [36m[DEBUG] [0mProcessed directive 'listen' with 1 arguments at line 12
 [36m[DEBUG] [0mAdded server name 'webserv.com' at line 13
 [36m[DEBUG] [0mAdded server name 'www.webserv.com' at line 13
@@ -220,8 +222,10 @@
 [36m[DEBUG] [0mEnd of location block, added location for path: /
 [36m[DEBUG] [0mParsing location block content
 [36m[DEBUG] [0mParsing location block for path: /upload
+[36m[DEBUG] [0mAdded allowed method 'GET' via limit_except at line 27
 [36m[DEBUG] [0mAdded allowed method 'POST' via limit_except at line 27
-[36m[DEBUG] [0mCompleted limit_except block with 1 allowed methods
+[36m[DEBUG] [0mAdded allowed method 'DELETE' via limit_except at line 27
+[36m[DEBUG] [0mCompleted limit_except block with 3 allowed methods
 [36m[DEBUG] [0mSet upload_store to './var/uploads' at line 29
 [36m[DEBUG] [0mProcessed directive 'upload_store' with 1 arguments at line 29
 [36m[DEBUG] [0mSet upload_store_permissions to 660 (432 decimal) at line 30
@@ -284,10 +288,10 @@
   [Line 1] STRING: 'server'
   [Line 1] BLOCK_START: '{'
   [Line 2] STRING: 'listen'
-  [Line 2] STRING: '127.0.0.1:8080'
+  [Line 2] STRING: '127.0.0.1:8081'
   [Line 2] SEMICOLON: ';'
   [Line 3] STRING: 'listen'
-  [Line 3] STRING: '[::1]:8080'
+  [Line 3] STRING: '[::1]:8081'
   [Line 3] SEMICOLON: ';'
   [Line 4] STRING: 'server_name'
   [Line 4] STRING: 'dev.localhost'
@@ -382,7 +386,7 @@
   [Line 36] BLOCK_START: '{'
   [Line 37] STRING: 'return'
   [Line 37] STRING: '302'
-  [Line 37] STRING: 'https://dev.localhost/secure'
+  [Line 37] STRING: 'https://dev.localhost:8081/secure'
   [Line 37] SEMICOLON: ';'
   [Line 38] BLOCK_END: '}'
   [Line 39] BLOCK_END: '}'
@@ -390,9 +394,9 @@
 
 [36m[DEBUG] [0mEntering server block at line 1
 [36m[DEBUG] [0mParsing server block content
-[36m[DEBUG] [0mAdded listen directive '127.0.0.1:8080' at line 2
+[36m[DEBUG] [0mAdded listen directive '127.0.0.1:8081' at line 2
 [36m[DEBUG] [0mProcessed directive 'listen' with 1 arguments at line 2
-[36m[DEBUG] [0mAdded listen directive '[::1]:8080' at line 3
+[36m[DEBUG] [0mAdded listen directive '[::1]:8081' at line 3
 [36m[DEBUG] [0mProcessed directive 'listen' with 1 arguments at line 3
 [36m[DEBUG] [0mAdded server name 'dev.localhost' at line 4
 [36m[DEBUG] [0mProcessed directive 'server_name' with 1 arguments at line 4
@@ -446,7 +450,7 @@
 [36m[DEBUG] [0mEnd of location block, added location for path: /dev-upload
 [36m[DEBUG] [0mParsing location block content
 [36m[DEBUG] [0mParsing location block for path: /temp-redirect
-[36m[DEBUG] [0mSet return 302 -> 'https://dev.localhost/secure' at line 37
+[36m[DEBUG] [0mSet return 302 -> 'https://dev.localhost:8081/secure' at line 37
 [36m[DEBUG] [0mProcessed directive 'return' with 2 arguments at line 37
 [36m[DEBUG] [0mEnd of location block, added location for path: /temp-redirect
 [36m[DEBUG] [0mEnd of server block, added server with 2 listen directives
@@ -467,14 +471,14 @@ Send timeout: 60s
 Total servers: 2
 
 --- Server 1 (default) ---
-  Listen: 0.0.0.0:80, :::80
+  Listen: 0.0.0.0:8080, :::8080
   Server names: webserv.com, www.webserv.com, _
   Root: html
   Locations: 6
   Max body size: 1048576 bytes
 
 --- Server 2 ---
-  Listen: 127.0.0.1:8080, ::1:8080
+  Listen: 127.0.0.1:8081, ::1:8081
   Server names: dev.localhost
   Root: dev
   Locations: 5
@@ -485,5 +489,40 @@ Total servers: 2
 [32m[INFO] [0mInitializing socket orchestrator
 [32m[INFO] [0mInitializing SocketOrchestrator
 [32m[INFO] [0mCreating server sockets from configuration
-[31m[ERROR] [0mInitialization failed: Permission denied: 0.0.0.0:80 (Permission denied [errno=13])
-[31m[ERROR] [0mServer initialization failed: Permission denied: 0.0.0.0:80 (Permission denied [errno=13])
+[36m[DEBUG] [0mSocket bound to 0.0.0.0:8080
+[36m[DEBUG] [0mSocket listening on 0.0.0.0:8080 (backlog=128)
+[32m[INFO] [0mBound listen socket to 0.0.0.0:8080 (fd=4)
+[36m[DEBUG] [0mSocket bound to 127.0.0.1:8081
+[36m[DEBUG] [0mSocket listening on 127.0.0.1:8081 (backlog=128)
+[32m[INFO] [0mBound listen socket to 127.0.0.1:8081 (fd=5)
+[36m[DEBUG] [0mSocket bound to ::1:8081
+[36m[DEBUG] [0mSocket listening on ::1:8081 (backlog=128)
+[32m[INFO] [0mBound listen socket to [::1]:8081 (fd=6)
+[36m[DEBUG] [0mSocket bound to :::8080
+[36m[DEBUG] [0mSocket listening on :::8080 (backlog=128)
+[32m[INFO] [0mBound listen socket to [::]:8080 (fd=7)
+[32m[INFO] [0mCreated 4 listen socket(s)
+[32m[INFO] [0mEventMultiplexer initialized with epoll
+[36m[DEBUG] [0mRegistered fd=4 with events=0x1
+[36m[DEBUG] [0mRegistered listen socket fd=4 (0.0.0.0:8080)
+[36m[DEBUG] [0mRegistered fd=5 with events=0x1
+[36m[DEBUG] [0mRegistered listen socket fd=5 (127.0.0.1:8081)
+[36m[DEBUG] [0mRegistered fd=6 with events=0x1
+[36m[DEBUG] [0mRegistered listen socket fd=6 (::1:8081)
+[36m[DEBUG] [0mRegistered fd=7 with events=0x1
+[36m[DEBUG] [0mRegistered listen socket fd=7 (:::8080)
+[32m[INFO] [0mServer sockets registered with event multiplexer
+[32m[INFO] [0mSocketOrchestrator initialized with 4 listen socket(s)
+[32m[INFO] [0mServer initialized with 4 listen socket(s)
+[32m[INFO] [0mWebserv is ready to accept connections
+[32m[INFO] [0mStarting event loop
+[32m[INFO] [0mStarting event loop
+[32m[INFO] [0mShutdown signal during wait(); processing final events
+[32m[INFO] [0mShutdown signal detected post-iteration; exiting loop
+[32m[INFO] [0mEvent loop terminated
+[32m[INFO] [0mShutdown signal received
+[32m[INFO] [0mShutting down server
+[32m[INFO] [0mInitiating graceful shutdown
+[32m[INFO] [0mShutdown complete
+[32m[INFO] [0mClosed 0 active connection(s)
+[32m[INFO] [0mWebserv shutdown complete

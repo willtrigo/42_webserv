@@ -9,7 +9,7 @@
   [Line 1] STRING: 'server'
   [Line 1] BLOCK_START: '{'
   [Line 2] STRING: 'listen'
-  [Line 2] STRING: '80'
+  [Line 2] STRING: '8080'
   [Line 2] SEMICOLON: ';'
   [Line 3] STRING: 'server_name'
   [Line 3] STRING: 'localhost'
@@ -109,7 +109,7 @@
   [Line 42] BLOCK_START: '{'
   [Line 43] STRING: 'return'
   [Line 43] STRING: '302'
-  [Line 43] STRING: 'http://localhost/help'
+  [Line 43] STRING: 'http://localhost:8080/help'
   [Line 43] SEMICOLON: ';'
   [Line 44] BLOCK_END: '}'
   [Line 45] BLOCK_END: '}'
@@ -117,7 +117,7 @@
 
 [36m[DEBUG] [0mEntering server block at line 1
 [36m[DEBUG] [0mParsing server block content
-[36m[DEBUG] [0mAdded listen directive '80' at line 2
+[36m[DEBUG] [0mAdded listen directive '8080' at line 2
 [36m[DEBUG] [0mProcessed directive 'listen' with 1 arguments at line 2
 [36m[DEBUG] [0mAdded server name 'localhost' at line 3
 [36m[DEBUG] [0mProcessed directive 'server_name' with 1 arguments at line 3
@@ -172,7 +172,7 @@
 [36m[DEBUG] [0mEnd of location block, added location for path: /public
 [36m[DEBUG] [0mParsing location block content
 [36m[DEBUG] [0mParsing location block for path: /docs
-[36m[DEBUG] [0mSet return 302 -> 'http://localhost/help' at line 43
+[36m[DEBUG] [0mSet return 302 -> 'http://localhost:8080/help' at line 43
 [36m[DEBUG] [0mProcessed directive 'return' with 2 arguments at line 43
 [36m[DEBUG] [0mEnd of location block, added location for path: /docs
 [36m[DEBUG] [0mEnd of server block, added server with 1 listen directives
@@ -188,7 +188,7 @@ Send timeout: 60s
 Total servers: 1
 
 --- Server 1 (default) ---
-  Listen: 0.0.0.0:80
+  Listen: 0.0.0.0:8080
   Server names: localhost
   Root: default
   Locations: 4
@@ -199,5 +199,25 @@ Total servers: 1
 [32m[INFO] [0mInitializing socket orchestrator
 [32m[INFO] [0mInitializing SocketOrchestrator
 [32m[INFO] [0mCreating server sockets from configuration
-[31m[ERROR] [0mInitialization failed: Permission denied: 0.0.0.0:80 (Permission denied [errno=13])
-[31m[ERROR] [0mServer initialization failed: Permission denied: 0.0.0.0:80 (Permission denied [errno=13])
+[36m[DEBUG] [0mSocket bound to 0.0.0.0:8080
+[36m[DEBUG] [0mSocket listening on 0.0.0.0:8080 (backlog=128)
+[32m[INFO] [0mBound listen socket to 0.0.0.0:8080 (fd=4)
+[32m[INFO] [0mCreated 1 listen socket(s)
+[32m[INFO] [0mEventMultiplexer initialized with epoll
+[36m[DEBUG] [0mRegistered fd=4 with events=0x1
+[36m[DEBUG] [0mRegistered listen socket fd=4 (0.0.0.0:8080)
+[32m[INFO] [0mServer sockets registered with event multiplexer
+[32m[INFO] [0mSocketOrchestrator initialized with 1 listen socket(s)
+[32m[INFO] [0mServer initialized with 1 listen socket(s)
+[32m[INFO] [0mWebserv is ready to accept connections
+[32m[INFO] [0mStarting event loop
+[32m[INFO] [0mStarting event loop
+[32m[INFO] [0mShutdown signal during wait(); processing final events
+[32m[INFO] [0mShutdown signal detected post-iteration; exiting loop
+[32m[INFO] [0mEvent loop terminated
+[32m[INFO] [0mShutdown signal received
+[32m[INFO] [0mShutting down server
+[32m[INFO] [0mInitiating graceful shutdown
+[32m[INFO] [0mShutdown complete
+[32m[INFO] [0mClosed 0 active connection(s)
+[32m[INFO] [0mWebserv shutdown complete

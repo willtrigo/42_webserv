@@ -40,10 +40,10 @@
   [Line 12] STRING: 'server'
   [Line 12] BLOCK_START: '{'
   [Line 13] STRING: 'listen'
-  [Line 13] STRING: '80'
+  [Line 13] STRING: '8080'
   [Line 13] SEMICOLON: ';'
   [Line 14] STRING: 'listen'
-  [Line 14] STRING: '[::]:80'
+  [Line 14] STRING: '[::]:8080'
   [Line 14] SEMICOLON: ';'
   [Line 15] STRING: 'listen'
   [Line 15] STRING: '80'
@@ -179,10 +179,10 @@
   [Line 70] STRING: 'server'
   [Line 70] BLOCK_START: '{'
   [Line 71] STRING: 'listen'
-  [Line 71] STRING: '127.0.0.1:8080'
+  [Line 71] STRING: '127.0.0.1:8081'
   [Line 71] SEMICOLON: ';'
   [Line 72] STRING: 'listen'
-  [Line 72] STRING: '[::1]:8080'
+  [Line 72] STRING: '[::1]:8081'
   [Line 72] SEMICOLON: ';'
   [Line 73] STRING: 'server_name'
   [Line 73] STRING: 'dev.localhost'
@@ -277,7 +277,7 @@
   [Line 109] BLOCK_START: '{'
   [Line 110] STRING: 'return'
   [Line 110] STRING: '302'
-  [Line 110] STRING: 'https://dev.localhost/secure'
+  [Line 110] STRING: 'https://dev.localhost:8081/secure'
   [Line 110] SEMICOLON: ';'
   [Line 111] BLOCK_END: '}'
   [Line 112] BLOCK_END: '}'
@@ -307,8 +307,9 @@
 [32m[INFO] [0mSuccessfully processed include: 'sites-available/*.conf'
 [36m[DEBUG] [0mProcessed directive 'include' with 1 arguments at line 10
 [36m[DEBUG] [0mParsing server block content
-[36m[DEBUG] [0mAdded listen directive '80' at line 13
+[36m[DEBUG] [0mAdded listen directive '8080' at line 13
 [36m[DEBUG] [0mProcessed directive 'listen' with 1 arguments at line 13
-[36m[DEBUG] [0mAdded listen directive '[::]:80' at line 14
+[36m[DEBUG] [0mAdded listen directive '[::]:8080' at line 14
 [36m[DEBUG] [0mProcessed directive 'listen' with 1 arguments at line 14
-[31m[ERROR] [0mConfiguration error: unexpected error during configuration load: invalid directive: Invalid listen directive format: Invalid listen directive format: 80 - Duplicate listen directive: 80 at line 15
+[36m[DEBUG] [0mAdded listen directive '80' at line 15
+[31m[ERROR] [0mConfiguration error: unexpected error during configuration load: invalid directive: Invalid listen directive format: Invalid listen directive format: default_server - Invalid host format: Invalid host format: 'default_server' at line 15

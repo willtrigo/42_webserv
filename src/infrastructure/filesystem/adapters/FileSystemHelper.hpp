@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   FileSystemHelper.hpp                               :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 14:09:30 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/27 23:19:34 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/08 23:04:56 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,11 @@ namespace adapters {
 
 class FileSystemHelper {
  public:
+  // Singleton instance for dependency injection
+  // Returns a valid pointer that can be passed to adapters
+  // The pointer itself is never dereferenced - only static methods are called
+  static FileSystemHelper* getInstance();
+
   static bool exists(const std::string& path);
   static bool isDirectory(const std::string& path);
   static bool isFile(const std::string& path);
@@ -63,6 +68,7 @@ class FileSystemHelper {
   static std::string resolveSymbolicLink(const std::string& path);
 
  private:
+  FileSystemHelper();
   FileSystemHelper(const FileSystemHelper&);
   ~FileSystemHelper();
 

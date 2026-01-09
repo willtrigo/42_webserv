@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   UploadConfig.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 13:30:43 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/28 17:36:46 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/08 23:01:20 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,6 +101,35 @@ UploadConfig::UploadConfig(
 }
 
 UploadConfig::~UploadConfig() { cleanupDependencies(); }
+
+UploadConfig::UploadConfig(
+    const domain::filesystem::value_objects::Path& uploadDirectory,
+    infrastructure::filesystem::adapters::FileHandler* fileHandler,
+    infrastructure::filesystem::adapters::DirectoryLister* directoryLister,
+    infrastructure::filesystem::adapters::PathResolver* pathResolver)
+    : m_uploadDirectory(uploadDirectory),
+      m_maxFileSize(DEFAULT_MAX_FILE_SIZE),
+      m_maxTotalSize(DEFAULT_MAX_TOTAL_SIZE),
+      m_maxFilesPerUpload(DEFAULT_MAX_FILES_PER_UPLOAD),
+      m_maxFilenameLength(DEFAULT_MAX_FILENAME_LENGTH),
+      m_maxUploadsPerHour(DEFAULT_MAX_UPLOADS_PER_HOUR),
+      m_overwriteExisting(false),
+      m_generateThumbnails(false),
+      m_applyWatermark(false),
+      m_encryptFiles(false),
+      m_compressFiles(false),
+      m_fileHandler(fileHandler),
+      m_directoryLister(directoryLister),
+      m_pathResolver(pathResolver),
+      m_permissions(domain::filesystem::value_objects::Permission(0644)),
+      m_uploadAccess("rw-r--r--") {
+  for (std::size_t i = 0; i < DEFAULT_ALLOWED_EXTENSIONS_COUNT; ++i) {
+    m_allowedExtensions.push_back(DEFAULT_ALLOWED_EXTENSIONS[i]);
+  }
+  for (std::size_t i = 0; i < DEFAULT_BLOCKED_EXTENSIONS_COUNT; ++i) {
+    m_blockedExtensions.push_back(DEFAULT_BLOCKED_EXTENSIONS[i]);
+  }
+}
 
 UploadConfig::UploadConfig(const UploadConfig& other)
     : m_uploadDirectory(other.m_uploadDirectory),
@@ -323,6 +352,10 @@ bool UploadConfig::validateFilename(const std::string& filename) const {
     return false;
   }
 
+  if (filename == "." || filename == "..") {
+    return false;
+  }
+
   const char* invalidChars = "/\\?%*:|\"<>";
   for (std::size_t i = 0; i < filename.length(); ++i) {
     for (std::size_t j = 0; j < std::strlen(invalidChars); ++j) {
@@ -404,14 +437,9 @@ UploadFileInfo UploadConfig::processUpload(const std::string& originalFilename,
                                            const std::vector<char>& fileData,
                                            const std::string& uploader) const {
   try {
-    initializeDependencies();
-
-    if (!validateUploadConstraints(uploader)) {
-      throw exceptions::UploadConfigException(
-          "Upload limit reached for uploader: " + uploader,
-          exceptions::UploadConfigException::UPLOAD_LIMIT_REACHED);
-    }
-
+    // Perform validations BEFORE initializing dependencies
+    // This allows validation tests to pass without requiring file I/O
+    // infrastructure
     if (!validateFilename(originalFilename)) {
       throw exceptions::UploadConfigException(
           "Invalid filename: " + originalFilename,
@@ -423,6 +451,16 @@ UploadFileInfo UploadConfig::processUpload(const std::string& originalFilename,
       throw exceptions::UploadConfigException(
           "File size exceeds maximum allowed",
           exceptions::UploadConfigException::MAX_FILE_SIZE_EXCEEDED);
+    }
+
+    // Initialize dependencies only after basic validations pass
+    // This requires actual file I/O infrastructure
+    initializeDependencies();
+
+    if (!validateUploadConstraints(uploader)) {
+      throw exceptions::UploadConfigException(
+          "Upload limit reached for uploader: " + uploader,
+          exceptions::UploadConfigException::UPLOAD_LIMIT_REACHED);
     }
 
     std::string storedFilename = generateUniqueFilename(originalFilename);
@@ -438,10 +476,16 @@ UploadFileInfo UploadConfig::processUpload(const std::string& originalFilename,
             exceptions::UploadConfigException::DUPLICATE_FILENAME);
       }
     } catch (...) {
-      // File doesn't exist, which is fine
     }
 
-    std::string mimeType = m_fileHandler->detectMimeType(filePath);
+    std::string mimeType;
+    try {
+      mimeType = m_fileHandler->detectMimeType(filePath);
+    } catch (const std::exception& e) {
+      mimeType = "application/octet-stream";
+    } catch (...) {
+      mimeType = "application/octet-stream";
+    }
     if (mimeType.empty()) {
       mimeType = "application/octet-stream";
     }
@@ -1138,18 +1182,20 @@ bool UploadConfig::getEncryptFiles() const { return m_encryptFiles; }
 
 bool UploadConfig::getCompressFiles() const { return m_compressFiles; }
 
-void UploadConfig::initializeDependencies()
-    const {  // TODO: look at this part and make the fix
+void UploadConfig::initializeDependencies() const {
   if (m_fileHandler == NULL) {
-    // Note: In a real DDD implementation, these would be injected
-    // For now, create them with NULL helpers (which would need to be
-    // implemented)
-    m_fileHandler =
-        new infrastructure::filesystem::adapters::FileHandler(NULL, NULL);
-    m_directoryLister =
-        new infrastructure::filesystem::adapters::DirectoryLister(NULL, NULL);
+    // FileSystemHelper is a utility class with only static methods.
+    // Use singleton instance for safe dependency injection.
+    infrastructure::filesystem::adapters::FileSystemHelper* helperPtr =
+        infrastructure::filesystem::adapters::FileSystemHelper::getInstance();
+
     m_pathResolver =
-        new infrastructure::filesystem::adapters::PathResolver(NULL);
+        new infrastructure::filesystem::adapters::PathResolver(helperPtr);
+    m_fileHandler = new infrastructure::filesystem::adapters::FileHandler(
+        helperPtr, m_pathResolver);
+    m_directoryLister =
+        new infrastructure::filesystem::adapters::DirectoryLister(
+            helperPtr, m_pathResolver);
   }
 }
 
@@ -1247,7 +1293,8 @@ std::string UploadConfig::getCurrentTimestamp() const {
   struct tm* timeinfo = localtime(&now);
 
   char buffer[80];
-  strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", timeinfo);
+  // Use filesystem-safe format: no spaces, no colons
+  strftime(buffer, sizeof(buffer), "%Y%m%d-%H%M%S", timeinfo);
 
   return std::string(buffer);
 }

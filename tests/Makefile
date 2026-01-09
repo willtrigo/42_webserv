@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/24 09:42:14 by umeneses          #+#    #+#              #
-#    Updated: 2026/01/08 11:50:27 by umeneses         ###   ########.fr        #
+#    Updated: 2026/01/08 22:50:45 by umeneses         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -43,11 +43,8 @@ NAME                            := $(BIN_DIR)/test_runner
 # ============================================================================
 # SOURCE FILE EXCLUSIONS
 # ============================================================================
-# SOURCE FILE EXCLUSIONS
-# ============================================================================
 # Files excluded:
 #  1. main.cpp - tests have test_main.cpp
-#  2. IncludeProcessor.cpp - tests use MockIncludeProcessor
 # ============================================================================
 
 # Get all project source files
@@ -55,7 +52,6 @@ PROJECT_SRCS_ALL                := $(shell find $(SRC_DIR) -name '*.cpp')
 
 # Exclude files that conflict with test environment
 EXCLUDED_FILES                  := $(SRC_DIR)/main.cpp
-EXCLUDED_FILES                  += $(SRC_DIR)/infrastructure/config/parsers/IncludeProcessor.cpp
 
 # Filter out excluded files
 PROJECT_SRCS                    := $(filter-out $(EXCLUDED_FILES),$(PROJECT_SRCS_ALL))
@@ -66,8 +62,9 @@ TEST_SRCS                       := test_main.cpp
 TEST_SRCS                       += $(shell find $(UNIT_TESTS_DIR) -name 'test_*.cpp' 2>/dev/null || true)
 TEST_SRCS                       += $(shell find $(INTEGRATION_TESTS_DIR) -name 'test_*.cpp' 2>/dev/null || true)
 
-# Mock implementations
-MOCK_SRCS                       := $(shell find $(MOCKS_DIR) -name '*.cpp' 2>/dev/null || true)
+# Mock implementations - exclude MockIncludeProcessor since real implementation is used
+MOCK_SRCS_ALL                   := $(shell find $(MOCKS_DIR) -name '*.cpp' 2>/dev/null || true)
+MOCK_SRCS                       := $(filter-out $(MOCKS_DIR)/MockIncludeProcessor.cpp,$(MOCK_SRCS_ALL))
 
 ALL_SRCS                        := $(PROJECT_SRCS) $(TEST_SRCS) $(MOCK_SRCS)
 OBJS                            := $(ALL_SRCS:%.cpp=$(BUILD_DIR)/%.o)
@@ -115,8 +112,17 @@ unit: $(NAME)
 
 integration: $(NAME)
 	@printf "$(CYAN)Running integration tests...$(RESET)\n"
-	@./$(NAME) --gtest_filter="*IntegrationTest.*" || true
-	@printf "$(YELLOW)[ℹ] Integration test run completed (exit code ignored)$(RESET)\n"
+	@./$(NAME) --gtest_filter="*IntegrationTest.*" 2>&1 | tee /tmp/integration_test_output.txt || true
+	@TOTAL=$$(grep -oP 'Running \K[0-9]+' /tmp/integration_test_output.txt | head -1 2>/dev/null || echo "0"); \
+	FAILED=$$(grep '^\[  FAILED  \]' /tmp/integration_test_output.txt | grep -oP '\K[0-9]+(?= tests)' | head -1 2>/dev/null || echo "0"); \
+	if [ "$$TOTAL" -gt 0 ] && [ "$$TOTAL" -eq "$$FAILED" ]; then \
+		printf "$(RED)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)\n"; \
+		printf "$(RED)100%% of the Integration Tests FAILED! Are you running the webserver binary?$(RESET)\n"; \
+		printf "$(RED)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)\n"; \
+	else \
+		printf "$(YELLOW)[ℹ] Integration test run completed (exit code ignored)$(RESET)\n"; \
+	fi; \
+	rm -f /tmp/integration_test_output.txt
 
 failing-tests: $(NAME)
 	@printf "$(CYAN)Analyzing test failures (excluding crashing suites)...$(RESET)\n"

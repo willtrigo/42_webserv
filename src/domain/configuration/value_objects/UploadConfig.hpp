@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   UploadConfig.hpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 13:27:36 by dande-je          #+#    #+#             */
-/*   Updated: 2025/12/28 17:29:14 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/08 22:13:30 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,6 +76,14 @@ class UploadConfig {
   UploadConfig(const domain::filesystem::value_objects::Path& uploadDirectory,
                const domain::filesystem::value_objects::Size& maxFileSize,
                const domain::filesystem::value_objects::Size& maxTotalSize);
+
+  // Constructor for dependency injection (primarily for testing)
+  UploadConfig(
+      const domain::filesystem::value_objects::Path& uploadDirectory,
+      infrastructure::filesystem::adapters::FileHandler* fileHandler,
+      infrastructure::filesystem::adapters::DirectoryLister* directoryLister,
+      infrastructure::filesystem::adapters::PathResolver* pathResolver);
+
   ~UploadConfig();
 
   UploadConfig(const UploadConfig& other);
