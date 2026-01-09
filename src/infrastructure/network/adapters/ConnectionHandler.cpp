@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 12:01:14 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/08 10:40:32 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/09 02:08:38 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -309,20 +309,79 @@ domain::filesystem::value_objects::Path
 ConnectionHandler::resolvePathWithServerFallback(
     const domain::configuration::entities::LocationConfig& location,
     const std::string& requestPath) const {
-  const domain::filesystem::value_objects::Path& locationRoot =
-      location.getRoot();
+  const domain::configuration::entities::LocationConfig::LocationMatchType
+      matchType = location.getMatchType();
+  bool isRegexLocation =
+      (matchType == domain::configuration::entities::LocationConfig::
+                        MATCH_REGEX_CASE_SENSITIVE ||
+       matchType == domain::configuration::entities::LocationConfig::
+                        MATCH_REGEX_CASE_INSENSITIVE);
 
-  if (locationRoot.toString() == "/" && m_serverConfig != NULL &&
-      !m_serverConfig->getRoot().isEmpty()) {
-    std::string relativeRequestPath = requestPath;
-    if (!relativeRequestPath.empty() && relativeRequestPath[0] == '/') {
-      relativeRequestPath = relativeRequestPath.substr(1);
-    }
-
-    return m_serverConfig->getRoot().join(relativeRequestPath);
+  std::string relativeRequestPath = requestPath;
+  if (!relativeRequestPath.empty() && relativeRequestPath[0] == '/') {
+    relativeRequestPath = relativeRequestPath.substr(1);
   }
 
-  return location.resolvePath(requestPath);
+  if (isRegexLocation) {
+    if (location.hasCgiConfig()) {
+      try {
+        const domain::configuration::value_objects::CgiConfig& cgiConfig =
+            location.getCgiConfig();
+        const domain::filesystem::value_objects::Path& cgiRoot =
+            cgiConfig.getCgiRoot();
+        std::string cgiRootStr = cgiRoot.toString();
+        if (!cgiRoot.isEmpty() && cgiRootStr != "/" &&
+            cgiRootStr.find('\\') == std::string::npos &&
+            cgiRootStr.find('$') == std::string::npos) {
+          return cgiRoot.join(relativeRequestPath);
+        }
+      } catch (const std::exception& ex) {
+        std::ostringstream oss;
+        oss << "CGI root resolution failed: " << ex.what();
+        m_logger.debug(oss.str());
+      }
+    }
+
+    if (m_serverConfig != NULL && !m_serverConfig->getRoot().isEmpty()) {
+      return m_serverConfig->getRoot().join(relativeRequestPath);
+    }
+
+    return domain::filesystem::value_objects::Path::fromString(
+        "./" + relativeRequestPath, false);
+  }
+
+  try {
+    const domain::filesystem::value_objects::Path& locationRoot =
+        location.getRoot();
+    std::string rootStr = locationRoot.toString();
+
+    bool looksLikeRegex =
+        (!rootStr.empty() &&
+         (rootStr[0] == '\\' || rootStr.find('$') != std::string::npos ||
+          rootStr.find('^') != std::string::npos ||
+          rootStr.find('*') != std::string::npos));
+
+    if (!looksLikeRegex && rootStr != "/") {
+      return location.resolvePath(requestPath);
+    }
+
+    if (m_serverConfig != NULL && !m_serverConfig->getRoot().isEmpty()) {
+      return m_serverConfig->getRoot().join(relativeRequestPath);
+    }
+
+  } catch (const std::exception& ex) {
+    std::ostringstream oss;
+    oss << "Location root resolution failed (likely regex location): "
+        << ex.what();
+    m_logger.debug(oss.str());
+
+    if (m_serverConfig != NULL && !m_serverConfig->getRoot().isEmpty()) {
+      return m_serverConfig->getRoot().join(relativeRequestPath);
+    }
+  }
+
+  return domain::filesystem::value_objects::Path::fromString(
+      "./" + relativeRequestPath, false);
 }
 
 void ConnectionHandler::processRequest() {
@@ -370,18 +429,23 @@ void ConnectionHandler::processRequest() {
       return;
     }
 
+    m_logger.debug("route will be create");
     domain::configuration::value_objects::Route route =
         matchedLocation->toRoute();
+    m_logger.debug("route is working");
 
     if (method == domain::http::value_objects::HttpMethod::get() ||
         method == domain::http::value_objects::HttpMethod::head()) {
+      m_logger.debug("method == get or head");
       handleGetRequest(route, *matchedLocation, requestPath);
     } else if (method == domain::http::value_objects::HttpMethod::post()) {
+      m_logger.debug("method == post");
       handlePostRequest(route, *matchedLocation, requestPath);
     } else if (method ==
                domain::http::value_objects::HttpMethod::deleteMethod()) {
       handleDeleteRequest(route, *matchedLocation, requestPath);
     } else {
+      m_logger.debug("else generateErrorResponse");
       generateErrorResponse(
           domain::shared::value_objects::ErrorCode::methodNotAllowed(),
           "Unsupported HTTP method");
@@ -529,6 +593,9 @@ void ConnectionHandler::handleGetRequest(
     pathExists = false;
   }
 
+  std::ostringstream oss;
+  oss << "Inside of handleGetRequest verify pathExists = " << pathExists;
+  m_logger.debug(oss.str());
   if (!pathExists) {
     if (!location.getTryFiles().empty()) {
       resolvedPath = tryFindFile(location, requestPath);
@@ -555,10 +622,21 @@ void ConnectionHandler::handleGetRequest(
     return;
   }
 
-  if (location.hasCgiConfig() &&
-      location.getCgiConfig().matchesExtension(resolvedPath.toString())) {
-    handleCgiRequest(location, resolvedPath);
-    return;
+  if (location.hasCgiConfig()) {
+    const domain::configuration::entities::LocationConfig::LocationMatchType
+        matchType = location.getMatchType();
+    bool isRegexLocation =
+        (matchType == domain::configuration::entities::LocationConfig::
+                          MATCH_REGEX_CASE_SENSITIVE ||
+         matchType == domain::configuration::entities::LocationConfig::
+                          MATCH_REGEX_CASE_INSENSITIVE);
+
+    if (isRegexLocation ||
+        location.getCgiConfig().matchesExtension(resolvedPath.toString())) {
+      m_logger.debug("Routing to CGI handler for: " + resolvedPath.toString());
+      handleCgiRequest(location, resolvedPath);
+      return;
+    }
   }
 
   handleStaticFileRequest(location, resolvedPath);
@@ -577,7 +655,18 @@ void ConnectionHandler::handlePostRequest(
     domain::filesystem::value_objects::Path resolvedPath =
         resolvePathWithServerFallback(location, requestPath.toString());
 
-    if (location.getCgiConfig().matchesExtension(resolvedPath.toString())) {
+    const domain::configuration::entities::LocationConfig::LocationMatchType
+        matchType = location.getMatchType();
+    bool isRegexLocation =
+        (matchType == domain::configuration::entities::LocationConfig::
+                          MATCH_REGEX_CASE_SENSITIVE ||
+         matchType == domain::configuration::entities::LocationConfig::
+                          MATCH_REGEX_CASE_INSENSITIVE);
+
+    if (isRegexLocation ||
+        location.getCgiConfig().matchesExtension(resolvedPath.toString())) {
+      m_logger.debug("POST routing to CGI handler for: " +
+                     resolvedPath.toString());
       handleCgiRequest(location, resolvedPath);
       return;
     }
@@ -595,16 +684,15 @@ void ConnectionHandler::handleDeleteRequest(
   domain::filesystem::value_objects::Path resolvedPath;
 
   m_logger.debug("enter handler Delete");
-  // For upload locations, resolve path relative to upload_store
   if (location.isUploadRoute() && location.hasUploadConfig()) {
     const domain::configuration::value_objects::UploadConfig& uploadConfig =
         location.getUploadConfig();
     const domain::filesystem::value_objects::Path& uploadStore =
         uploadConfig.getUploadDirectory();
 
-    m_logger.debug("uploadConfig => " + uploadConfig.getUploadDirectory().getFilename());
+    m_logger.debug("uploadConfig => " +
+                   uploadConfig.getUploadDirectory().getFilename());
     m_logger.debug("uploadStore => " + uploadStore.getFilename());
-    // Extract filename from request path (remove location prefix)
     std::string requestPathStr = requestPath.toString();
     std::string locationPath = location.getPath();
 
@@ -651,7 +739,8 @@ void ConnectionHandler::handleDeleteRequest(
 
   m_logger.debug("before make path isDirectory");
   try {
-    filesystem::adapters::FileSystemHelper::isDirectory(resolvedPath.toString());
+    filesystem::adapters::FileSystemHelper::isDirectory(
+        resolvedPath.toString());
     m_logger.debug("path is a directory - forbidden");
     generateErrorResponse(domain::shared::value_objects::ErrorCode::forbidden(),
                           "Directory deletion not allowed");
@@ -1078,10 +1167,8 @@ std::string ConnectionHandler::extractBoundary(
 }
 
 bool ConnectionHandler::parseMultipartFormData(
-    const std::string& body,
-    const std::string& boundary,
-    std::string& outFilename,
-    std::vector<char>& outContent) const {
+    const std::string& body, const std::string& boundary,
+    std::string& outFilename, std::vector<char>& outContent) const {
   std::string delimiter = "--" + boundary;
 
   std::size_t pos = body.find(delimiter);
@@ -1113,9 +1200,8 @@ bool ConnectionHandler::parseMultipartFormData(
   std::string headers = part.substr(0, headerEnd);
   std::string content = part.substr(headerEnd + headerSeparatorLen);
 
-  while (!content.empty() &&
-         (content[content.length() - 1] == '\n' ||
-          content[content.length() - 1] == '\r')) {
+  while (!content.empty() && (content[content.length() - 1] == '\n' ||
+                              content[content.length() - 1] == '\r')) {
     content = content.substr(0, content.length() - 1);
   }
 
@@ -1184,8 +1270,8 @@ void ConnectionHandler::ensureDirectoryExists(
   } catch (const std::exception&) {
     if (!filesystem::adapters::FileSystemHelper::createDirectoryRecursive(
             dirPath.toString())) {
-      throw std::runtime_error(
-          "Failed to create upload directory: " + dirPath.toString());
+      throw std::runtime_error("Failed to create upload directory: " +
+                               dirPath.toString());
     }
   }
 }
@@ -1195,16 +1281,15 @@ void ConnectionHandler::writeUploadedFile(
     const std::vector<char>& content) const {
   std::ofstream outFile(filePath.toString().c_str(), std::ios::binary);
   if (!outFile.is_open()) {
-    throw std::runtime_error(
-        "Failed to open file for writing: " + filePath.toString());
+    throw std::runtime_error("Failed to open file for writing: " +
+                             filePath.toString());
   }
 
   outFile.write(content.data(), static_cast<std::streamsize>(content.size()));
   outFile.close();
 
   if (outFile.fail()) {
-    throw std::runtime_error(
-        "Failed to write file: " + filePath.toString());
+    throw std::runtime_error("Failed to write file: " + filePath.toString());
   }
 }
 
@@ -1272,22 +1357,21 @@ void ConnectionHandler::handleNotFound(
   debugMsg << "handleNotFound: looking for 404 error page";
   m_logger.debug(debugMsg.str());
 
-  // First, try to find error page in location config
   const domain::configuration::entities::LocationConfig::ErrorPageMap&
       locationErrorPages = location.getErrorPages();
-  
+
   domain::configuration::entities::LocationConfig::ErrorPageMap::const_iterator
       locationIt = locationErrorPages.find(notFoundCode);
 
   if (locationIt != locationErrorPages.end()) {
     std::ostringstream foundMsg;
-    foundMsg << "handleNotFound: found 404 page in location config: " << locationIt->second;
+    foundMsg << "handleNotFound: found 404 page in location config: "
+             << locationIt->second;
     m_logger.debug(foundMsg.str());
     serveErrorPage(locationIt->second, notFoundCode, location);
     return;
   }
 
-  // If not found in location, try server config
   std::ostringstream tryServerMsg;
   tryServerMsg << "handleNotFound: 404 not in location, checking server config";
   m_logger.debug(tryServerMsg.str());
@@ -1295,22 +1379,23 @@ void ConnectionHandler::handleNotFound(
   if (m_serverConfig != NULL) {
     const domain::configuration::entities::ServerConfig::ErrorPageMap&
         serverErrorPages = m_serverConfig->getErrorPages();
-    
+
     domain::configuration::entities::ServerConfig::ErrorPageMap::const_iterator
         serverIt = serverErrorPages.find(notFoundCode);
 
     if (serverIt != serverErrorPages.end()) {
       std::ostringstream foundServerMsg;
-      foundServerMsg << "handleNotFound: found 404 page in server config: " << serverIt->second;
+      foundServerMsg << "handleNotFound: found 404 page in server config: "
+                     << serverIt->second;
       m_logger.debug(foundServerMsg.str());
       serveErrorPage(serverIt->second, notFoundCode, location);
       return;
     }
   }
 
-  // No error page configured, generate default
   std::ostringstream noErrorPageMsg;
-  noErrorPageMsg << "handleNotFound: no 404 error page configured, generating default";
+  noErrorPageMsg
+      << "handleNotFound: no 404 error page configured, generating default";
   m_logger.debug(noErrorPageMsg.str());
   generateErrorResponse(notFoundCode, "Not Found");
 }
@@ -1329,14 +1414,12 @@ void ConnectionHandler::serveErrorPage(
 
     const std::string errorPathStr = errorPath.toString();
 
-    // Check if file exists
     if (!filesystem::adapters::FileSystemHelper::exists(errorPathStr)) {
       m_logger.warn("Error page not found at: " + errorPathStr);
       generateErrorResponse(statusCode, "Error page not found");
       return;
     }
 
-    // Read file content directly using ifstream
     std::ifstream file(errorPathStr.c_str(), std::ios::binary);
     if (!file.is_open()) {
       m_logger.error("Failed to open error page file: " + errorPathStr);
@@ -1344,7 +1427,6 @@ void ConnectionHandler::serveErrorPage(
       return;
     }
 
-    // Read entire file content
     std::ostringstream contentStream;
     contentStream << file.rdbuf();
     file.close();
@@ -1355,7 +1437,6 @@ void ConnectionHandler::serveErrorPage(
     sizeMsg << "Read error page file: " << contentStr.size() << " bytes";
     m_logger.debug(sizeMsg.str());
 
-    // Create response with error status code
     m_response = domain::http::entities::HttpResponse(statusCode, contentStr);
     m_response.setContentType("text/html");
 
@@ -1392,7 +1473,7 @@ domain::filesystem::value_objects::Path ConnectionHandler::tryFindFile(
   const std::string requestPathStr = requestPath.toString();
 
   std::ostringstream debugStart;
-  debugStart << "try_files: starting with " << tryFiles.size() 
+  debugStart << "try_files: starting with " << tryFiles.size()
              << " patterns for path: " << requestPathStr;
   m_logger.debug(debugStart.str());
 
@@ -1401,25 +1482,24 @@ domain::filesystem::value_objects::Path ConnectionHandler::tryFindFile(
        it != tryFiles.end(); ++it) {
     std::string tryFilePattern = *it;
 
-    // Handle special case: =404, =500, etc.
     if (!tryFilePattern.empty() && tryFilePattern[0] == '=') {
       std::ostringstream statusMsg;
-      statusMsg << "try_files: reached status code pattern '" << tryFilePattern 
+      statusMsg << "try_files: reached status code pattern '" << tryFilePattern
                 << "', returning empty path to trigger error handling";
       m_logger.debug(statusMsg.str());
       return domain::filesystem::value_objects::Path();
     }
 
-    // Substitute $uri with the actual request path
     std::string substitutedPattern = tryFilePattern;
     std::size_t uriPos = substitutedPattern.find("$uri");
     while (uriPos != std::string::npos) {
       substitutedPattern.replace(uriPos, 4, requestPathStr);
-      uriPos = substitutedPattern.find("$uri", uriPos + requestPathStr.length());
+      uriPos =
+          substitutedPattern.find("$uri", uriPos + requestPathStr.length());
     }
 
     std::ostringstream patternMsg;
-    patternMsg << "try_files: processing pattern '" << tryFilePattern 
+    patternMsg << "try_files: processing pattern '" << tryFilePattern
                << "' -> '" << substitutedPattern << "'";
     m_logger.debug(patternMsg.str());
 
@@ -1438,15 +1518,15 @@ domain::filesystem::value_objects::Path ConnectionHandler::tryFindFile(
         return tryPath;
       } else {
         std::ostringstream notFoundMsg;
-        notFoundMsg << "try_files: file does not exist: '" << tryPath.toString() << "'";
+        notFoundMsg << "try_files: file does not exist: '" << tryPath.toString()
+                    << "'";
         m_logger.debug(notFoundMsg.str());
       }
     } catch (const std::exception& ex) {
       std::ostringstream errMsg;
-      errMsg << "try_files: exception while resolving '" << substitutedPattern 
+      errMsg << "try_files: exception while resolving '" << substitutedPattern
              << "': " << ex.what();
       m_logger.debug(errMsg.str());
-      // Continue to next pattern
     }
   }
 

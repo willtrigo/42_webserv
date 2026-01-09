@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/05 17:37:21 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/06 01:45:16 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/09 02:10:00 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,8 +14,11 @@
 #include "infrastructure/cgi/primitives/CgiRequest.hpp"
 
 #include <cctype>
+#include <climits>
 #include <cstdlib>
+#include <cstring>
 #include <sstream>
+#include <unistd.h>
 
 namespace infrastructure {
 namespace cgi {
@@ -28,7 +31,7 @@ CgiRequest::CgiRequest(
     const domain::configuration::value_objects::CgiConfig& cgiConfig,
     const domain::http::value_objects::RouteMatchInfo& matchInfo,
     const std::string& serverName, unsigned int serverPort)
-    : m_scriptPath(cgiConfig.getScriptPath()),
+    : m_scriptPath(matchInfo.getFileToServe()),
       m_interpreter(cgiConfig.getScriptPath()) {
   buildStandardEnvironment(httpRequest, cgiConfig, matchInfo, serverName,
                            serverPort);
@@ -218,12 +221,42 @@ void CgiRequest::addScriptInfo(
     const domain::configuration::value_objects::CgiConfig& cgiConfig,
     const domain::http::value_objects::RouteMatchInfo& matchInfo) {
   std::string fileToServe = matchInfo.getFileToServe();
-
-  m_environment["SCRIPT_FILENAME"] = fileToServe;
-  m_environment["SCRIPT_NAME"] = fileToServe;
-
+  std::string absoluteScriptPath = fileToServe;
+  if (!fileToServe.empty() && fileToServe[0] != '/') {
+    char resolvedPath[PATH_MAX];
+    if (realpath(fileToServe.c_str(), resolvedPath) != NULL) {
+      absoluteScriptPath = resolvedPath;
+    } else {
+      char cwd[PATH_MAX];
+      if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        absoluteScriptPath = std::string(cwd) + "/" + fileToServe;
+        if (fileToServe.length() >= 2 && fileToServe[0] == '.' &&
+            fileToServe[1] == '/') {
+          absoluteScriptPath = std::string(cwd) + "/" + fileToServe.substr(2);
+        }
+      }
+    }
+  }
+  m_environment["SCRIPT_FILENAME"] = absoluteScriptPath;
   std::string documentRoot = cgiConfig.getCgiRoot().toString();
+  if (!documentRoot.empty() && documentRoot[0] != '/') {
+    char resolvedRoot[PATH_MAX];
+    if (realpath(documentRoot.c_str(), resolvedRoot) != NULL) {
+      documentRoot = resolvedRoot;
+    } else {
+      char cwd[PATH_MAX];
+      if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        if (documentRoot.length() >= 2 && documentRoot[0] == '.' &&
+            documentRoot[1] == '/') {
+          documentRoot = std::string(cwd) + "/" + documentRoot.substr(2);
+        } else {
+          documentRoot = std::string(cwd) + "/" + documentRoot;
+        }
+      }
+    }
+  }
   m_environment["DOCUMENT_ROOT"] = documentRoot;
+  m_environment["REDIRECT_STATUS"] = "200";
 }
 
 void CgiRequest::addPathInfo(
@@ -231,6 +264,8 @@ void CgiRequest::addPathInfo(
     const domain::http::value_objects::RouteMatchInfo& matchInfo) {
   std::string requestPath = httpRequest.getPath().toString();
   std::string scriptName = matchInfo.getFileToServe();
+
+  m_environment["SCRIPT_NAME"] = requestPath;
 
   std::string pathInfo = extractPathInfo(requestPath, scriptName);
   if (!pathInfo.empty()) {
