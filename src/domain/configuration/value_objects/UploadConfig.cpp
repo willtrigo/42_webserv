@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 13:30:43 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/08 22:13:30 by umeneses         ###   ########.fr       */
+/*   Updated: 2026/01/08 23:01:20 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -476,16 +476,15 @@ UploadFileInfo UploadConfig::processUpload(const std::string& originalFilename,
             exceptions::UploadConfigException::DUPLICATE_FILENAME);
       }
     } catch (...) {
-      // File doesn't exist, which is fine
     }
 
-    // Detect MIME type - catch any exceptions as file doesn't exist yet
     std::string mimeType;
     try {
       mimeType = m_fileHandler->detectMimeType(filePath);
+    } catch (const std::exception& e) {
+      mimeType = "application/octet-stream";
     } catch (...) {
-      // If detection fails, use default
-      mimeType = "";
+      mimeType = "application/octet-stream";
     }
     if (mimeType.empty()) {
       mimeType = "application/octet-stream";
@@ -1185,13 +1184,10 @@ bool UploadConfig::getCompressFiles() const { return m_compressFiles; }
 
 void UploadConfig::initializeDependencies() const {
   if (m_fileHandler == NULL) {
-    // FileSystemHelper is static-only, so we create a dummy instance pointer
-    // The actual FileSystemHelper methods are all static and don't use 'this'
-    // This is safe because the pointer is never dereferenced - only passed to
-    // constructors that validate non-NULL but then use static methods
+    // FileSystemHelper is a utility class with only static methods.
+    // Use singleton instance for safe dependency injection.
     infrastructure::filesystem::adapters::FileSystemHelper* helperPtr =
-        reinterpret_cast<
-            infrastructure::filesystem::adapters::FileSystemHelper*>(1);
+        infrastructure::filesystem::adapters::FileSystemHelper::getInstance();
 
     m_pathResolver =
         new infrastructure::filesystem::adapters::PathResolver(helperPtr);

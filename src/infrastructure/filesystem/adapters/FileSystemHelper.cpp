@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 14:13:01 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/08 22:14:09 by umeneses         ###   ########.fr       */
+/*   Updated: 2026/01/08 23:04:56 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,8 @@
 namespace infrastructure {
 namespace filesystem {
 namespace adapters {
+
+FileSystemHelper::FileSystemHelper() {}
 
 FileSystemHelper::FileSystemHelper(const FileSystemHelper& /*unused*/) {}
 
@@ -65,6 +67,12 @@ bool FileSystemHelper::isRootDirectory(const std::string& path) {
   return path == "/";
 }
 
+// Singleton instance for dependency injection
+FileSystemHelper* FileSystemHelper::getInstance() {
+  static FileSystemHelper instance;
+  return &instance;
+}
+
 bool FileSystemHelper::exists(const std::string& path) {
   if (isPathEmpty(path)) {
     return false;
@@ -88,8 +96,7 @@ bool FileSystemHelper::isDirectory(const std::string& path) {
     return false;
   }
 
-  return S_ISDIR(pathStat.st_mode) !=
-         0;
+  return S_ISDIR(pathStat.st_mode) != 0;
 }
 
 bool FileSystemHelper::isFile(const std::string& path) {
@@ -102,8 +109,7 @@ bool FileSystemHelper::isFile(const std::string& path) {
     return false;
   }
 
-  return S_ISREG(pathStat.st_mode) !=
-         0;
+  return S_ISREG(pathStat.st_mode) != 0;
 }
 
 bool FileSystemHelper::isSymbolicLink(const std::string& path) {
