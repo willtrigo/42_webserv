@@ -10,7 +10,7 @@ on:
 jobs:
   run-server:
     runs-on: ubuntu-latest
-    timeout-minutes: 4
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -34,10 +34,12 @@ jobs:
             project-build-${{ runner.os }}-
 
       - name: Build project
+        timeout-minutes: 5
         run: |
           make
 
       - name: Run server without config
+        timeout-minutes: 2
         run: |
           echo "🚀 Testing server without config file..."
           timeout 5s ./bin/webserv || EXIT_CODE=$?
@@ -75,6 +77,7 @@ jobs:
           echo "config_count=$(echo "$CONFIG_FILES" | wc -l)" >> $GITHUB_OUTPUT
 
       - name: Test each config file
+        timeout-minutes: 10
         run: |
           echo "🧪 Testing each configuration file..."
           RESULTS_FILE="test_results.txt"
@@ -190,12 +193,14 @@ jobs:
           fi
 
       - name: Rebuild for Valgrind (compatible instruction set)
+        timeout-minutes: 3
         run: |
           echo "🔧 Rebuilding with Valgrind-compatible CPU flags..."
           make clean
           CXXFLAGS="-mno-avx512f -mno-avx2" make
 
       - name: Run Valgrind on primary config
+        timeout-minutes: 10
         run: |
           echo "🔍 Running Valgrind on primary config..."
           PRIMARY_CONFIG=$(head -1 config_files.txt)

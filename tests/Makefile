@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/24 09:42:14 by umeneses          #+#    #+#              #
-#    Updated: 2026/01/08 11:50:27 by umeneses         ###   ########.fr        #
+#    Updated: 2026/01/08 22:41:09 by umeneses         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -115,8 +115,17 @@ unit: $(NAME)
 
 integration: $(NAME)
 	@printf "$(CYAN)Running integration tests...$(RESET)\n"
-	@./$(NAME) --gtest_filter="*IntegrationTest.*" || true
-	@printf "$(YELLOW)[ℹ] Integration test run completed (exit code ignored)$(RESET)\n"
+	@./$(NAME) --gtest_filter="*IntegrationTest.*" 2>&1 | tee /tmp/integration_test_output.txt || true
+	@TOTAL=$$(grep -oP 'Running \K[0-9]+' /tmp/integration_test_output.txt | head -1 2>/dev/null || echo "0"); \
+	FAILED=$$(grep '^\[  FAILED  \]' /tmp/integration_test_output.txt | grep -oP '\K[0-9]+(?= tests)' | head -1 2>/dev/null || echo "0"); \
+	if [ "$$TOTAL" -gt 0 ] && [ "$$TOTAL" -eq "$$FAILED" ]; then \
+		printf "$(RED)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)\n"; \
+		printf "$(RED)100%% of the Integration Tests FAILED! Are you running the webserver binary?$(RESET)\n"; \
+		printf "$(RED)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)\n"; \
+	else \
+		printf "$(YELLOW)[ℹ] Integration test run completed (exit code ignored)$(RESET)\n"; \
+	fi; \
+	rm -f /tmp/integration_test_output.txt
 
 failing-tests: $(NAME)
 	@printf "$(CYAN)Analyzing test failures (excluding crashing suites)...$(RESET)\n"
