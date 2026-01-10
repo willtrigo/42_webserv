@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 12:01:14 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/09 18:13:48 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/09 22:34:44 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -728,31 +728,27 @@ void ConnectionHandler::handleDeleteRequest(
     m_logger.debug(debugMsg.str());
   }
 
-  m_logger.debug("before make path exist");
-  try {
-    filesystem::adapters::FileSystemHelper::exists(resolvedPath.toString());
-  } catch (const std::exception&) {
-    m_logger.debug("path does not exist");
+  const std::string resolvedPathStr = resolvedPath.toString();
+
+  m_logger.debug("Checking if path exists: " + resolvedPathStr);
+  if (!filesystem::adapters::FileSystemHelper::exists(resolvedPathStr)) {
+    m_logger.debug("Path does not exist");
     handleNotFound(location);
     return;
   }
-  m_logger.debug("after make path exist");
+  m_logger.debug("Path exists");
 
-  m_logger.debug("before make path isDirectory");
-  try {
-    filesystem::adapters::FileSystemHelper::isDirectory(
-        resolvedPath.toString());
-    m_logger.debug("path is a directory - forbidden");
+  m_logger.debug("Checking if path is directory: " + resolvedPathStr);
+  if (filesystem::adapters::FileSystemHelper::isDirectory(resolvedPathStr)) {
+    m_logger.debug("Path is a directory - deletion forbidden");
     generateErrorResponse(domain::shared::value_objects::ErrorCode::forbidden(),
                           "Directory deletion not allowed");
     return;
-  } catch (const std::exception&) {
-    m_logger.debug("path is not a directory (it's a file) - proceeding");
   }
-  m_logger.debug("after make path isDirectory");
+  m_logger.debug("Path is a file - proceeding with deletion");
 
   try {
-    if (std::remove(resolvedPath.toString().c_str()) != 0) {
+    if (std::remove(resolvedPathStr.c_str()) != 0) {
       throw std::runtime_error("Failed to delete file");
     }
 
