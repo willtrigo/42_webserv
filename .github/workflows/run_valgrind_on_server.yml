@@ -1,0 +1,239 @@
+name: Run Valgrind on Server
+
+on:
+    push:
+        branches: [main, master, develop, "**feat**"]
+    pull_request:
+        branches: [main, master, develop]
+    workflow_dispatch:
+
+jobs:
+    run-valgrind-on-server:
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v6
+              with:
+                  submodules: recursive
+
+            - name: Install dependencies
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y build-essential cmake valgrind
+
+            - name: Cache project build
+              uses: actions/cache@v5
+              with:
+                  path: |
+                      build
+                      bin
+                  key: project-build-${{ runner.os }}-${{ hashFiles('src/**/*.cpp', 'src/**/*.hpp', 'Makefile') }}
+                  restore-keys: |
+                      project-build-${{ runner.os }}-
+
+            - name: Build project
+              timeout-minutes: 5
+              run: |
+                  make
+
+            - name: Discover config files
+              id: configs
+              run: |
+                  echo "📂 Scanning conf/ directory for root-level .conf files..."
+                  if [ ! -d conf ]; then
+                    echo "❌ conf/ directory not found"
+                    exit 1
+                  fi
+
+                  # Find only root-level .conf files (not in subdirectories)
+                  CONFIG_FILES=$(find conf -maxdepth 1 -name "*.conf" -type f | sort)
+                  if [ -z "$CONFIG_FILES" ]; then
+                    echo "❌ No .conf files found in conf/"
+                    exit 1
+                  fi
+
+                  echo "✅ Found config files:"
+                  echo "$CONFIG_FILES" | while read file; do
+                    echo "  - $file"
+                  done
+
+                  # Save for next steps
+                  echo "$CONFIG_FILES" > /tmp/config_files.txt
+                  CONFIG_COUNT=$(echo "$CONFIG_FILES" | wc -l)
+                  echo "config_count=$CONFIG_COUNT" >> $GITHUB_OUTPUT
+
+            - name: Rebuild for Valgrind (compatible instruction set)
+              timeout-minutes: 3
+              run: |
+                  echo "🔧 Rebuilding with Valgrind-compatible CPU flags..."
+                  make clean
+                  CXXFLAGS="-mno-avx512f -mno-avx2" make
+
+            - name: Run Valgrind on all config files
+              timeout-minutes: 25
+              run: |
+                  echo "🔍 Running Valgrind on all configuration files..."
+                  VALGRIND_RESULTS="valgrind_results.txt"
+                  echo "Valgrind Memory Check Results" > $VALGRIND_RESULTS
+                  echo "=============================" >> $VALGRIND_RESULTS
+                  echo "" >> $VALGRIND_RESULTS
+
+                  TOTAL=0
+                  SUCCESS=0
+                  FAILED=0
+                  ERRORS=""
+
+                  while read CONFIG_FILE; do
+                    TOTAL=$((TOTAL + 1))
+                    echo "" >> $VALGRIND_RESULTS
+                    echo "📋 Testing: $CONFIG_FILE" | tee -a $VALGRIND_RESULTS
+                    echo "---" >> $VALGRIND_RESULTS
+                    
+                    # Generate unique filenames for this config
+                    CONFIG_NAME=$(basename "$CONFIG_FILE" .conf)
+                    VALGRIND_LOG="valgrind_${CONFIG_NAME}.txt"
+                    SERVER_LOG="server_${CONFIG_NAME}.log"
+                    
+                    echo "Running server with: $CONFIG_FILE"
+                    
+                    # Run server with valgrind in background
+                    valgrind \
+                      --leak-check=full \
+                      --show-leak-kinds=all \
+                      --track-origins=yes \
+                      --log-file=$VALGRIND_LOG \
+                      ./bin/webserv "$CONFIG_FILE" > "$SERVER_LOG" 2>&1 &
+                    SERVER_PID=$!
+                    echo "Started server under Valgrind with PID $SERVER_PID"
+                    
+                    # Wait for server to start and be ready
+                    TIMEOUT=60
+                    ELAPSED=0
+                    READY=0
+                    
+                    while [ $ELAPSED -lt $TIMEOUT ]; do
+                      if [ -f "$SERVER_LOG" ]; then
+                        if grep -q "Webserv is ready to accept connections" "$SERVER_LOG" && \
+                           grep -q "Starting event loop" "$SERVER_LOG"; then
+                          echo "✅ Server is ready and running event loop" | tee -a $VALGRIND_RESULTS
+                          READY=1
+                          break
+                        fi
+                      fi
+                      sleep 0.5
+                      ELAPSED=$((ELAPSED + 1))
+                    done
+                    
+                    if [ $READY -eq 1 ]; then
+                      # Give server a moment to stabilize
+                      sleep 1
+                      
+                      echo "Sending SIGINT to gracefully shutdown server..." | tee -a $VALGRIND_RESULTS
+                      kill -INT $SERVER_PID
+                      
+                      # Wait for graceful shutdown
+                      SHUTDOWN_TIMEOUT=10
+                      for i in $(seq 1 $SHUTDOWN_TIMEOUT); do
+                        if ! kill -0 $SERVER_PID 2>/dev/null; then
+                          echo "✅ Server shut down gracefully" | tee -a $VALGRIND_RESULTS
+                          wait $SERVER_PID 2>/dev/null
+                          break
+                        fi
+                        sleep 1
+                      done
+                      
+                      # Force kill if still running
+                      if kill -0 $SERVER_PID 2>/dev/null; then
+                        echo "⚠️ Force killing server after timeout" | tee -a $VALGRIND_RESULTS
+                        kill -9 $SERVER_PID 2>/dev/null
+                        wait $SERVER_PID 2>/dev/null
+                      fi
+                      
+                      # Check Valgrind results
+                      if [ -f "$VALGRIND_LOG" ]; then
+                        echo "" >> $VALGRIND_RESULTS
+                        echo "Valgrind output:" >> $VALGRIND_RESULTS
+                        cat "$VALGRIND_LOG" >> $VALGRIND_RESULTS
+                        
+                        # Check for ERROR SUMMARY
+                        if grep -q "ERROR SUMMARY: 0 errors from 0 contexts" "$VALGRIND_LOG"; then
+                          echo "✅ Valgrind: No errors detected" | tee -a $VALGRIND_RESULTS
+                          SUCCESS=$((SUCCESS + 1))
+                        else
+                          echo "❌ Valgrind: Errors detected" | tee -a $VALGRIND_RESULTS
+                          FAILED=$((FAILED + 1))
+                          ERRORS="$ERRORS\n  - $CONFIG_FILE"
+                        fi
+                      else
+                        echo "❌ Valgrind log not found" | tee -a $VALGRIND_RESULTS
+                        FAILED=$((FAILED + 1))
+                        ERRORS="$ERRORS\n  - $CONFIG_FILE (no valgrind log)"
+                      fi
+                    else
+                      echo "❌ Server did not reach event loop within ${TIMEOUT}s" | tee -a $VALGRIND_RESULTS
+                      if [ -f "$SERVER_LOG" ]; then
+                        echo "Server log:" >> $VALGRIND_RESULTS
+                        cat "$SERVER_LOG" >> $VALGRIND_RESULTS
+                      fi
+                      kill -9 $SERVER_PID 2>/dev/null
+                      wait $SERVER_PID 2>/dev/null
+                      FAILED=$((FAILED + 1))
+                      ERRORS="$ERRORS\n  - $CONFIG_FILE (server startup failed)"
+                    fi
+                    
+                    echo "" >> $VALGRIND_RESULTS
+                  done < /tmp/config_files.txt
+
+                  # Summary
+                  echo "" >> $VALGRIND_RESULTS
+                  echo "=============================" >> $VALGRIND_RESULTS
+                  echo "📊 SUMMARY" >> $VALGRIND_RESULTS
+                  echo "=============================" >> $VALGRIND_RESULTS
+                  echo "Total configs tested: $TOTAL" >> $VALGRIND_RESULTS
+                  echo "Successful (no errors): $SUCCESS" >> $VALGRIND_RESULTS
+                  echo "Failed (errors detected): $FAILED" >> $VALGRIND_RESULTS
+
+                  # Display summary
+                  cat $VALGRIND_RESULTS
+
+                  # Exit with error if any failed
+                  if [ $FAILED -gt 0 ]; then
+                    echo ""
+                    echo "❌ $FAILED configuration(s) had Valgrind errors"
+                    echo -e "$ERRORS"
+                    exit 1
+                  else
+                    echo ""
+                    echo "✅ All $SUCCESS configuration(s) passed Valgrind checks"
+                  fi
+
+            - name: Upload Valgrind logs
+              if: always()
+              uses: actions/upload-artifact@v6
+              with:
+                  name: valgrind-logs
+                  path: |
+                      valgrind_*.txt
+                      server_*.log
+                      valgrind_results.txt
+
+            - name: Display final summary
+              if: always()
+              run: |
+                  echo ""
+                  echo "=========================================="
+                  echo "📊 VALGRIND VALIDATION SUMMARY"
+                  echo "=========================================="
+                  echo ""
+                  echo "This workflow validates:"
+                  echo "  ✓ Server compiles successfully"
+                  echo "  ✓ Server starts with all config files"
+                  echo "  ✓ No memory errors (Valgrind ERROR SUMMARY: 0 errors)"
+                  echo ""
+                  if [ -f valgrind_results.txt ]; then
+                    echo "Valgrind Results:"
+                    tail -15 valgrind_results.txt
+                  fi
+                  echo "=========================================="
