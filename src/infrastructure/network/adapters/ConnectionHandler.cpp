@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ConnectionHandler.cpp                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 12:01:14 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/09 22:34:44 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/10 10:19:49 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -111,6 +111,12 @@ void ConnectionHandler::processEvent() {
 
         case STATE_PROCESSING:
           processRequest();
+          // For HEAD requests, clear body but keep headers (RFC 7231
+          // Section 4.3.2)
+          if (m_request.getMethod() ==
+              domain::http::value_objects::HttpMethod::head()) {
+            m_response.clearBody();
+          }
           m_responseBuffer = m_response.serialize();
           m_responseOffset = 0;
           m_state = STATE_WRITING_RESPONSE;
@@ -139,20 +145,31 @@ void ConnectionHandler::processEvent() {
     m_responseBuffer = m_response.serialize();
     m_responseOffset = 0;
     m_state = STATE_WRITING_RESPONSE;
+    handleWrite();  // Immediately write error response
   } catch (const exceptions::ConnectionException& ex) {
     m_logger.error(std::string("Connection error: ") + ex.what());
     domain::shared::value_objects::ErrorCode errorCode =
         domain::shared::value_objects::ErrorCode::internalServerError();
     std::string errorMsg = ex.what();
+
+    // Check error type and set appropriate status code
     if (errorMsg.find("Request size exceeds") != std::string::npos ||
         errorMsg.find("too large") != std::string::npos ||
         errorMsg.find("Request entity too large") != std::string::npos) {
       errorCode = domain::shared::value_objects::ErrorCode::payloadTooLarge();
+    } else if (errorMsg.find("Unsupported HTTP method") != std::string::npos) {
+      // Return 405 for unsupported methods (test accepts 405 or 501)
+      errorCode = domain::shared::value_objects::ErrorCode::methodNotAllowed();
+    } else if (errorMsg.find("Malformed request") != std::string::npos ||
+               errorMsg.find("Failed to parse") != std::string::npos) {
+      errorCode = domain::shared::value_objects::ErrorCode::badRequest();
     }
+
     generateErrorResponse(errorCode, ex.what());
     m_responseBuffer = m_response.serialize();
     m_responseOffset = 0;
     m_state = STATE_WRITING_RESPONSE;
+    handleWrite();  // Immediately write error response
   } catch (const std::exception& ex) {
     m_logger.error(std::string("Unexpected error: ") + ex.what());
     generateErrorResponse(
@@ -161,6 +178,7 @@ void ConnectionHandler::processEvent() {
     m_responseBuffer = m_response.serialize();
     m_responseOffset = 0;
     m_state = STATE_WRITING_RESPONSE;
+    handleWrite();  // Immediately write error response
   }
 }
 
@@ -262,6 +280,29 @@ bool ConnectionHandler::parseRequest() {
   parser.setMaxBodySize(m_serverConfig->getClientMaxBodySize().getBytes());
 
   if (!parser.parse(m_requestBuffer.c_str(), m_requestBuffer.size())) {
+    // Check if parse failed due to error (not just incomplete)
+    if (parser.hasError()) {
+      // Try to determine error type from request buffer
+      std::string errorDetail = "Failed to parse HTTP request";
+      if (!m_requestBuffer.empty()) {
+        // Extract first line to check for method issues
+        std::size_t lineEnd = m_requestBuffer.find("\r\n");
+        if (lineEnd != std::string::npos) {
+          std::string firstLine = m_requestBuffer.substr(0, lineEnd);
+          std::istringstream iss(firstLine);
+          std::string method;
+          if (!(iss >> method)) {
+            errorDetail = "Malformed request line";
+          } else if (!domain::http::value_objects::HttpMethod::
+                         isValidMethodString(method)) {
+            errorDetail = "Unsupported HTTP method: " + method;
+          }
+        }
+      }
+      throw exceptions::ConnectionException(
+          errorDetail, exceptions::ConnectionException::MALFORMED_REQUEST);
+    }
+    // Not complete yet, need more data
     return false;
   }
 
@@ -791,8 +832,8 @@ void ConnectionHandler::handleDirectoryRequest(
 
       try {
         m_logger.debug("About to check if path exists...");
-        pathExists =
-            filesystem::adapters::FileSystemHelper::exists(indexPath.toString());
+        pathExists = filesystem::adapters::FileSystemHelper::exists(
+            indexPath.toString());
         m_logger.debug(pathExists ? "Path exists: YES" : "Path exists: NO");
       } catch (const std::exception& ex) {
         m_logger.debug(std::string("Path exists check failed: ") + ex.what());
@@ -849,7 +890,8 @@ void ConnectionHandler::handleDirectoryRequest(
   m_logger.debug("No index file found, checking autoindex: " +
                  std::string(location.getAutoIndex() ? "enabled" : "disabled"));
 
-  m_logger.debug("directoryPath => " + directoryPath.toString() + " requestPath => " + requestPath.toString());
+  m_logger.debug("directoryPath => " + directoryPath.toString() +
+                 " requestPath => " + requestPath.toString());
   if (location.getAutoIndex()) {
     handleDirectoryListing(directoryPath, requestPath);
     return;
@@ -974,7 +1016,7 @@ void ConnectionHandler::handleDirectoryListing(
   try {
     const std::string dirPathStr = directoryPath.toString();
     char resolvedPath[PATH_MAX];
-    
+
     if (realpath(dirPathStr.c_str(), resolvedPath) == NULL) {
       std::ostringstream errorMsg;
       errorMsg << "Failed to resolve absolute path for: " << dirPathStr
@@ -985,14 +1027,14 @@ void ConnectionHandler::handleDirectoryListing(
           "Failed to resolve directory path");
       return;
     }
-    
+
     const domain::filesystem::value_objects::Path absolutePath(resolvedPath);
-    
+
     std::ostringstream debugMsg;
     debugMsg << "Resolved directory path: " << dirPathStr << " -> "
              << absolutePath.toString();
     m_logger.debug(debugMsg.str());
-    
+
     const std::string htmlListing =
         filesystem::adapters::DirectoryLister::generateHtmlListing(
             absolutePath, requestPath, false, "name", true);
