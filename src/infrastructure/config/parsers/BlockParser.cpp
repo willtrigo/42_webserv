@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   BlockParser.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 16:35:11 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/02 13:23:10 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/10 11:17:44 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -483,10 +483,24 @@ void BlockParser::handleLimitExceptBlock(
   context.expect(lexer::Token::BLOCK_START, "limit_except block start");
   context.advance();
 
+  // Clear default allowed methods before adding limit_except methods
+  location.clearAllowedMethods();
+
   for (std::size_t i = 0; i < methods.size(); ++i) {
     try {
       domain::http::value_objects::HttpMethod method(methods[i]);
       location.addAllowedMethod(method);
+
+      // Per HTTP spec (RFC 7231 Section 4.3.2), HEAD must be allowed wherever
+      // GET is allowed
+      if (method == domain::http::value_objects::HttpMethod::get()) {
+        location.addAllowedMethod(
+            domain::http::value_objects::HttpMethod::head());
+        std::ostringstream headMsg;
+        headMsg << "Auto-added HEAD method (GET is allowed) at line "
+                << lineNumber;
+        m_logger.debug(headMsg.str());
+      }
 
       std::ostringstream oss;
       oss << "Added allowed method '" << methods[i]

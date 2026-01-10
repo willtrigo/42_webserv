@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ConnectionHandler.hpp                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 11:57:13 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/08 10:20:23 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/10 15:40:26 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,7 +47,8 @@ class ConnectionHandler {
   static const size_t K_READ_BUFFER_SIZE = 8192;
   static const time_t K_CONNECTION_TIMEOUT = 60;
   static const time_t K_KEEPALIVE_TIMEOUT = 5;
-  static const size_t K_MAX_REQUEST_SIZE = 1048576;
+  static const size_t K_MAX_REQUEST_SIZE =
+      16777216;  // 16MB to allow large uploads
 
   ConnectionHandler(
       TcpSocket* socket,
