@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   RequestParser.cpp                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/24 20:53:07 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/06 19:53:13 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/10 15:40:26 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -237,6 +237,14 @@ bool RequestParser::parseHeaders() {
     }
   }
 
+  // RFC 7230: Request cannot have both Transfer-Encoding and Content-Length
+  if (m_request.hasHeader("transfer-encoding") &&
+      m_request.hasHeader("content-length")) {
+    throw RequestParserException(
+        "Request cannot have both Transfer-Encoding and Content-Length headers",
+        RequestParserException::MALFORMED_REQUEST);
+  }
+
   return true;
 }
 
@@ -282,18 +290,35 @@ bool RequestParser::parseBody() {
 }
 
 bool RequestParser::parseChunkedBody() {
-  // Simple chunked parsing - for full implementation you'd need to handle
-  // chunk sizes, trailers, etc.
+  // RFC 7230 Section 4.1: Chunked transfer encoding
+  // Each chunk is: chunk-size [ chunk-ext ] CRLF chunk-data CRLF
+  // Followed by: 0 CRLF [ trailer-section ] CRLF
 
-  // For now, just read until we find "0\r\n\r\n" (end of chunks)
-  std::size_t endPos = m_buffer.find("0\r\n\r\n");
-  if (endPos == std::string::npos) {
-    // Not enough data yet
+  // For proper validation, check if data starts with a valid hex chunk size
+  if (m_buffer.empty()) {
     return false;
   }
 
-  // For simplicity, just skip chunked encoding for now
-  // In a real implementation, you would parse each chunk
+  // Check first character - should be a hex digit (0-9, a-f, A-F)
+  char firstChar = m_buffer[0];
+  if (!((firstChar >= '0' && firstChar <= '9') ||
+        (firstChar >= 'a' && firstChar <= 'f') ||
+        (firstChar >= 'A' && firstChar <= 'F'))) {
+    // Malformed chunked encoding - doesn't start with hex digit
+    throw RequestParserException(
+        "Malformed chunked encoding: body does not start with valid chunk size",
+        RequestParserException::CHUNKED_ENCODING_ERROR);
+  }
+
+  // Look for the final chunk terminator: "0\r\n\r\n"
+  std::size_t endPos = m_buffer.find("0\r\n\r\n");
+  if (endPos == std::string::npos) {
+    // Not enough data yet - waiting for final chunk
+    return false;
+  }
+
+  // For now, just skip chunked encoding parsing
+  // In a real implementation, you would fully parse each chunk
   m_buffer.erase(0, endPos + 5);  // Remove "0\r\n\r\n"
   m_state = COMPLETE;
   return true;
