@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/24 09:42:14 by umeneses          #+#    #+#              #
-#    Updated: 2026/01/08 22:50:45 by umeneses         ###   ########.fr        #
+#    Updated: 2026/01/10 09:14:00 by umeneses         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -107,7 +107,7 @@ test: $(NAME)
 
 unit: $(NAME)
 	@printf "$(CYAN)Running unit tests...$(RESET)\n"
-	@./$(NAME) --gtest_filter="*Test.*" || true
+	@./$(NAME) --gtest_filter="*Test.*:-*IntegrationTest.*" || true
 	@printf "$(YELLOW)[ℹ] Unit test run completed (exit code ignored)$(RESET)\n"
 
 integration: $(NAME)
