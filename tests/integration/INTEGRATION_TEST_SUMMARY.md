@@ -403,57 +403,6 @@ cd tests
 [  FAILED  ] 13 tests ❌
 ```
 
-**Failing tests with non-default configs:**
-- AdvancedIntegrationTest.UploadLargeFileSucceeds (405)
-- FileHandlerIntegrationTest.UploadFileViaPost (405)
-- FileHandlerIntegrationTest.UploadLargeFile (405)
-- FileHandlerIntegrationTest.DownloadExistingFile (405)
-- FileHandlerIntegrationTest.DeleteUploadedFile (405)
-- FileHandlerIntegrationTest.DeleteNonExistentFile (405)
-- HttpServerIntegrationTest.PostRequestReturns200Or201 (405)
-- HttpServerIntegrationTest.DeleteRequestReturns200Or204 (405)
-- HttpServerIntegrationTest.SmallBodyAccepted (405)
-- HttpServerIntegrationTest.FileUploadReturns200Or201 (405)
-- HttpServerIntegrationTest.RedirectReturns3xxCode (404)
-- HttpServerIntegrationTest.RedirectHasLocationHeader (404)
-- HttpServerIntegrationTest.HeadOnPostOnlyRouteReturns405 (404)
-
-### Why Tests All Pass With default.conf
-
-The integration test suite was designed with specific routing and method restrictions in mind:
-
-1. **File Upload Tests** expect:
-   - A `/files` route that accepts POST and DELETE
-   - An `upload_store` configured to handle file uploads
-   - These exist in `default.conf` but not in `webserv.conf`
-
-2. **Redirect Tests** expect:
-   - A `/docs` route configured with `return 301 /new-path/;`
-   - This exists in `default.conf` but not in other configs
-
-3. **Method Restriction Tests** expect:
-   - Root `/` route to be GET-only (allows HEAD implicitly)
-   - `/files` route to be POST/DELETE only
-   - `default.conf` matches this exactly; other configs use different constraints
-
----
-
-## 🐛 Known Issues
-
-### Critical (Must Fix)
-
-1. **HEAD Method Segfault**
-   - Status: ❌ SHOWSTOPPER
-   - Trigger: 2nd HEAD request
-   - Impact: Complete server failure
-   - Tests: HeadRequestHasNoBody crashes server
-
-2. **Cannot Test Other Features**
-   - Status: ⏳ Blocked by HEAD crash
-   - Need: Fix HEAD first, then re-run all tests
-
----
-
 ## ✅ Test Coverage Matrix
 
 | Feature | Basic | Routes | Multi-Port | CGI | Advanced |
@@ -482,25 +431,6 @@ The integration test suite was designed with specific routing and method restric
 
 ---
 
-## 🎓 Benefits
-
-### Before Integration Tests
-- ❌ Manual curl commands (slow, error-prone)
-- ❌ ubuntu_tester crashes without details
-- ❌ No way to debug systematically
-- ❌ Can't reproduce bugs reliably
-
-### After Integration Tests
-- ✅ **104 automated tests** covering all requirements
-- ✅ **Found HEAD crash immediately** (2nd test)
-- ✅ **Reproducible** - same bugs every run
-- ✅ **Debuggable** - run single test with GDB
-- ✅ **Fast feedback** - all tests in ~5 minutes
-- ✅ **CI/CD ready** - GitHub Actions compatible
-- ✅ **100% subject coverage** - no feature missed
-
----
-
 ## 📝 Files
 
 | File | Lines | Tests | Purpose |
@@ -514,18 +444,6 @@ The integration test suite was designed with specific routing and method restric
 
 ---
 
-## 🎯 Next Steps
-
-1. **Fix HEAD crash** (URGENT) - Use GDB to find segfault
-2. **Re-run all tests** - See which other bugs exist
-3. **Fix remaining bugs** - Use test feedback
-4. **Verify 100% pass rate** - All 104 tests green
-5. **Run ubuntu_tester** - Final validation
-6. **Run shell script** - Compare results
-7. **Siege stress test** - Performance validation
-8. **Valgrind check** - Memory leak validation
-
----
 
 ## 📖 References
 
