@@ -122,7 +122,8 @@ jobs:
           # Parse results to determine actual status
           TOTAL=$(grep -oP 'Running \K[0-9]+' /tmp/integration_test_output.txt | head -1 2>/dev/null || echo "0")
           PASSED=$(grep -c '^\[       OK \]' /tmp/integration_test_output.txt 2>/dev/null || echo "0")
-          FAILED=$(grep -c '^\[  FAILED  \]' /tmp/integration_test_output.txt 2>/dev/null || echo "0")
+          # Count only test result lines, not the summary list (stop at "tests, listed below:")
+          FAILED=$(grep '^\[  FAILED  \]' /tmp/integration_test_output.txt | grep -v 'tests, listed below:' | wc -l 2>/dev/null || echo "0")
 
           echo "TEST_TOTAL=$TOTAL" >> $GITHUB_ENV
           echo "TEST_PASSED=$PASSED" >> $GITHUB_ENV
@@ -133,6 +134,11 @@ jobs:
           # Exit with failure if any tests failed
           if [ "$FAILED" -gt 0 ]; then
             exit 1
+          fi
+
+      - name: Stop server
+        if: always()
+        run: |
           if [ -n "$SERVER_PID" ] && kill -0 $SERVER_PID 2>/dev/null; then
             echo "Sending SIGINT to server (PID: $SERVER_PID)..."
             kill -INT $SERVER_PID
