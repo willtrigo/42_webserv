@@ -4,67 +4,66 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>400 Bad Request - 42 Webserv</title>
+    <meta name="description" content="The server cannot process the request due to a client error.">
 
-    <link rel="stylesheet" href="./css/reset.css">
-    <link rel="stylesheet" href="./css/400.css">
-    <link rel="stylesheet" href="./css/errors.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../css/reset.css">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/errors.css">
 </head>
 <body>
-    <div class="error-container">
-        <div class="error-code">400</div>
-        <h1 class="error-title">Bad Request</h1>
-        
-        <div class="error-message">
-            The server cannot process the request due to a client error. 
-            The request syntax is invalid or cannot be fulfilled.
-        </div>
-        
-        <div class="error-details">
-            <h3>🛠️ Possible Causes:</h3>
-            <ul>
-                <li>Malformed request syntax</li>
-                <li>Invalid request message framing</li>
-                <li>Deceptive request routing</li>
-                <li>Missing required headers</li>
-                <li>Invalid character encoding</li>
-            </ul>
-        </div>
-        
-        <div class="error-details">
-            <h3>✅ How to Fix:</h3>
-            <ul>
-                <li>Check your request syntax and formatting</li>
-                <li>Verify all required headers are present</li>
-                <li>Ensure proper character encoding</li>
-                <li>Review the HTTP specification for correct format</li>
-                <li>Try refreshing the page or clearing your cache</li>
-            </ul>
-        </div>
-        
-        <div class="btn-container">
-            <a href="/static/index.html" class="btn">🏠 Go to Homepage</a>
-            <a href="javascript:history.back()" class="btn btn-secondary">↩️ Go Back</a>
-            <button onclick="location.reload()" class="btn btn-secondary">🔄 Refresh Page</button>
-        </div>
-        
-        <div class="server-info">
-            <p>42 Webserv v1.0 | HTTP/1.1 | Error 400 - Bad Request</p>
-            <p><small>Timestamp: <span id="timestamp"></span></small></p>
-        </div>
+    <div class="background-grid"></div>
+    <div class="background-glow"></div>
+    
+    <div class="container">
+        <main class="main-content error-page" aria-labelledby="error-title">
+            <div class="error-header">
+                <div class="error-code">400</div>
+                <h1 id="error-title" class="error-title">Bad Request</h1>
+                
+                <p class="error-description">
+                    The server cannot process the request due to a client error. 
+                    The request syntax is invalid or cannot be fulfilled.
+                </p>
+            </div>
+            
+            <div class="error-content">
+                <h2 class="error-content__title">Possible Causes:</h2>
+                <ul class="error-content__list">
+                    <li class="error-content__item">Malformed request syntax</li>
+                    <li class="error-content__item">Invalid request message framing</li>
+                    <li class="error-content__item">Deceptive request routing</li>
+                    <li class="error-content__item">Missing required headers</li>
+                    <li class="error-content__item">Invalid character encoding</li>
+                </ul>
+            </div>
+            
+            <div class="error-links">
+                <h2 class="error-links__title">Try These Instead:</h2>
+                <nav aria-label="Suggested links">
+                    <ul class="error-links__list">
+                        <li><a href="/" class="error-links__item">Homepage</a></li>
+                        <li><a href="/uploads/" class="error-links__item">Uploads Directory</a></li>
+                    </ul>
+                </nav>
+            </div>
+            
+            <div class="error-buttons">
+                <a href="/" class="btn btn--primary">Go to Homepage</a>
+                <a href="javascript:history.back()" class="btn btn--secondary">Go Back</a>
+                <button onclick="location.reload()" class="btn btn--secondary">Refresh Page</button>
+            </div>
+            
+            <div class="error-footer">
+                <p>42 Webserv v1.0 | HTTP/1.1 | Error 400 - Bad Request</p>
+                <p class="error-footer__muted">Timestamp: <span id="timestamp"></span></p>
+            </div>
+        </main>
     </div>
     
-    <script>
-        document.getElementById('timestamp').textContent = new Date().toLocaleString();
-        
-        // Add some visual feedback
-        document.querySelectorAll('.btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                this.style.transform = 'scale(0.95)';
-                setTimeout(() => {
-                    this.style.transform = '';
-                }, 150);
-            });
-        });
-    </script>
+    <script src="../js/error.js" defer></script>
 </body>
 </html>

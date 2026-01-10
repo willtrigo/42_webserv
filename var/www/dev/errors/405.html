@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>500 Internal Server Error - 42 Webserv</title>
-    <meta name="description" content="The server encountered an unexpected condition that prevented it from fulfilling the request.">
+    <title>405 Method Not Allowed - 42 Webserv</title>
+    <meta name="description" content="The request method is not supported for the requested resource.">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,28 +15,35 @@
     <link rel="stylesheet" href="../css/errors.css">
 </head>
 <body>
+    <!-- Fixed Environment Banner -->
+    <div class="env-banner" role="banner" aria-label="Environment indicator">
+        <span class="env-banner__text">DEVELOPMENT MODE</span>
+    </div>
+
     <div class="background-grid"></div>
     <div class="background-glow"></div>
     
     <div class="container">
         <main class="main-content error-page" aria-labelledby="error-title">
             <div class="error-header">
-                <div class="error-code">500</div>
-                <h1 id="error-title" class="error-title">Internal Server Error</h1>
+                <div class="error-code">405</div>
+                <h1 id="error-title" class="error-title">Method Not Allowed</h1>
                 
                 <p class="error-description">
-                    The server encountered an unexpected condition that prevented it from fulfilling the request.
-                    This is usually a temporary issue on our end.
+                    The request method is not supported for the requested resource.
+                    The server knows the request method, but the target resource doesn't support it.
                 </p>
             </div>
             
             <div class="error-content">
-                <h2 class="error-content__title">What You Can Do:</h2>
+                <h2 class="error-content__title">Allowed Methods for This Resource:</h2>
                 <ul class="error-content__list">
-                    <li class="error-content__item">Refresh the page in a few moments</li>
-                    <li class="error-content__item">Clear your browser cache and cookies</li>
-                    <li class="error-content__item">Try accessing a different page</li>
-                    <li class="error-content__item">Contact support if the issue persists</li>
+                    <li class="error-content__item">✅ GET - Retrieve resource representation</li>
+                    <li class="error-content__item">✅ HEAD - GET without response body</li>
+                    <li class="error-content__item">✅ OPTIONS - Describe communication options</li>
+                    <li class="error-content__item">❌ POST - Submit entity to the resource</li>
+                    <li class="error-content__item">❌ PUT - Replace the resource</li>
+                    <li class="error-content__item">❌ DELETE - Remove the resource</li>
                 </ul>
             </div>
             
@@ -53,21 +60,16 @@
             <div class="error-buttons">
                 <a href="/" class="btn btn--primary">Go to Homepage</a>
                 <a href="javascript:history.back()" class="btn btn--secondary">Go Back</a>
-                <button onclick="location.reload()" class="btn btn--secondary">Refresh Page</button>
+                <button onclick="location.reload()" class="btn btn--secondary">Try Again</button>
             </div>
             
             <div class="error-footer">
-                <p>42 Webserv v1.0 | HTTP/1.1 | Error 500 - Internal Server Error</p>
-                <p class="error-footer__muted">Error ID: <span id="errorId"></span></p>
-                <p class="error-footer__muted">Our team has been notified. Please try again in a few minutes.</p>
+                <p>42 Webserv v1.0 | HTTP/1.1 | Error 405 - Method Not Allowed</p>
+                <p class="error-footer__muted">Allowed methods: GET, HEAD, OPTIONS</p>
             </div>
         </main>
     </div>
     
     <script src="../js/main.js" defer></script>
-    <script>
-        document.getElementById('errorId').textContent = 
-            'ERR-500-' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5).toUpperCase();
-    </script>
 </body>
 </html>

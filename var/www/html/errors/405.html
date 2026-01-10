@@ -4,98 +4,67 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>405 Method Not Allowed - 42 Webserv</title>
+    <meta name="description" content="The request method is not supported for the requested resource.">
 
-    <link rel="stylesheet" href="./css/reset.css">
-    <link rel="stylesheet" href="./css/405.css">
-    <link rel="stylesheet" href="./css/errors.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../css/reset.css">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/errors.css">
 </head>
 <body>
-    <div class="error-container">
-        <div class="method-icon">🔄</div>
-        <div class="error-code">405</div>
-        <h1 class="error-title">Method Not Allowed</h1>
-        
-        <div class="error-message">
-            The request method is not supported for the requested resource.
-            The server knows the request method, but the target resource doesn't support it.
-        </div>
-        
-        <div class="methods-container">
-            <h3>📡 HTTP Methods for This Resource:</h3>
-            <div class="methods-grid">
-                <div class="method-card allowed">
-                    <div class="method-status">✅</div>
-                    <div class="method-name">GET</div>
-                    <div class="method-desc">Retrieve resource representation</div>
-                </div>
+    <div class="background-grid"></div>
+    <div class="background-glow"></div>
+    
+    <div class="container">
+        <main class="main-content error-page" aria-labelledby="error-title">
+            <div class="error-header">
+                <div class="error-code">405</div>
+                <h1 id="error-title" class="error-title">Method Not Allowed</h1>
                 
-                <div class="method-card not-allowed">
-                    <div class="method-status">❌</div>
-                    <div class="method-name">POST</div>
-                    <div class="method-desc">Submit entity to the resource</div>
-                </div>
-                
-                <div class="method-card not-allowed">
-                    <div class="method-status">❌</div>
-                    <div class="method-name">PUT</div>
-                    <div class="method-desc">Replace the resource</div>
-                </div>
-                
-                <div class="method-card not-allowed">
-                    <div class="method-status">❌</div>
-                    <div class="method-name">DELETE</div>
-                    <div class="method-desc">Remove the resource</div>
-                </div>
-                
-                <div class="method-card allowed">
-                    <div class="method-status">✅</div>
-                    <div class="method-name">HEAD</div>
-                    <div class="method-desc">GET without response body</div>
-                </div>
-                
-                <div class="method-card allowed">
-                    <div class="method-status">✅</div>
-                    <div class="method-name">OPTIONS</div>
-                    <div class="method-desc">Describe communication options</div>
-                </div>
+                <p class="error-description">
+                    The request method is not supported for the requested resource.
+                    The server knows the request method, but the target resource doesn't support it.
+                </p>
             </div>
-        </div>
-        
-        <div class="http-info">
-            <h3>📋 HTTP Specification Reference:</h3>
-            <p>The Allow header field MUST be present in a 405 response to indicate which request methods are supported by the target resource.</p>
-            <p><code>Allow: GET, HEAD, OPTIONS</code></p>
-        </div>
-        
-        <div class="btn-container">
-            <a href="/static/index.html" class="btn">🏠 Go to Homepage</a>
-            <a href="javascript:history.back()" class="btn btn-secondary">↩️ Go Back</a>
-            <button onclick="tryGetMethod()" class="btn btn-secondary">🔄 Try GET Instead</button>
-        </div>
-        
-        <div class="server-info">
-            <p>42 Webserv v1.0 | HTTP/1.1 | Error 405 - Method Not Allowed</p>
-            <p><small>Allowed methods are specified in the server configuration</small></p>
-        </div>
+            
+            <div class="error-content">
+                <h2 class="error-content__title">Allowed Methods for This Resource:</h2>
+                <ul class="error-content__list">
+                    <li class="error-content__item">✅ GET - Retrieve resource representation</li>
+                    <li class="error-content__item">✅ HEAD - GET without response body</li>
+                    <li class="error-content__item">✅ OPTIONS - Describe communication options</li>
+                    <li class="error-content__item">❌ POST - Submit entity to the resource</li>
+                    <li class="error-content__item">❌ PUT - Replace the resource</li>
+                    <li class="error-content__item">❌ DELETE - Remove the resource</li>
+                </ul>
+            </div>
+            
+            <div class="error-links">
+                <h2 class="error-links__title">Try These Instead:</h2>
+                <nav aria-label="Suggested links">
+                    <ul class="error-links__list">
+                        <li><a href="/" class="error-links__item">Homepage</a></li>
+                        <li><a href="/uploads/" class="error-links__item">Uploads Directory</a></li>
+                    </ul>
+                </nav>
+            </div>
+            
+            <div class="error-buttons">
+                <a href="/" class="btn btn--primary">Go to Homepage</a>
+                <a href="javascript:history.back()" class="btn btn--secondary">Go Back</a>
+                <button onclick="location.reload()" class="btn btn--secondary">Refresh Page</button>
+            </div>
+            
+            <div class="error-footer">
+                <p>42 Webserv v1.0 | HTTP/1.1 | Error 405 - Method Not Allowed</p>
+                <p class="error-footer__muted">Allowed methods: GET, HEAD, OPTIONS</p>
+            </div>
+        </main>
     </div>
     
-    <script>
-        function tryGetMethod() {
-            // Try to reload the page with GET method
-            window.location.href = window.location.pathname;
-        }
-        
-        // Add click effects to method cards
-        document.querySelectorAll('.method-card').forEach(card => {
-            card.addEventListener('click', function() {
-                const method = this.querySelector('.method-name').textContent;
-                if (this.classList.contains('allowed')) {
-                    alert(`Method ${method} is allowed for this resource.`);
-                } else {
-                    alert(`Method ${method} is NOT allowed for this resource.\n\nTry using GET or HEAD instead.`);
-                }
-            });
-        });
-    </script>
+    <script src="../js/main.js" defer></script>
 </body>
 </html>

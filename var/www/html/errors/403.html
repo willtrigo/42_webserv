@@ -4,86 +4,65 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>403 Forbidden - 42 Webserv</title>
+    <meta name="description" content="You don't have permission to access this resource on the server.">
 
-    <link rel="stylesheet" href="./css/reset.css">
-    <link rel="stylesheet" href="./css/403.css">
-    <link rel="stylesheet" href="./css/errors.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../css/reset.css">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/errors.css">
 </head>
 <body>
-    <div class="error-container">
-        <div class="error-icon">🚫</div>
-        <div class="error-code">403</div>
-        <h1 class="error-title">Access Forbidden</h1>
-        
-        <div class="error-message">
-            You don't have permission to access this resource on the server. 
-            The server understood the request but refuses to authorize it.
-        </div>
-        
-        <div class="access-denied">
-            <h3>🔒 Why This Happened:</h3>
-            <p>The server configuration or file permissions prevent access to this resource.</p>
-            
-            <div class="permission-list">
-                <div class="permission-item">
-                    <h4>📁 File Permissions</h4>
-                    <p>Check if the file has correct read permissions for the web server user.</p>
-                </div>
+    <div class="background-grid"></div>
+    <div class="background-glow"></div>
+    
+    <div class="container">
+        <main class="main-content error-page" aria-labelledby="error-title">
+            <div class="error-header">
+                <div class="error-code">403</div>
+                <h1 id="error-title" class="error-title">Access Forbidden</h1>
                 
-                <div class="permission-item">
-                    <h4>⚙️ Server Configuration</h4>
-                    <p>The location might be restricted in the server configuration file.</p>
-                </div>
-                
-                <div class="permission-item">
-                    <h4>🔐 Authentication</h4>
-                    <p>This resource might require authentication or specific credentials.</p>
-                </div>
-                
-                <div class="permission-item">
-                    <h4>🚦 Access Control</h4>
-                    <p>IP-based restrictions or other access control rules might be in place.</p>
-                </div>
+                <p class="error-description">
+                    You don't have permission to access this resource on the server. 
+                    The server understood the request but refuses to authorize it.
+                </p>
             </div>
-        </div>
-        
-        <div class="btn-container">
-            <a href="/static/index.html" class="btn">🏠 Go to Homepage</a>
-            <a href="javascript:history.back()" class="btn btn-secondary">↩️ Go Back</a>
-            <button onclick="location.reload()" class="btn btn-secondary">🔄 Try Again</button>
-        </div>
-        
-        <div class="server-info">
-            <p>42 Webserv v1.0 | HTTP/1.1 | Error 403 - Forbidden</p>
-            <p><small>Request denied by server configuration or permissions</small></p>
-        </div>
+            
+            <div class="error-content">
+                <h2 class="error-content__title">Why This Happened:</h2>
+                <ul class="error-content__list">
+                    <li class="error-content__item">File permissions prevent access</li>
+                    <li class="error-content__item">Server configuration restrictions</li>
+                    <li class="error-content__item">Authentication required</li>
+                    <li class="error-content__item">IP-based access control rules</li>
+                </ul>
+            </div>
+            
+            <div class="error-links">
+                <h2 class="error-links__title">Try These Instead:</h2>
+                <nav aria-label="Suggested links">
+                    <ul class="error-links__list">
+                        <li><a href="/" class="error-links__item">Homepage</a></li>
+                        <li><a href="/uploads/" class="error-links__item">Uploads Directory</a></li>
+                    </ul>
+                </nav>
+            </div>
+            
+            <div class="error-buttons">
+                <a href="/" class="btn btn--primary">Go to Homepage</a>
+                <a href="javascript:history.back()" class="btn btn--secondary">Go Back</a>
+                <button onclick="location.reload()" class="btn btn--secondary">Refresh Page</button>
+            </div>
+            
+            <div class="error-footer">
+                <p>42 Webserv v1.0 | HTTP/1.1 | Error 403 - Forbidden</p>
+                <p class="error-footer__muted">Request denied by server configuration or permissions</p>
+            </div>
+        </main>
     </div>
     
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Add animation to permission items
-            const items = document.querySelectorAll('.permission-item');
-            items.forEach((item, index) => {
-                item.style.animationDelay = (index * 0.1) + 's';
-                item.style.animation = 'fadeInUp 0.5s ease forwards';
-            });
-        });
-        
-        // Add keyframe animation
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes fadeInUp {
-                from {
-                    opacity: 0;
-                    transform: translateY(20px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-            }
-        `;
-        document.head.appendChild(style);
-    </script>
+    <script src="../js/main.js" defer></script>
 </body>
 </html>

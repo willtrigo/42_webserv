@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>500 Internal Server Error - 42 Webserv</title>
-    <meta name="description" content="The server encountered an unexpected condition that prevented it from fulfilling the request.">
+    <title>413 Payload Too Large - 42 Webserv</title>
+    <meta name="description" content="The request entity is larger than limits defined by server.">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,28 +15,42 @@
     <link rel="stylesheet" href="../css/errors.css">
 </head>
 <body>
+    <!-- Fixed Environment Banner -->
+    <div class="env-banner" role="banner" aria-label="Environment indicator">
+        <span class="env-banner__text">DEVELOPMENT MODE</span>
+    </div>
+
     <div class="background-grid"></div>
     <div class="background-glow"></div>
     
     <div class="container">
         <main class="main-content error-page" aria-labelledby="error-title">
             <div class="error-header">
-                <div class="error-code">500</div>
-                <h1 id="error-title" class="error-title">Internal Server Error</h1>
+                <div class="error-code">413</div>
+                <h1 id="error-title" class="error-title">Payload Too Large</h1>
                 
                 <p class="error-description">
-                    The server encountered an unexpected condition that prevented it from fulfilling the request.
-                    This is usually a temporary issue on our end.
+                    The request entity exceeds the maximum size the server is willing or able to process.
+                    The server is refusing to process the request.
                 </p>
             </div>
             
             <div class="error-content">
-                <h2 class="error-content__title">What You Can Do:</h2>
+                <h2 class="error-content__title">Upload Limits:</h2>
                 <ul class="error-content__list">
-                    <li class="error-content__item">Refresh the page in a few moments</li>
-                    <li class="error-content__item">Clear your browser cache and cookies</li>
-                    <li class="error-content__item">Try accessing a different page</li>
-                    <li class="error-content__item">Contact support if the issue persists</li>
+                    <li class="error-content__item">Maximum file size: <strong>1 MB</strong></li>
+                    <li class="error-content__item">Allowed file types: Images, PDFs, Text files</li>
+                </ul>
+            </div>
+            
+            <div class="error-content">
+                <h2 class="error-content__title">How to Fix:</h2>
+                <ul class="error-content__list">
+                    <li class="error-content__item">Reduce the file size before uploading</li>
+                    <li class="error-content__item">Compress images or documents</li>
+                    <li class="error-content__item">Split large files into smaller parts</li>
+                    <li class="error-content__item">Check file size before uploading</li>
+                    <li class="error-content__item">Use a different file format if possible</li>
                 </ul>
             </div>
             
@@ -53,21 +67,16 @@
             <div class="error-buttons">
                 <a href="/" class="btn btn--primary">Go to Homepage</a>
                 <a href="javascript:history.back()" class="btn btn--secondary">Go Back</a>
-                <button onclick="location.reload()" class="btn btn--secondary">Refresh Page</button>
+                <button onclick="location.reload()" class="btn btn--secondary">Try Again</button>
             </div>
             
             <div class="error-footer">
-                <p>42 Webserv v1.0 | HTTP/1.1 | Error 500 - Internal Server Error</p>
-                <p class="error-footer__muted">Error ID: <span id="errorId"></span></p>
-                <p class="error-footer__muted">Our team has been notified. Please try again in a few minutes.</p>
+                <p>42 Webserv v1.0 | HTTP/1.1 | Error 413 - Payload Too Large</p>
+                <p class="error-footer__muted">File size limit: 1 MB</p>
             </div>
         </main>
     </div>
     
-    <script src="../js/main.js" defer></script>
-    <script>
-        document.getElementById('errorId').textContent = 
-            'ERR-500-' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5).toUpperCase();
-    </script>
+    <script src="../js/error.js" defer></script>
 </body>
 </html>

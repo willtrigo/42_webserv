@@ -3,109 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>42 Webserv - Home</title>
+    <title>42 Webserv - High Performance HTTP/1.1 Server</title>
+    <meta name="description" content="Custom HTTP/1.1 server implementation with non-blocking I/O">
     
-    <link rel="stylesheet" href="index.css">
-    <link rel="stylesheet" href="reset.css">
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS: Load reset first, then main -->
+    <link rel="stylesheet" href="css/reset.css">
+    <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
+    <!-- Fixed Environment Banner -->
+    <div class="env-banner" role="banner" aria-label="Environment indicator">
+        <span class="env-banner__text">DEVELOPMENT MODE</span>
+    </div>
+    
+    <div class="background-grid"></div>
+    <div class="background-glow"></div>
+    
     <div class="container">
-        <header>
-            <div class="logo">42_WEBSERV</div>
+        <header class="header">
+            <div class="logo" aria-label="42 Webserv Logo">
+                <span class="logo__prefix">42_</span><span class="logo__main">WEBSERV</span>
+            </div>
             <p class="tagline">A custom HTTP/1.1 server written in C++98</p>
         </header>
         
         <main class="main-content">
-            <h1 class="section-title">Welcome to 42 Webserv</h1>
-            <p>This is a demonstration of a custom web server implementation for the 42 School project. The server supports HTTP/1.1 protocol with non-blocking I/O using poll().</p>
+            <section class="hero-section">
+                <h1 class="hero-section__title">Welcome to 42 Webserv</h1>
+                <p class="hero-section__description">
+                    This is a demonstration of a custom web server implementation for the 42 School project. 
+                    The server supports HTTP/1.1 protocol with non-blocking I/O using poll().
+                </p>
+            </section>
             
-            <div class="features">
-                <div class="feature-card">
-                    <div class="feature-icon">🚀</div>
-                    <h3>High Performance</h3>
-                    <p>Non-blocking architecture using poll() for efficient I/O operations and handling multiple simultaneous connections.</p>
-                </div>
+            <section class="features" aria-labelledby="features-title">
+                <h2 id="features-title" class="visually-hidden">Server Features</h2>
+                <article class="feature-card">
+                    <div class="feature-card__icon" aria-hidden="true">🚀</div>
+                    <h3 class="feature-card__title">High Performance</h3>
+                    <p class="feature-card__description">
+                        Non-blocking architecture using poll() for efficient I/O operations and handling 
+                        multiple simultaneous connections.
+                    </p>
+                </article>
                 
-                <div class="feature-card">
-                    <div class="feature-icon">🔧</div>
-                    <h3>HTTP/1.1 Compliant</h3>
-                    <p>Supports GET, POST, DELETE methods, chunked encoding, persistent connections, and proper status codes.</p>
-                </div>
+                <article class="feature-card">
+                    <div class="feature-card__icon" aria-hidden="true">🔧</div>
+                    <h3 class="feature-card__title">HTTP/1.1 Compliant</h3>
+                    <p class="feature-card__description">
+                        Supports GET, POST, DELETE methods, chunked encoding, persistent connections, 
+                        and proper status codes.
+                    </p>
+                </article>
                 
-                <div class="feature-card">
-                    <div class="feature-icon">⚙️</div>
-                    <h3>CGI Support</h3>
-                    <p>Execute PHP, Python, and other CGI scripts with proper environment variable handling and process management.</p>
-                </div>
+                <article class="feature-card">
+                    <div class="feature-card__icon" aria-hidden="true">⚙️</div>
+                    <h3 class="feature-card__title">CGI Support</h3>
+                    <p class="feature-card__description">
+                        Execute PHP, Python, and other CGI scripts with proper environment variable 
+                        handling and process management.
+                    </p>
+                </article>
                 
-                <div class="feature-card">
-                    <div class="feature-icon">📁</div>
-                    <h3>File Operations</h3>
-                    <p>Directory listing, file upload/download, autoindex, and configurable error pages with NGINX-like configuration.</p>
-                </div>
-            </div>
+                <article class="feature-card">
+                    <div class="feature-card__icon" aria-hidden="true">📁</div>
+                    <h3 class="feature-card__title">File Operations</h3>
+                    <p class="feature-card__description">
+                        Directory listing, file upload/download, autoindex, and configurable error 
+                        pages with NGINX-like configuration.
+                    </p>
+                </article>
+            </section>
             
-            <div class="test-section">
-                <h2 class="section-title">Test Features</h2>
-                <p>Try out the server's capabilities:</p>
-                <ul class="test-links">
-                    <li><a href="/static/default.html">Default Page</a></li>
-                    <li><a href="/nonexistent">Trigger 404 Error</a></li>
-                    <li><a href="/test.php">Test PHP CGI</a> (if configured)</li>
-                    <li><a href="/test.py">Test Python CGI</a> (if configured)</li>
-                    <li><a href="/uploads/">View Upload Directory</a></li>
-                </ul>
-            </div>
+            <section class="test-section" aria-labelledby="test-features-title">
+                <h2 id="test-features-title" class="section-title">Test Features</h2>
+                <p class="test-section__intro">Try out the server's capabilities:</p>
+                <nav aria-label="Test links">
+                    <ul class="test-links">
+                        <li><a href="/index.html" class="test-links__item">Default Page</a></li>
+                        <li><a href="/old-path" class="test-links__item">Redirect Page</a></li>
+                        <li><a href="/nonexistent" class="test-links__item">Trigger 404 Error</a></li>
+                        <li><a href="/api/env_dump.php" class="test-links__item">Test PHP CGI <span class="badge">if configured</span></a></li>
+                        <li><a href="/api/env_dump.py" class="test-links__item">Test Python CGI <span class="badge">if configured</span></a></li>
+                        <li><a href="/uploads" class="test-links__item">View Uploads Directory</a></li>
+                    </ul>
+                </nav>
+            </section>
             
-            <div class="upload-section">
-                <h2 class="section-title">File Upload Test</h2>
-                <p>Test the POST method with file upload functionality:</p>
-                <form action="/uploads/" method="POST" enctype="multipart/form-data">
-                    <input type="file" name="file" style="margin: 1rem 0;">
-                    <button type="submit" class="btn">Upload File</button>
+            <section class="upload-section" aria-labelledby="upload-title">
+                <h2 id="upload-title" class="section-title">File Upload Test</h2>
+                <p class="upload-section__description">Test the POST method with file upload functionality:</p>
+                <form action="/uploads" method="POST" enctype="multipart/form-data" class="upload-form">
+                    <div class="upload-form__input-wrapper">
+                        <input 
+                            type="file" 
+                            name="file" 
+                            id="file-input" 
+                            class="upload-form__input"
+                            aria-label="Choose file to upload"
+                        >
+                        <label for="file-input" class="upload-form__label">Choose File</label>
+                    </div>
+                    <button type="submit" class="btn btn--primary">Upload File</button>
                 </form>
-            </div>
+            </section>
             
-            <div class="test-section">
-                <h2 class="section-title">DELETE Method Test</h2>
-                <p>Test DELETE method on uploaded files (use with caution):</p>
-                <button class="btn btn-danger" onclick="testDelete()">Test DELETE Request</button>
-                <script>
-                    function testDelete() {
-                        fetch('/uploads/test.txt', { method: 'DELETE' })
-                            .then(response => alert('DELETE request sent. Check console for response.'))
-                            .catch(error => alert('Error: ' + error));
-                    }
-                </script>
-            </div>
+            <section class="test-section" aria-labelledby="delete-title">
+                <h2 id="delete-title" class="section-title">DELETE Method Test</h2>
+                <p class="test-section__warning">Test DELETE method on uploaded files (use with caution):</p>
+                <button class="btn btn--danger" onclick="testDelete()" aria-label="Test DELETE request">
+                    Test DELETE Request
+                </button>
+            </section>
             
-            <div class="server-info">
-                <span class="status-indicator"></span>
-                Server Status: <strong>RUNNING</strong> | 
-                Uptime: <span id="uptime">00:00:00</span>
-            </div>
+            <aside class="server-info" role="status" aria-live="polite">
+                <span class="server-info__status-indicator" aria-hidden="true"></span>
+                <span class="server-info__label">Server Status:</span>
+                <strong class="server-info__value">RUNNING</strong>
+                <span class="server-info__separator">|</span>
+                <span class="server-info__label">Uptime:</span>
+                <time id="uptime" class="server-info__uptime">00:00:00</time>
+            </aside>
         </main>
         
-        <footer>
-            <p>42 Webserv Project © 2025 | Built with C++98 | DDD Architecture</p>
-            <p><small>Server Version: 1.0 | Compatible with Chrome, Firefox, Safari</small></p>
+        <footer class="footer">
+            <p class="footer__main">42 Webserv Project © 2025 | Built with C++98 | DDD Architecture</p>
+            <p class="footer__details"><small>Server Version: 1.0 | Compatible with Chrome, Firefox, Safari</small></p>
         </footer>
     </div>
     
-    <script>
-        // Simple uptime counter
-        let startTime = Date.now();
-        function updateUptime() {
-            let elapsed = Date.now() - startTime;
-            let hours = Math.floor(elapsed / 3600000);
-            let minutes = Math.floor((elapsed % 3600000) / 60000);
-            let seconds = Math.floor((elapsed % 60000) / 1000);
-            
-            document.getElementById('uptime').textContent = 
-                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        }
-        setInterval(updateUptime, 1000);
-        updateUptime();
-    </script>
+    <!-- JS: Load deferred for performance -->
+    <script src="js/main.js" defer></script>
 </body>
 </html>

@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 12:01:14 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/09 02:08:38 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/09 18:13:48 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,6 +37,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <fstream>
+#include <limits.h>
 #include <sstream>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -794,23 +795,24 @@ void ConnectionHandler::handleDirectoryRequest(
 
       try {
         m_logger.debug("About to check if path exists...");
-        filesystem::adapters::FileSystemHelper::exists(indexPath.toString());
-        pathExists = true;
-        m_logger.debug("Path exists: YES");
-      } catch (const std::exception&) {
-        m_logger.debug("Path exists: NO");
+        pathExists =
+            filesystem::adapters::FileSystemHelper::exists(indexPath.toString());
+        m_logger.debug(pathExists ? "Path exists: YES" : "Path exists: NO");
+      } catch (const std::exception& ex) {
+        m_logger.debug(std::string("Path exists check failed: ") + ex.what());
         pathExists = false;
       }
 
       if (pathExists) {
         try {
           m_logger.debug("About to check if path is directory...");
-          filesystem::adapters::FileSystemHelper::isDirectory(
+          pathIsDir = filesystem::adapters::FileSystemHelper::isDirectory(
               indexPath.toString());
-          pathIsDir = true;
-          m_logger.debug("Path is directory: YES");
-        } catch (const std::exception&) {
-          m_logger.debug("Path is directory: NO (it's a file)");
+          m_logger.debug(pathIsDir ? "Path is directory: YES"
+                                   : "Path is directory: NO (it's a file)");
+        } catch (const std::exception& ex) {
+          m_logger.debug(std::string("Path isDirectory check failed: ") +
+                         ex.what());
           pathIsDir = false;
         }
       }
@@ -851,6 +853,7 @@ void ConnectionHandler::handleDirectoryRequest(
   m_logger.debug("No index file found, checking autoindex: " +
                  std::string(location.getAutoIndex() ? "enabled" : "disabled"));
 
+  m_logger.debug("directoryPath => " + directoryPath.toString() + " requestPath => " + requestPath.toString());
   if (location.getAutoIndex()) {
     handleDirectoryListing(directoryPath, requestPath);
     return;
@@ -973,9 +976,30 @@ void ConnectionHandler::handleDirectoryListing(
     const domain::filesystem::value_objects::Path& directoryPath,
     const domain::filesystem::value_objects::Path& requestPath) {
   try {
-    std::string htmlListing =
+    const std::string dirPathStr = directoryPath.toString();
+    char resolvedPath[PATH_MAX];
+    
+    if (realpath(dirPathStr.c_str(), resolvedPath) == NULL) {
+      std::ostringstream errorMsg;
+      errorMsg << "Failed to resolve absolute path for: " << dirPathStr
+               << " (errno: " << errno << ")";
+      m_logger.error(errorMsg.str());
+      generateErrorResponse(
+          domain::shared::value_objects::ErrorCode::internalServerError(),
+          "Failed to resolve directory path");
+      return;
+    }
+    
+    const domain::filesystem::value_objects::Path absolutePath(resolvedPath);
+    
+    std::ostringstream debugMsg;
+    debugMsg << "Resolved directory path: " << dirPathStr << " -> "
+             << absolutePath.toString();
+    m_logger.debug(debugMsg.str());
+    
+    const std::string htmlListing =
         filesystem::adapters::DirectoryLister::generateHtmlListing(
-            directoryPath, requestPath, false, "name", true);
+            absolutePath, requestPath, false, "name", true);
 
     m_response = domain::http::entities::HttpResponse::ok(htmlListing);
     m_response.setContentType("text/html; charset=utf-8");
