@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   LocationConfig.cpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 12:23:41 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/09 02:13:32 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/10 11:26:20 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -262,6 +262,8 @@ void LocationConfig::removeAllowedMethod(
     const http::value_objects::HttpMethod& method) {
   m_allowedMethods.erase(method);
 }
+
+void LocationConfig::clearAllowedMethods() { m_allowedMethods.clear(); }
 
 void LocationConfig::setAutoIndex(bool autoIndex) { m_autoIndex = autoIndex; }
 
@@ -567,8 +569,7 @@ void LocationConfig::setUploadDirectory(const std::string& directory) {
 
 void LocationConfig::setUploadPermissions(unsigned int permissions) {
   if (!m_hasUploadConfig) {
-    domain::filesystem::value_objects::Path defaultDir(
-        "/tmp");
+    domain::filesystem::value_objects::Path defaultDir("/tmp");
     m_uploadConfig =
         domain::configuration::value_objects::UploadConfig(defaultDir);
     m_hasUploadConfig = true;
@@ -591,7 +592,6 @@ void LocationConfig::setUploadAccess(const std::string& accessString) {
 
 void LocationConfig::setUploadMaxFileSize(const std::string& sizeString) {
   if (!m_hasUploadConfig) {
-    // Create default UploadConfig first
     domain::filesystem::value_objects::Path defaultDir("/tmp");
     m_uploadConfig =
         domain::configuration::value_objects::UploadConfig(defaultDir);
@@ -874,7 +874,6 @@ void LocationConfig::addCustomHeader(const std::string& name,
 
   std::ostringstream oss;
   oss << "Added custom header '" << name << "' with value '" << value << "'";
-  // Add logger, log here: m_logger.debug(oss.str());
 }
 
 void LocationConfig::removeCustomHeader(const std::string& name) {
@@ -949,15 +948,12 @@ filesystem::value_objects::Path LocationConfig::resolvePath(
     const std::string& requestPath) const {
   if (hasAlias()) {
     std::string relativePath = requestPath.substr(m_path.length());
-    // Strip leading slash for proper joining
     if (!relativePath.empty() && relativePath[0] == '/') {
       relativePath = relativePath.substr(1);
     }
     return m_alias.join(relativePath);
   }
 
-  // Strip leading slash from request path for proper joining
-  // Web request paths like "/" or "/index.html" are relative to the root
   std::string relativeRequestPath = requestPath;
   if (!relativeRequestPath.empty() && relativeRequestPath[0] == '/') {
     relativeRequestPath = relativeRequestPath.substr(1);
@@ -1009,40 +1005,32 @@ value_objects::Route LocationConfig::toRoute() const {
     handlerType = value_objects::Route::REDIRECT;
   }
 
-  // For regex locations, use root path or "/" instead of the regex pattern
-  // since regex patterns are not valid filesystem paths
   filesystem::value_objects::Path routePath;
-  bool isRegexLocation =
-      (m_matchType == MATCH_REGEX_CASE_SENSITIVE ||
-       m_matchType == MATCH_REGEX_CASE_INSENSITIVE);
+  bool isRegexLocation = (m_matchType == MATCH_REGEX_CASE_SENSITIVE ||
+                          m_matchType == MATCH_REGEX_CASE_INSENSITIVE);
 
   if (isRegexLocation) {
-    // Use root if set, otherwise use "/"
     if (!m_root.isEmpty() && m_root.toString() != "/") {
       routePath = m_root;
     } else {
       routePath = filesystem::value_objects::Path::rootDirectory();
     }
   } else {
-    // Normal location - use path (which should be a valid filesystem path)
     try {
       routePath = filesystem::value_objects::Path(m_path, true);
     } catch (const std::exception&) {
-      // Fallback to root if path is invalid
       routePath = filesystem::value_objects::Path::rootDirectory();
     }
   }
 
   value_objects::Route route(routePath, m_allowedMethods, handlerType);
 
-  // Set root directory if it's a valid path (not just "/" and not empty)
   if (!m_root.isEmpty()) {
     std::string rootStr = m_root.toString();
     if (rootStr != "/" && !rootStr.empty()) {
       try {
         route.setRootDirectory(rootStr);
       } catch (const std::exception&) {
-        // Ignore invalid root directory for Route (will use defaults)
       }
     }
   }

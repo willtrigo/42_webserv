@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 16:35:11 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/10 10:05:59 by umeneses         ###   ########.fr       */
+/*   Updated: 2026/01/10 11:17:44 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -482,6 +482,9 @@ void BlockParser::handleLimitExceptBlock(
 
   context.expect(lexer::Token::BLOCK_START, "limit_except block start");
   context.advance();
+
+  // Clear default allowed methods before adding limit_except methods
+  location.clearAllowedMethods();
 
   for (std::size_t i = 0; i < methods.size(); ++i) {
     try {

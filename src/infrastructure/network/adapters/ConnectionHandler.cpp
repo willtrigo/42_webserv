@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 12:01:14 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/10 10:19:49 by umeneses         ###   ########.fr       */
+/*   Updated: 2026/01/10 11:17:44 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,7 @@
 #include "infrastructure/filesystem/adapters/DirectoryLister.hpp"
 #include "infrastructure/filesystem/adapters/FileSystemHelper.hpp"
 #include "infrastructure/http/RequestParser.hpp"
+#include "infrastructure/http/RequestParserException.hpp"
 #include "infrastructure/network/adapters/ConnectionHandler.hpp"
 #include "infrastructure/network/adapters/TcpSocket.hpp"
 #include "infrastructure/network/exceptions/ConnectionException.hpp"
@@ -152,16 +153,20 @@ void ConnectionHandler::processEvent() {
         domain::shared::value_objects::ErrorCode::internalServerError();
     std::string errorMsg = ex.what();
 
-    // Check error type and set appropriate status code
+    // Check error type and set appropriate status code based on exception code
+    // and message
     if (errorMsg.find("Request size exceeds") != std::string::npos ||
         errorMsg.find("too large") != std::string::npos ||
-        errorMsg.find("Request entity too large") != std::string::npos) {
+        errorMsg.find("Request entity too large") != std::string::npos ||
+        errorMsg.find("Payload too large") != std::string::npos) {
       errorCode = domain::shared::value_objects::ErrorCode::payloadTooLarge();
-    } else if (errorMsg.find("Unsupported HTTP method") != std::string::npos) {
-      // Return 405 for unsupported methods (test accepts 405 or 501)
+    } else if (errorMsg.find("Unsupported HTTP method") != std::string::npos ||
+               errorMsg.find("Invalid HTTP method") != std::string::npos) {
+      // Return 405 for unsupported methods
       errorCode = domain::shared::value_objects::ErrorCode::methodNotAllowed();
     } else if (errorMsg.find("Malformed request") != std::string::npos ||
-               errorMsg.find("Failed to parse") != std::string::npos) {
+               errorMsg.find("Failed to parse") != std::string::npos ||
+               errorMsg.find("Malformed HTTP request") != std::string::npos) {
       errorCode = domain::shared::value_objects::ErrorCode::badRequest();
     }
 
@@ -228,6 +233,8 @@ void ConnectionHandler::handleRead() {
   m_logger.debug(oss.str());
 
   if (m_requestBuffer.size() > K_MAX_REQUEST_SIZE) {
+    // Clear buffer to prevent malformed request errors on next read attempt
+    m_requestBuffer.clear();
     throw exceptions::ConnectionException(
         "Request size exceeds maximum allowed",
         exceptions::ConnectionException::REQUEST_TOO_LARGE);
@@ -277,33 +284,43 @@ void ConnectionHandler::handleWrite() {
 bool ConnectionHandler::parseRequest() {
   http::RequestParser parser;
   parser.setMaxHeaderSize(K_MAX_REQUEST_SIZE);
-  parser.setMaxBodySize(m_serverConfig->getClientMaxBodySize().getBytes());
+  // Set a very large body size limit to avoid parser rejecting large bodies
+  // The actual body size validation happens in validateRequestBodySize()
+  // and in handleRead() for the total request buffer size
+  parser.setMaxBodySize(100 * 1024 *
+                        1024);  // 100MB (parser limit, not enforced)
 
-  if (!parser.parse(m_requestBuffer.c_str(), m_requestBuffer.size())) {
-    // Check if parse failed due to error (not just incomplete)
-    if (parser.hasError()) {
-      // Try to determine error type from request buffer
-      std::string errorDetail = "Failed to parse HTTP request";
-      if (!m_requestBuffer.empty()) {
-        // Extract first line to check for method issues
-        std::size_t lineEnd = m_requestBuffer.find("\r\n");
-        if (lineEnd != std::string::npos) {
-          std::string firstLine = m_requestBuffer.substr(0, lineEnd);
-          std::istringstream iss(firstLine);
-          std::string method;
-          if (!(iss >> method)) {
-            errorDetail = "Malformed request line";
-          } else if (!domain::http::value_objects::HttpMethod::
-                         isValidMethodString(method)) {
-            errorDetail = "Unsupported HTTP method: " + method;
+  try {
+    if (!parser.parse(m_requestBuffer.c_str(), m_requestBuffer.size())) {
+      // Check if parse failed due to error (not just incomplete)
+      if (parser.hasError()) {
+        // Try to determine error type from request buffer
+        std::string errorDetail = "Failed to parse HTTP request";
+        if (!m_requestBuffer.empty()) {
+          // Extract first line to check for method issues
+          std::size_t lineEnd = m_requestBuffer.find("\r\n");
+          if (lineEnd != std::string::npos) {
+            std::string firstLine = m_requestBuffer.substr(0, lineEnd);
+            std::istringstream iss(firstLine);
+            std::string method;
+            if (!(iss >> method)) {
+              errorDetail = "Malformed request line";
+            } else if (!domain::http::value_objects::HttpMethod::
+                           isValidMethodString(method)) {
+              errorDetail = "Unsupported HTTP method: " + method;
+            }
           }
         }
+        throw exceptions::ConnectionException(
+            errorDetail, exceptions::ConnectionException::MALFORMED_REQUEST);
       }
-      throw exceptions::ConnectionException(
-          errorDetail, exceptions::ConnectionException::MALFORMED_REQUEST);
+      // Not complete yet, need more data
+      return false;
     }
-    // Not complete yet, need more data
-    return false;
+  } catch (const shared::exceptions::RequestParserException& ex) {
+    // Parser threw an exception (shouldn't normally happen with large max size)
+    throw exceptions::ConnectionException(
+        ex.what(), exceptions::ConnectionException::MALFORMED_REQUEST);
   }
 
   if (!parser.isComplete()) {
@@ -404,7 +421,21 @@ ConnectionHandler::resolvePathWithServerFallback(
           rootStr.find('*') != std::string::npos));
 
     if (!looksLikeRegex && rootStr != "/") {
-      return location.resolvePath(requestPath);
+      // Strip location prefix from request path before resolving with custom
+      // root e.g., for location "/public" with root "./var/www/html/public",
+      // request "/public/index.html" should resolve to
+      // "./var/www/html/public/index.html" not
+      // "./var/www/html/public/public/index.html"
+      std::string adjustedPath = requestPath;
+      const std::string& locationPath = location.getPath();
+      if (!locationPath.empty() && locationPath != "/" &&
+          adjustedPath.substr(0, locationPath.length()) == locationPath) {
+        adjustedPath = adjustedPath.substr(locationPath.length());
+        if (adjustedPath.empty()) {
+          adjustedPath = "/";
+        }
+      }
+      return location.resolvePath(adjustedPath);
     }
 
     if (m_serverConfig != NULL && !m_serverConfig->getRoot().isEmpty()) {
@@ -1110,90 +1141,134 @@ void ConnectionHandler::handleFileUpload(
       location.getUploadConfig();
 
   try {
-    if (!m_request.hasHeader("content-type")) {
-      generateErrorResponse(
-          domain::shared::value_objects::ErrorCode::badRequest(),
-          "Content-Type header required for upload");
-      return;
+    std::string contentType;
+    if (m_request.hasHeader("content-type")) {
+      contentType = m_request.getHeader("content-type");
     }
 
-    std::string contentType = m_request.getHeader("content-type");
-    if (contentType.find("multipart/form-data") == std::string::npos) {
-      generateErrorResponse(
-          domain::shared::value_objects::ErrorCode::badRequest(),
-          "Content-Type must be multipart/form-data");
-      return;
+    // Support both multipart/form-data and raw body uploads
+    if (!contentType.empty() &&
+        contentType.find("multipart/form-data") != std::string::npos) {
+      // Handle multipart upload
+      std::string boundary = extractBoundary(contentType);
+      if (boundary.empty()) {
+        generateErrorResponse(
+            domain::shared::value_objects::ErrorCode::badRequest(),
+            "Missing boundary in Content-Type");
+        return;
+      }
+
+      m_logger.debug("Upload boundary: " + boundary);
+
+      const domain::http::entities::HttpRequest::Body& body =
+          m_request.getBody();
+      std::string bodyStr(body.begin(), body.end());
+
+      domain::filesystem::value_objects::Size bodySize(body.size());
+      if (!uploadConfig.validateFileSize(bodySize)) {
+        generateErrorResponse(
+            domain::shared::value_objects::ErrorCode::payloadTooLarge(),
+            "Uploaded file exceeds maximum size");
+        return;
+      }
+
+      std::string filename;
+      std::vector<char> fileContent;
+      if (!parseMultipartFormData(bodyStr, boundary, filename, fileContent)) {
+        generateErrorResponse(
+            domain::shared::value_objects::ErrorCode::badRequest(),
+            "Invalid multipart format");
+        return;
+      }
+
+      if (filename.empty()) {
+        std::ostringstream defaultName;
+        defaultName << "upload_" << std::time(NULL);
+        filename = defaultName.str();
+      }
+
+      filename = sanitizeFilename(filename);
+      m_logger.debug("Upload filename: " + filename);
+
+      std::ostringstream sizeMsg;
+      sizeMsg << "Upload content size: " << fileContent.size();
+      m_logger.debug(sizeMsg.str());
+
+      domain::filesystem::value_objects::Path uploadDir =
+          uploadConfig.getUploadDirectory();
+      domain::filesystem::value_objects::Path filePath =
+          uploadDir.join(filename);
+
+      m_logger.debug("Upload destination: " + filePath.toString());
+
+      ensureDirectoryExists(uploadDir);
+      writeUploadedFile(filePath, fileContent);
+
+      m_logger.info("File uploaded successfully: " + filePath.toString());
+
+      m_response = domain::http::entities::HttpResponse(
+          domain::shared::value_objects::ErrorCode::created(),
+          "File uploaded successfully");
+      m_response.setContentType("text/html");
+
+      std::ostringstream successBody;
+      successBody << "<!DOCTYPE html>\n"
+                  << "<html><head><title>Upload Success</title></head>\n"
+                  << "<body>\n"
+                  << "<h1>File Uploaded Successfully</h1>\n"
+                  << "<p>Filename: " << filename << "</p>\n"
+                  << "<p>Size: " << fileContent.size() << " bytes</p>\n"
+                  << "<p><a href=\"/\">Back to Home</a></p>\n"
+                  << "</body></html>\n";
+      m_response.setBody(successBody.str());
+
+    } else {
+      // Handle raw body upload (non-multipart)
+      m_logger.debug("Handling raw body upload (non-multipart)");
+
+      const domain::http::entities::HttpRequest::Body& body =
+          m_request.getBody();
+
+      domain::filesystem::value_objects::Size bodySize(body.size());
+      if (!uploadConfig.validateFileSize(bodySize)) {
+        generateErrorResponse(
+            domain::shared::value_objects::ErrorCode::payloadTooLarge(),
+            "Uploaded file exceeds maximum size");
+        return;
+      }
+
+      // Generate filename from timestamp
+      std::ostringstream filename;
+      filename << "upload_" << std::time(NULL);
+
+      std::string sanitized = sanitizeFilename(filename.str());
+      m_logger.debug("Upload filename: " + sanitized);
+
+      std::ostringstream sizeMsg;
+      sizeMsg << "Upload content size: " << body.size();
+      m_logger.debug(sizeMsg.str());
+
+      domain::filesystem::value_objects::Path uploadDir =
+          uploadConfig.getUploadDirectory();
+      domain::filesystem::value_objects::Path filePath =
+          uploadDir.join(sanitized);
+
+      m_logger.debug("Upload destination: " + filePath.toString());
+
+      ensureDirectoryExists(uploadDir);
+
+      // Write raw body to file
+      std::vector<char> fileContent(body.begin(), body.end());
+      writeUploadedFile(filePath, fileContent);
+
+      m_logger.info("File uploaded successfully: " + filePath.toString());
+
+      m_response = domain::http::entities::HttpResponse(
+          domain::shared::value_objects::ErrorCode::created(),
+          "File uploaded successfully");
+      m_response.setContentType("text/plain");
+      m_response.setBody("File uploaded successfully");
     }
-
-    std::string boundary = extractBoundary(contentType);
-    if (boundary.empty()) {
-      generateErrorResponse(
-          domain::shared::value_objects::ErrorCode::badRequest(),
-          "Missing boundary in Content-Type");
-      return;
-    }
-
-    m_logger.debug("Upload boundary: " + boundary);
-
-    const domain::http::entities::HttpRequest::Body& body = m_request.getBody();
-    std::string bodyStr(body.begin(), body.end());
-
-    domain::filesystem::value_objects::Size bodySize(body.size());
-    if (!uploadConfig.validateFileSize(bodySize)) {
-      generateErrorResponse(
-          domain::shared::value_objects::ErrorCode::payloadTooLarge(),
-          "Uploaded file exceeds maximum size");
-      return;
-    }
-
-    std::string filename;
-    std::vector<char> fileContent;
-    if (!parseMultipartFormData(bodyStr, boundary, filename, fileContent)) {
-      generateErrorResponse(
-          domain::shared::value_objects::ErrorCode::badRequest(),
-          "Invalid multipart format");
-      return;
-    }
-
-    if (filename.empty()) {
-      std::ostringstream defaultName;
-      defaultName << "upload_" << std::time(NULL);
-      filename = defaultName.str();
-    }
-
-    filename = sanitizeFilename(filename);
-    m_logger.debug("Upload filename: " + filename);
-
-    std::ostringstream sizeMsg;
-    sizeMsg << "Upload content size: " << fileContent.size();
-    m_logger.debug(sizeMsg.str());
-
-    domain::filesystem::value_objects::Path uploadDir =
-        uploadConfig.getUploadDirectory();
-    domain::filesystem::value_objects::Path filePath = uploadDir.join(filename);
-
-    m_logger.debug("Upload destination: " + filePath.toString());
-
-    ensureDirectoryExists(uploadDir);
-    writeUploadedFile(filePath, fileContent);
-
-    m_logger.info("File uploaded successfully: " + filePath.toString());
-
-    m_response = domain::http::entities::HttpResponse(
-        domain::shared::value_objects::ErrorCode::created(),
-        "File uploaded successfully");
-    m_response.setContentType("text/html");
-
-    std::ostringstream successBody;
-    successBody << "<!DOCTYPE html>\n"
-                << "<html><head><title>Upload Success</title></head>\n"
-                << "<body>\n"
-                << "<h1>File Uploaded Successfully</h1>\n"
-                << "<p>Filename: " << filename << "</p>\n"
-                << "<p>Size: " << fileContent.size() << " bytes</p>\n"
-                << "<p><a href=\"/\">Back to Home</a></p>\n"
-                << "</body></html>\n";
-    m_response.setBody(successBody.str());
 
   } catch (const std::exception& ex) {
     m_logger.error(std::string("File upload error: ") + ex.what());

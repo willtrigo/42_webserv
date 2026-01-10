@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   LocationConfig.hpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
+/*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 12:21:54 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/01 20:11:44 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/10 11:17:44 by umeneses         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,6 +84,7 @@ class LocationConfig {
   void clearIndexFiles();
   void addAllowedMethod(const http::value_objects::HttpMethod& method);
   void removeAllowedMethod(const http::value_objects::HttpMethod& method);
+  void clearAllowedMethods();
   void setAutoIndex(bool autoIndex);
   void setTryFiles(const TryFiles& tryFiles);
   void addTryFile(const std::string& tryFile);
