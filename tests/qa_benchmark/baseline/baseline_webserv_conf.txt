@@ -4,8 +4,8 @@
 [36m[DEBUG] [0mConfigParser initialized.
 [32m[INFO] [0mConfigProvider initialized with parser.
 [36m[DEBUG] [0mInitializing parser for: ./conf/webserv.conf
-[36m[DEBUG] [0mTokenized 171 tokens from ./conf/webserv.conf
-[36m[DEBUG] [0mCurrent tokens (171):
+[36m[DEBUG] [0mTokenized 182 tokens from ./conf/webserv.conf
+[36m[DEBUG] [0mCurrent tokens (182):
   [Line 1] STRING: 'http'
   [Line 1] BLOCK_START: '{'
   [Line 2] STRING: 'error_page'
@@ -60,7 +60,6 @@
   [Line 19] STRING: 'limit_except'
   [Line 19] STRING: 'GET'
   [Line 19] STRING: 'POST'
-  [Line 19] STRING: 'DELETE'
   [Line 19] BLOCK_START: '{'
   [Line 19] STRING: 'deny'
   [Line 19] STRING: 'all'
@@ -76,7 +75,7 @@
   [Line 23] SEMICOLON: ';'
   [Line 24] BLOCK_END: '}'
   [Line 26] STRING: 'location'
-  [Line 26] STRING: '/upload'
+  [Line 26] STRING: '/uploads'
   [Line 26] BLOCK_START: '{'
   [Line 27] STRING: 'limit_except'
   [Line 27] STRING: 'GET'
@@ -88,7 +87,7 @@
   [Line 27] SEMICOLON: ';'
   [Line 27] BLOCK_END: '}'
   [Line 29] STRING: 'upload_store'
-  [Line 29] STRING: './var/uploads'
+  [Line 29] STRING: './var/www/html/uploads'
   [Line 29] SEMICOLON: ';'
   [Line 30] STRING: 'upload_store_permissions'
   [Line 30] STRING: '0660'
@@ -101,82 +100,94 @@
   [Line 33] STRING: 'autoindex'
   [Line 33] STRING: 'on'
   [Line 33] SEMICOLON: ';'
-  [Line 35] STRING: 'try_files'
-  [Line 35] STRING: '/upload_success.html'
-  [Line 35] STRING: '=200'
-  [Line 35] SEMICOLON: ';'
-  [Line 36] BLOCK_END: '}'
-  [Line 38] STRING: 'location'
-  [Line 38] STRING: '/old-path'
-  [Line 38] BLOCK_START: '{'
-  [Line 39] STRING: 'return'
-  [Line 39] STRING: '301'
-  [Line 39] STRING: 'http://$host/new-path'
-  [Line 39] SEMICOLON: ';'
-  [Line 40] BLOCK_END: '}'
-  [Line 42] STRING: 'location'
-  [Line 42] STRING: '/api'
-  [Line 42] BLOCK_START: '{'
-  [Line 43] STRING: 'root'
-  [Line 43] STRING: './var/www/api'
-  [Line 43] SEMICOLON: ';'
-  [Line 45] STRING: 'limit_except'
-  [Line 45] STRING: 'GET'
-  [Line 45] STRING: 'POST'
-  [Line 45] BLOCK_START: '{'
-  [Line 45] STRING: 'deny'
-  [Line 45] STRING: 'all'
+  [Line 34] BLOCK_END: '}'
+  [Line 36] STRING: 'location'
+  [Line 36] STRING: '/errors'
+  [Line 36] BLOCK_START: '{'
+  [Line 37] STRING: 'return'
+  [Line 37] STRING: '301'
+  [Line 37] STRING: '/'
+  [Line 37] SEMICOLON: ';'
+  [Line 38] BLOCK_END: '}'
+  [Line 40] STRING: 'location'
+  [Line 40] STRING: '/custom'
+  [Line 40] BLOCK_START: '{'
+  [Line 41] STRING: 'return'
+  [Line 41] STRING: '301'
+  [Line 41] STRING: '/'
+  [Line 41] SEMICOLON: ';'
+  [Line 42] BLOCK_END: '}'
+  [Line 44] STRING: 'location'
+  [Line 44] STRING: '/old-path'
+  [Line 44] BLOCK_START: '{'
+  [Line 45] STRING: 'return'
+  [Line 45] STRING: '301'
+  [Line 45] STRING: '/new-path/index.html'
   [Line 45] SEMICOLON: ';'
-  [Line 45] BLOCK_END: '}'
-  [Line 47] STRING: 'autoindex'
-  [Line 47] STRING: 'off'
-  [Line 47] SEMICOLON: ';'
-  [Line 49] STRING: 'location'
-  [Line 49] STRING: '~'
-  [Line 49] STRING: '\.py$'
-  [Line 49] BLOCK_START: '{'
-  [Line 50] STRING: 'script'
-  [Line 50] STRING: '/usr/bin/python3'
-  [Line 50] SEMICOLON: ';'
-  [Line 51] STRING: 'cgi_root'
-  [Line 51] STRING: './var/www/api'
+  [Line 46] BLOCK_END: '}'
+  [Line 48] STRING: 'location'
+  [Line 48] STRING: '/api'
+  [Line 48] BLOCK_START: '{'
+  [Line 49] STRING: 'root'
+  [Line 49] STRING: '/var/www'
+  [Line 49] SEMICOLON: ';'
+  [Line 51] STRING: 'limit_except'
+  [Line 51] STRING: 'GET'
+  [Line 51] STRING: 'POST'
+  [Line 51] BLOCK_START: '{'
+  [Line 51] STRING: 'deny'
+  [Line 51] STRING: 'all'
   [Line 51] SEMICOLON: ';'
-  [Line 53] STRING: 'fastcgi_param'
-  [Line 53] STRING: 'SCRIPT_FILENAME'
-  [Line 53] STRING: '$document_root$fastcgi_script_name'
+  [Line 51] BLOCK_END: '}'
+  [Line 53] STRING: 'autoindex'
+  [Line 53] STRING: 'off'
   [Line 53] SEMICOLON: ';'
-  [Line 54] STRING: 'include'
-  [Line 54] STRING: 'fastcgi_params'
-  [Line 54] SEMICOLON: ';'
-  [Line 55] BLOCK_END: '}'
-  [Line 57] STRING: 'try_files'
-  [Line 57] STRING: '$uri'
-  [Line 57] STRING: '$uri/'
-  [Line 57] STRING: '@python_fallback'
+  [Line 55] STRING: 'location'
+  [Line 55] STRING: '~'
+  [Line 55] STRING: '\.py$'
+  [Line 55] BLOCK_START: '{'
+  [Line 56] STRING: 'script'
+  [Line 56] STRING: '/usr/bin/python3'
+  [Line 56] SEMICOLON: ';'
+  [Line 57] STRING: 'cgi_root'
+  [Line 57] STRING: './var/www'
   [Line 57] SEMICOLON: ';'
-  [Line 58] STRING: 'location'
-  [Line 58] STRING: '@python_fallback'
-  [Line 58] BLOCK_START: '{'
-  [Line 59] STRING: 'return'
-  [Line 59] STRING: '404'
-  [Line 59] STRING: '/errors/404.html'
+  [Line 59] STRING: 'fastcgi_param'
+  [Line 59] STRING: 'SCRIPT_FILENAME'
+  [Line 59] STRING: '$document_root$fastcgi_script_name'
   [Line 59] SEMICOLON: ';'
-  [Line 60] BLOCK_END: '}'
+  [Line 60] STRING: 'include'
+  [Line 60] STRING: 'fastcgi_params'
+  [Line 60] SEMICOLON: ';'
   [Line 61] BLOCK_END: '}'
-  [Line 63] STRING: 'error_page'
-  [Line 63] STRING: '404'
-  [Line 63] STRING: '/custom/404.html'
+  [Line 63] STRING: 'try_files'
+  [Line 63] STRING: '$uri'
+  [Line 63] STRING: '$uri/'
+  [Line 63] STRING: '@python_fallback'
   [Line 63] SEMICOLON: ';'
-  [Line 64] STRING: 'error_page'
-  [Line 64] STRING: '413'
-  [Line 64] STRING: '/custom/413.html'
-  [Line 64] SEMICOLON: ';'
-  [Line 65] BLOCK_END: '}'
-  [Line 67] STRING: 'include'
-  [Line 67] STRING: './conf/sites-available/webserv-dev.conf'
-  [Line 67] SEMICOLON: ';'
-  [Line 68] BLOCK_END: '}'
-  [Line 68] EOF
+  [Line 64] STRING: 'location'
+  [Line 64] STRING: '@python_fallback'
+  [Line 64] BLOCK_START: '{'
+  [Line 65] STRING: 'return'
+  [Line 65] STRING: '404'
+  [Line 65] STRING: '/errors/404.html'
+  [Line 65] SEMICOLON: ';'
+  [Line 66] BLOCK_END: '}'
+  [Line 67] BLOCK_END: '}'
+  [Line 69] STRING: 'error_page'
+  [Line 69] STRING: '404'
+  [Line 69] STRING: '/custom/404.html'
+  [Line 69] SEMICOLON: ';'
+  [Line 70] STRING: 'error_page'
+  [Line 70] STRING: '413'
+  [Line 70] STRING: '/custom/413.html'
+  [Line 70] SEMICOLON: ';'
+  [Line 71] BLOCK_END: '}'
+  [Line 73] STRING: 'include'
+  [Line 73] STRING: './conf/sites-available/webserv_dev.conf'
+  [Line 73] SEMICOLON: ';'
+  [Line 74] BLOCK_END: '}'
+  [Line 74] EOF
 
 [36m[DEBUG] [0mEntering http block at line 1
 [36m[DEBUG] [0mParsing http block content
@@ -213,20 +224,19 @@
 [36m[DEBUG] [0mParsing location block for path: /
 [36m[DEBUG] [0mAdded allowed method 'GET' via limit_except at line 19
 [36m[DEBUG] [0mAdded allowed method 'POST' via limit_except at line 19
-[36m[DEBUG] [0mAdded allowed method 'DELETE' via limit_except at line 19
-[36m[DEBUG] [0mCompleted limit_except block with 3 allowed methods
+[36m[DEBUG] [0mCompleted limit_except block with 2 allowed methods
 [36m[DEBUG] [0mSet autoindex to 'off' at line 21
 [36m[DEBUG] [0mProcessed directive 'autoindex' with 1 arguments at line 21
 [36m[DEBUG] [0mSet try_files with 3 arguments at line 23
 [36m[DEBUG] [0mProcessed directive 'try_files' with 3 arguments at line 23
 [36m[DEBUG] [0mEnd of location block, added location for path: /
 [36m[DEBUG] [0mParsing location block content
-[36m[DEBUG] [0mParsing location block for path: /upload
+[36m[DEBUG] [0mParsing location block for path: /uploads
 [36m[DEBUG] [0mAdded allowed method 'GET' via limit_except at line 27
 [36m[DEBUG] [0mAdded allowed method 'POST' via limit_except at line 27
 [36m[DEBUG] [0mAdded allowed method 'DELETE' via limit_except at line 27
 [36m[DEBUG] [0mCompleted limit_except block with 3 allowed methods
-[36m[DEBUG] [0mSet upload_store to './var/uploads' at line 29
+[36m[DEBUG] [0mSet upload_store to './var/www/html/uploads' at line 29
 [36m[DEBUG] [0mProcessed directive 'upload_store' with 1 arguments at line 29
 [36m[DEBUG] [0mSet upload_store_permissions to 660 (432 decimal) at line 30
 [36m[DEBUG] [0mProcessed directive 'upload_store_permissions' with 1 arguments at line 30
@@ -236,55 +246,63 @@
 [36m[DEBUG] [0mProcessed directive 'upload_store_access' with 3 arguments at line 31
 [36m[DEBUG] [0mSet autoindex to 'on' at line 33
 [36m[DEBUG] [0mProcessed directive 'autoindex' with 1 arguments at line 33
-[36m[DEBUG] [0mSet try_files with 2 arguments at line 35
-[36m[DEBUG] [0mProcessed directive 'try_files' with 2 arguments at line 35
-[36m[DEBUG] [0mEnd of location block, added location for path: /upload
+[36m[DEBUG] [0mEnd of location block, added location for path: /uploads
+[36m[DEBUG] [0mParsing location block content
+[36m[DEBUG] [0mParsing location block for path: /errors
+[36m[DEBUG] [0mSet return 301 -> '/' at line 37
+[36m[DEBUG] [0mProcessed directive 'return' with 2 arguments at line 37
+[36m[DEBUG] [0mEnd of location block, added location for path: /errors
+[36m[DEBUG] [0mParsing location block content
+[36m[DEBUG] [0mParsing location block for path: /custom
+[36m[DEBUG] [0mSet return 301 -> '/' at line 41
+[36m[DEBUG] [0mProcessed directive 'return' with 2 arguments at line 41
+[36m[DEBUG] [0mEnd of location block, added location for path: /custom
 [36m[DEBUG] [0mParsing location block content
 [36m[DEBUG] [0mParsing location block for path: /old-path
-[36m[DEBUG] [0mSet return 301 -> 'http://$host/new-path' at line 39
-[36m[DEBUG] [0mProcessed directive 'return' with 2 arguments at line 39
+[36m[DEBUG] [0mSet return 301 -> '/new-path/index.html' at line 45
+[36m[DEBUG] [0mProcessed directive 'return' with 2 arguments at line 45
 [36m[DEBUG] [0mEnd of location block, added location for path: /old-path
 [36m[DEBUG] [0mParsing location block content
 [36m[DEBUG] [0mParsing location block for path: /api
-[36m[DEBUG] [0mSet root to './var/www/api' at line 43
-[36m[DEBUG] [0mProcessed directive 'root' with 1 arguments at line 43
-[36m[DEBUG] [0mAdded allowed method 'GET' via limit_except at line 45
-[36m[DEBUG] [0mAdded allowed method 'POST' via limit_except at line 45
+[36m[DEBUG] [0mSet root to '/var/www' at line 49
+[36m[DEBUG] [0mProcessed directive 'root' with 1 arguments at line 49
+[36m[DEBUG] [0mAdded allowed method 'GET' via limit_except at line 51
+[36m[DEBUG] [0mAdded allowed method 'POST' via limit_except at line 51
 [36m[DEBUG] [0mCompleted limit_except block with 2 allowed methods
-[36m[DEBUG] [0mSet autoindex to 'off' at line 47
-[36m[DEBUG] [0mProcessed directive 'autoindex' with 1 arguments at line 47
+[36m[DEBUG] [0mSet autoindex to 'off' at line 53
+[36m[DEBUG] [0mProcessed directive 'autoindex' with 1 arguments at line 53
 [36m[DEBUG] [0mParsing location block content
 [36m[DEBUG] [0mParsing location block for path: \.py$
-[36m[DEBUG] [0mSet script path to '/usr/bin/python3' at line 50
-[36m[DEBUG] [0mProcessed directive 'script' with 1 arguments at line 50
-[36m[DEBUG] [0mSet cgi_root to './var/www/api' at line 51
-[36m[DEBUG] [0mProcessed directive 'cgi_root' with 1 arguments at line 51
-[36m[DEBUG] [0mAdded fastcgi_param 'SCRIPT_FILENAME' = '$document_root$fastcgi_script_name' at line 53
-[36m[DEBUG] [0mProcessed directive 'fastcgi_param' with 2 arguments at line 53
-[32m[INFO] [0mInclude directive in location context (not yet implemented): fastcgi_params at line 54
-[36m[DEBUG] [0mProcessed directive 'include' with 1 arguments at line 54
+[36m[DEBUG] [0mSet script path to '/usr/bin/python3' at line 56
+[36m[DEBUG] [0mProcessed directive 'script' with 1 arguments at line 56
+[36m[DEBUG] [0mSet cgi_root to './var/www' at line 57
+[36m[DEBUG] [0mProcessed directive 'cgi_root' with 1 arguments at line 57
+[36m[DEBUG] [0mAdded fastcgi_param 'SCRIPT_FILENAME' = '$document_root$fastcgi_script_name' at line 59
+[36m[DEBUG] [0mProcessed directive 'fastcgi_param' with 2 arguments at line 59
+[32m[INFO] [0mInclude directive in location context (not yet implemented): fastcgi_params at line 60
+[36m[DEBUG] [0mProcessed directive 'include' with 1 arguments at line 60
 [36m[DEBUG] [0mEnd of location block, added location for path: \.py$
-[36m[DEBUG] [0mSet try_files with 3 arguments at line 57
-[36m[DEBUG] [0mProcessed directive 'try_files' with 3 arguments at line 57
+[36m[DEBUG] [0mSet try_files with 3 arguments at line 63
+[36m[DEBUG] [0mProcessed directive 'try_files' with 3 arguments at line 63
 [36m[DEBUG] [0mParsing location block content
 [36m[DEBUG] [0mParsing location block for path: @python_fallback
-[36m[DEBUG] [0mSet return content 404 -> '/errors/404.html' at line 59
-[36m[DEBUG] [0mProcessed directive 'return' with 2 arguments at line 59
+[36m[DEBUG] [0mSet return content 404 -> '/errors/404.html' at line 65
+[36m[DEBUG] [0mProcessed directive 'return' with 2 arguments at line 65
 [36m[DEBUG] [0mEnd of location block, added location for path: @python_fallback
 [36m[DEBUG] [0mEnd of location block, added location for path: /api
-[36m[DEBUG] [0mSet error_page 404 -> '/custom/404.html' at line 63
-[36m[DEBUG] [0mProcessed directive 'error_page' with 2 arguments at line 63
-[36m[DEBUG] [0mSet error_page 413 -> '/custom/413.html' at line 64
-[36m[DEBUG] [0mProcessed directive 'error_page' with 2 arguments at line 64
+[36m[DEBUG] [0mSet error_page 404 -> '/custom/404.html' at line 69
+[36m[DEBUG] [0mProcessed directive 'error_page' with 2 arguments at line 69
+[36m[DEBUG] [0mSet error_page 413 -> '/custom/413.html' at line 70
+[36m[DEBUG] [0mProcessed directive 'error_page' with 2 arguments at line 70
 [36m[DEBUG] [0mEnd of server block, added server with 2 listen directives
-[32m[INFO] [0mProcessing include directive: './conf/sites-available/webserv-dev.conf' at line 67
-[36m[DEBUG] [0mProcessing include pattern './conf/sites-available/webserv-dev.conf' (depth 1), found 1 files
-[36m[DEBUG] [0mIncluding file: ./conf/sites-available/webserv-dev.conf
+[32m[INFO] [0mProcessing include directive: './conf/sites-available/webserv_dev.conf' at line 73
+[36m[DEBUG] [0mProcessing include pattern './conf/sites-available/webserv_dev.conf' (depth 1), found 1 files
+[36m[DEBUG] [0mIncluding file: ./conf/sites-available/webserv_dev.conf
 [36m[DEBUG] [0mConfigLexer initialized.
 [36m[DEBUG] [0mConfigParser initialized.
-[36m[DEBUG] [0mInitializing parser for: ./conf/sites-available/webserv-dev.conf
-[36m[DEBUG] [0mTokenized 106 tokens from ./conf/sites-available/webserv-dev.conf
-[36m[DEBUG] [0mCurrent tokens (106):
+[36m[DEBUG] [0mInitializing parser for: ./conf/sites-available/webserv_dev.conf
+[36m[DEBUG] [0mTokenized 121 tokens from ./conf/sites-available/webserv_dev.conf
+[36m[DEBUG] [0mCurrent tokens (121):
   [Line 1] STRING: 'server'
   [Line 1] BLOCK_START: '{'
   [Line 2] STRING: 'listen'
@@ -300,97 +318,112 @@
   [Line 6] STRING: './var/www/dev'
   [Line 6] SEMICOLON: ';'
   [Line 7] STRING: 'index'
-  [Line 7] STRING: 'index.py'
   [Line 7] STRING: 'index.html'
+  [Line 7] STRING: 'index.htm'
   [Line 7] SEMICOLON: ';'
   [Line 9] STRING: 'location'
-  [Line 9] STRING: '/'
+  [Line 9] STRING: '~'
+  [Line 9] STRING: '\.php$'
   [Line 9] BLOCK_START: '{'
   [Line 10] STRING: 'limit_except'
   [Line 10] STRING: 'GET'
   [Line 10] STRING: 'POST'
-  [Line 10] STRING: 'DELETE'
   [Line 10] BLOCK_START: '{'
   [Line 10] STRING: 'deny'
   [Line 10] STRING: 'all'
   [Line 10] SEMICOLON: ';'
   [Line 10] BLOCK_END: '}'
-  [Line 11] STRING: 'autoindex'
-  [Line 11] STRING: 'on'
-  [Line 11] SEMICOLON: ';'
-  [Line 12] STRING: 'try_files'
-  [Line 12] STRING: '$uri'
-  [Line 12] STRING: '$uri/'
-  [Line 12] STRING: '@python_cgi'
+  [Line 12] STRING: 'script'
+  [Line 12] STRING: '/usr/bin/php-cgi'
   [Line 12] SEMICOLON: ';'
-  [Line 13] BLOCK_END: '}'
-  [Line 15] STRING: 'location'
-  [Line 15] STRING: '/cgi-bin'
-  [Line 15] BLOCK_START: '{'
-  [Line 16] STRING: 'root'
-  [Line 16] STRING: './var/www/cgi'
-  [Line 16] SEMICOLON: ';'
+  [Line 13] STRING: 'cgi_root'
+  [Line 13] STRING: './var/www'
+  [Line 13] SEMICOLON: ';'
+  [Line 14] BLOCK_END: '}'
+  [Line 16] STRING: 'location'
+  [Line 16] STRING: '/'
+  [Line 16] BLOCK_START: '{'
   [Line 17] STRING: 'limit_except'
   [Line 17] STRING: 'GET'
   [Line 17] STRING: 'POST'
+  [Line 17] STRING: 'DELETE'
   [Line 17] BLOCK_START: '{'
   [Line 17] STRING: 'deny'
   [Line 17] STRING: 'all'
   [Line 17] SEMICOLON: ';'
   [Line 17] BLOCK_END: '}'
-  [Line 19] STRING: 'location'
-  [Line 19] STRING: '~'
-  [Line 19] STRING: '\.py$'
-  [Line 19] BLOCK_START: '{'
-  [Line 20] STRING: 'script'
-  [Line 20] STRING: '/usr/bin/python3'
-  [Line 20] SEMICOLON: ';'
-  [Line 21] STRING: 'cgi_root'
-  [Line 21] STRING: './var/www/cgi'
+  [Line 19] STRING: 'autoindex'
+  [Line 19] STRING: 'off'
+  [Line 19] SEMICOLON: ';'
+  [Line 21] STRING: 'try_files'
+  [Line 21] STRING: '$uri'
+  [Line 21] STRING: '$uri/'
+  [Line 21] STRING: '=404'
   [Line 21] SEMICOLON: ';'
-  [Line 22] STRING: 'fastcgi_param'
-  [Line 22] STRING: 'SCRIPT_FILENAME'
-  [Line 22] STRING: '$document_root$fastcgi_script_name'
-  [Line 22] SEMICOLON: ';'
-  [Line 23] STRING: 'include'
-  [Line 23] STRING: 'fastcgi_params'
-  [Line 23] SEMICOLON: ';'
-  [Line 24] BLOCK_END: '}'
-  [Line 26] STRING: 'autoindex'
-  [Line 26] STRING: 'off'
-  [Line 26] SEMICOLON: ';'
-  [Line 27] BLOCK_END: '}'
-  [Line 29] STRING: 'location'
-  [Line 29] STRING: '/dev-upload'
-  [Line 29] BLOCK_START: '{'
-  [Line 30] STRING: 'limit_except'
-  [Line 30] STRING: 'POST'
-  [Line 30] BLOCK_START: '{'
-  [Line 30] STRING: 'deny'
-  [Line 30] STRING: 'all'
-  [Line 30] SEMICOLON: ';'
-  [Line 30] BLOCK_END: '}'
-  [Line 31] STRING: 'upload_store'
-  [Line 31] STRING: './var/uploads/dev'
+  [Line 22] BLOCK_END: '}'
+  [Line 24] STRING: 'location'
+  [Line 24] STRING: '/uploads'
+  [Line 24] BLOCK_START: '{'
+  [Line 25] STRING: 'limit_except'
+  [Line 25] STRING: 'GET'
+  [Line 25] STRING: 'POST'
+  [Line 25] STRING: 'DELETE'
+  [Line 25] BLOCK_START: '{'
+  [Line 25] STRING: 'deny'
+  [Line 25] STRING: 'all'
+  [Line 25] SEMICOLON: ';'
+  [Line 25] BLOCK_END: '}'
+  [Line 27] STRING: 'upload_store'
+  [Line 27] STRING: './var/www/dev/uploads'
+  [Line 27] SEMICOLON: ';'
+  [Line 28] STRING: 'upload_store_permissions'
+  [Line 28] STRING: '0660'
+  [Line 28] SEMICOLON: ';'
+  [Line 29] STRING: 'upload_store_access'
+  [Line 29] STRING: 'user:rw'
+  [Line 29] STRING: 'group:rw'
+  [Line 29] STRING: 'all:r'
+  [Line 29] SEMICOLON: ';'
+  [Line 31] STRING: 'autoindex'
+  [Line 31] STRING: 'on'
   [Line 31] SEMICOLON: ';'
-  [Line 32] STRING: 'upload_store_permissions'
-  [Line 32] STRING: '0664'
-  [Line 32] SEMICOLON: ';'
-  [Line 33] STRING: 'autoindex'
-  [Line 33] STRING: 'on'
-  [Line 33] SEMICOLON: ';'
-  [Line 34] BLOCK_END: '}'
-  [Line 36] STRING: 'location'
-  [Line 36] STRING: '='
-  [Line 36] STRING: '/temp-redirect'
-  [Line 36] BLOCK_START: '{'
-  [Line 37] STRING: 'return'
-  [Line 37] STRING: '302'
-  [Line 37] STRING: 'https://dev.localhost:8081/secure'
-  [Line 37] SEMICOLON: ';'
-  [Line 38] BLOCK_END: '}'
-  [Line 39] BLOCK_END: '}'
-  [Line 39] EOF
+  [Line 32] BLOCK_END: '}'
+  [Line 34] STRING: 'location'
+  [Line 34] STRING: '/old-path'
+  [Line 34] BLOCK_START: '{'
+  [Line 35] STRING: 'return'
+  [Line 35] STRING: '301'
+  [Line 35] STRING: '/new-path/index.html'
+  [Line 35] SEMICOLON: ';'
+  [Line 36] BLOCK_END: '}'
+  [Line 38] STRING: 'location'
+  [Line 38] STRING: '/api'
+  [Line 38] BLOCK_START: '{'
+  [Line 39] STRING: 'root'
+  [Line 39] STRING: './var/www'
+  [Line 39] SEMICOLON: ';'
+  [Line 41] STRING: 'limit_except'
+  [Line 41] STRING: 'GET'
+  [Line 41] STRING: 'POST'
+  [Line 41] BLOCK_START: '{'
+  [Line 41] STRING: 'deny'
+  [Line 41] STRING: 'all'
+  [Line 41] SEMICOLON: ';'
+  [Line 41] BLOCK_END: '}'
+  [Line 43] STRING: 'autoindex'
+  [Line 43] STRING: 'on'
+  [Line 43] SEMICOLON: ';'
+  [Line 44] BLOCK_END: '}'
+  [Line 46] STRING: 'error_page'
+  [Line 46] STRING: '404'
+  [Line 46] STRING: '/custom/404.html'
+  [Line 46] SEMICOLON: ';'
+  [Line 47] STRING: 'error_page'
+  [Line 47] STRING: '413'
+  [Line 47] STRING: '/custom/413.html'
+  [Line 47] SEMICOLON: ';'
+  [Line 48] BLOCK_END: '}'
+  [Line 48] EOF
 
 [36m[DEBUG] [0mEntering server block at line 1
 [36m[DEBUG] [0mParsing server block content
@@ -402,62 +435,71 @@
 [36m[DEBUG] [0mProcessed directive 'server_name' with 1 arguments at line 4
 [36m[DEBUG] [0mSet root to './var/www/dev' at line 6
 [36m[DEBUG] [0mProcessed directive 'root' with 1 arguments at line 6
-[36m[DEBUG] [0mAdded index file 'index.py' at line 7
 [36m[DEBUG] [0mAdded index file 'index.html' at line 7
+[36m[DEBUG] [0mAdded index file 'index.htm' at line 7
 [36m[DEBUG] [0mProcessed directive 'index' with 2 arguments at line 7
 [36m[DEBUG] [0mParsing location block content
-[36m[DEBUG] [0mParsing location block for path: /
+[36m[DEBUG] [0mParsing location block for path: \.php$
 [36m[DEBUG] [0mAdded allowed method 'GET' via limit_except at line 10
 [36m[DEBUG] [0mAdded allowed method 'POST' via limit_except at line 10
-[36m[DEBUG] [0mAdded allowed method 'DELETE' via limit_except at line 10
-[36m[DEBUG] [0mCompleted limit_except block with 3 allowed methods
-[36m[DEBUG] [0mSet autoindex to 'on' at line 11
-[36m[DEBUG] [0mProcessed directive 'autoindex' with 1 arguments at line 11
-[36m[DEBUG] [0mSet try_files with 3 arguments at line 12
-[36m[DEBUG] [0mProcessed directive 'try_files' with 3 arguments at line 12
-[36m[DEBUG] [0mEnd of location block, added location for path: /
+[36m[DEBUG] [0mCompleted limit_except block with 2 allowed methods
+[36m[DEBUG] [0mSet script path to '/usr/bin/php-cgi' at line 12
+[36m[DEBUG] [0mProcessed directive 'script' with 1 arguments at line 12
+[36m[DEBUG] [0mSet cgi_root to './var/www' at line 13
+[36m[DEBUG] [0mProcessed directive 'cgi_root' with 1 arguments at line 13
+[36m[DEBUG] [0mEnd of location block, added location for path: \.php$
 [36m[DEBUG] [0mParsing location block content
-[36m[DEBUG] [0mParsing location block for path: /cgi-bin
-[36m[DEBUG] [0mSet root to './var/www/cgi' at line 16
-[36m[DEBUG] [0mProcessed directive 'root' with 1 arguments at line 16
+[36m[DEBUG] [0mParsing location block for path: /
 [36m[DEBUG] [0mAdded allowed method 'GET' via limit_except at line 17
 [36m[DEBUG] [0mAdded allowed method 'POST' via limit_except at line 17
+[36m[DEBUG] [0mAdded allowed method 'DELETE' via limit_except at line 17
+[36m[DEBUG] [0mCompleted limit_except block with 3 allowed methods
+[36m[DEBUG] [0mSet autoindex to 'off' at line 19
+[36m[DEBUG] [0mProcessed directive 'autoindex' with 1 arguments at line 19
+[36m[DEBUG] [0mSet try_files with 3 arguments at line 21
+[36m[DEBUG] [0mProcessed directive 'try_files' with 3 arguments at line 21
+[36m[DEBUG] [0mEnd of location block, added location for path: /
+[36m[DEBUG] [0mParsing location block content
+[36m[DEBUG] [0mParsing location block for path: /uploads
+[36m[DEBUG] [0mAdded allowed method 'GET' via limit_except at line 25
+[36m[DEBUG] [0mAdded allowed method 'POST' via limit_except at line 25
+[36m[DEBUG] [0mAdded allowed method 'DELETE' via limit_except at line 25
+[36m[DEBUG] [0mCompleted limit_except block with 3 allowed methods
+[36m[DEBUG] [0mSet upload_store to './var/www/dev/uploads' at line 27
+[36m[DEBUG] [0mProcessed directive 'upload_store' with 1 arguments at line 27
+[36m[DEBUG] [0mSet upload_store_permissions to 660 (432 decimal) at line 28
+[36m[DEBUG] [0mProcessed directive 'upload_store_permissions' with 1 arguments at line 28
+[36m[DEBUG] [0mSet upload_store_access component 'user:rw' at line 29
+[36m[DEBUG] [0mSet upload_store_access component 'group:rw' at line 29
+[36m[DEBUG] [0mSet upload_store_access component 'all:r' at line 29
+[36m[DEBUG] [0mProcessed directive 'upload_store_access' with 3 arguments at line 29
+[36m[DEBUG] [0mSet autoindex to 'on' at line 31
+[36m[DEBUG] [0mProcessed directive 'autoindex' with 1 arguments at line 31
+[36m[DEBUG] [0mEnd of location block, added location for path: /uploads
+[36m[DEBUG] [0mParsing location block content
+[36m[DEBUG] [0mParsing location block for path: /old-path
+[36m[DEBUG] [0mSet return 301 -> '/new-path/index.html' at line 35
+[36m[DEBUG] [0mProcessed directive 'return' with 2 arguments at line 35
+[36m[DEBUG] [0mEnd of location block, added location for path: /old-path
+[36m[DEBUG] [0mParsing location block content
+[36m[DEBUG] [0mParsing location block for path: /api
+[36m[DEBUG] [0mSet root to './var/www' at line 39
+[36m[DEBUG] [0mProcessed directive 'root' with 1 arguments at line 39
+[36m[DEBUG] [0mAdded allowed method 'GET' via limit_except at line 41
+[36m[DEBUG] [0mAdded allowed method 'POST' via limit_except at line 41
 [36m[DEBUG] [0mCompleted limit_except block with 2 allowed methods
-[36m[DEBUG] [0mParsing location block content
-[36m[DEBUG] [0mParsing location block for path: \.py$
-[36m[DEBUG] [0mSet script path to '/usr/bin/python3' at line 20
-[36m[DEBUG] [0mProcessed directive 'script' with 1 arguments at line 20
-[36m[DEBUG] [0mSet cgi_root to './var/www/cgi' at line 21
-[36m[DEBUG] [0mProcessed directive 'cgi_root' with 1 arguments at line 21
-[36m[DEBUG] [0mAdded fastcgi_param 'SCRIPT_FILENAME' = '$document_root$fastcgi_script_name' at line 22
-[36m[DEBUG] [0mProcessed directive 'fastcgi_param' with 2 arguments at line 22
-[32m[INFO] [0mInclude directive in location context (not yet implemented): fastcgi_params at line 23
-[36m[DEBUG] [0mProcessed directive 'include' with 1 arguments at line 23
-[36m[DEBUG] [0mEnd of location block, added location for path: \.py$
-[36m[DEBUG] [0mSet autoindex to 'off' at line 26
-[36m[DEBUG] [0mProcessed directive 'autoindex' with 1 arguments at line 26
-[36m[DEBUG] [0mEnd of location block, added location for path: /cgi-bin
-[36m[DEBUG] [0mParsing location block content
-[36m[DEBUG] [0mParsing location block for path: /dev-upload
-[36m[DEBUG] [0mAdded allowed method 'POST' via limit_except at line 30
-[36m[DEBUG] [0mCompleted limit_except block with 1 allowed methods
-[36m[DEBUG] [0mSet upload_store to './var/uploads/dev' at line 31
-[36m[DEBUG] [0mProcessed directive 'upload_store' with 1 arguments at line 31
-[36m[DEBUG] [0mSet upload_store_permissions to 664 (436 decimal) at line 32
-[36m[DEBUG] [0mProcessed directive 'upload_store_permissions' with 1 arguments at line 32
-[36m[DEBUG] [0mSet autoindex to 'on' at line 33
-[36m[DEBUG] [0mProcessed directive 'autoindex' with 1 arguments at line 33
-[36m[DEBUG] [0mEnd of location block, added location for path: /dev-upload
-[36m[DEBUG] [0mParsing location block content
-[36m[DEBUG] [0mParsing location block for path: /temp-redirect
-[36m[DEBUG] [0mSet return 302 -> 'https://dev.localhost:8081/secure' at line 37
-[36m[DEBUG] [0mProcessed directive 'return' with 2 arguments at line 37
-[36m[DEBUG] [0mEnd of location block, added location for path: /temp-redirect
+[36m[DEBUG] [0mSet autoindex to 'on' at line 43
+[36m[DEBUG] [0mProcessed directive 'autoindex' with 1 arguments at line 43
+[36m[DEBUG] [0mEnd of location block, added location for path: /api
+[36m[DEBUG] [0mSet error_page 404 -> '/custom/404.html' at line 46
+[36m[DEBUG] [0mProcessed directive 'error_page' with 2 arguments at line 46
+[36m[DEBUG] [0mSet error_page 413 -> '/custom/413.html' at line 47
+[36m[DEBUG] [0mProcessed directive 'error_page' with 2 arguments at line 47
 [36m[DEBUG] [0mEnd of server block, added server with 2 listen directives
-[32m[INFO] [0mSuccessfully parsed configuration from ./conf/sites-available/webserv-dev.conf with 1 servers
-[32m[INFO] [0mSuccessfully included 1 server(s) from ./conf/sites-available/webserv-dev.conf
-[32m[INFO] [0mSuccessfully processed include: './conf/sites-available/webserv-dev.conf'
-[36m[DEBUG] [0mProcessed directive 'include' with 1 arguments at line 67
+[32m[INFO] [0mSuccessfully parsed configuration from ./conf/sites-available/webserv_dev.conf with 1 servers
+[32m[INFO] [0mSuccessfully included 1 server(s) from ./conf/sites-available/webserv_dev.conf
+[32m[INFO] [0mSuccessfully processed include: './conf/sites-available/webserv_dev.conf'
+[36m[DEBUG] [0mProcessed directive 'include' with 1 arguments at line 73
 [36m[DEBUG] [0mEnd of http block
 [32m[INFO] [0mSuccessfully parsed configuration from ./conf/webserv.conf with 2 servers
 [32m[INFO] [0mConfiguration loaded successfully from ./conf/webserv.conf with 2 servers
@@ -474,7 +516,7 @@ Total servers: 2
   Listen: 0.0.0.0:8080, :::8080
   Server names: webserv.com, www.webserv.com, _
   Root: html
-  Locations: 6
+  Locations: 8
   Max body size: 1048576 bytes
 
 --- Server 2 ---
