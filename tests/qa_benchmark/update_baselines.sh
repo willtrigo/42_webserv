@@ -126,8 +126,8 @@ run_and_capture "default.conf" "./conf/default.conf" "$BASELINE_DIR/baseline_def
 echo "3/4: webserv.conf"
 run_and_capture "webserv.conf" "./conf/webserv.conf" "$BASELINE_DIR/baseline_webserv_conf.txt"
 
-echo "4/4: webserv_py_cgi.conf"
-run_and_capture "webserv_py_cgi.conf" "./conf/webserv_py_cgi.conf" "$BASELINE_DIR/baseline_webserv_py_cgi_conf.txt"
+echo "4/4: webserv_combined_cgi.conf"
+run_and_capture "webserv_combined_cgi.conf" "./conf/webserv_combined_cgi.conf" "$BASELINE_DIR/baseline_webserv_combined_cgi_conf.txt"
 
 # Summary
 echo -e "${BLUE}========================================${NC}"
@@ -138,6 +138,6 @@ echo "Updated files:"
 echo "  - baseline_no_config.txt"
 echo "  - baseline_default_conf.txt"
 echo "  - baseline_webserv_conf.txt"
-echo "  - baseline_webserv_py_cgi_conf.txt"
+echo "  - baseline_webserv_combined_cgi_conf.txt"
 echo ""
 echo -e "${GREEN}Done! Baselines are now up to date.${NC}"

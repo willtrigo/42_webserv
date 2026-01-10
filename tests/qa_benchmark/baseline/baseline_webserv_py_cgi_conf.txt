@@ -1,7 +1,0 @@
-[32m[INFO] [0mLogger initialized.
-[32m[INFO] [0mLoading configuration from: ./conf/webserv_py_cgi.conf
-[36m[DEBUG] [0mConfigLexer initialized.
-[36m[DEBUG] [0mConfigParser initialized.
-[32m[INFO] [0mConfigProvider initialized with parser.
-[36m[DEBUG] [0mInitializing parser for: ./conf/webserv_py_cgi.conf
-[31m[ERROR] [0mConfiguration error: unexpected error during configuration load: unexpected error during configuration load: Unexpected error during configuration parse: config file not found or unreadable: Cannot open config file: ./conf/webserv_py_cgi.conf
