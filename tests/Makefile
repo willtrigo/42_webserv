@@ -6,7 +6,7 @@
 #    By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/12/24 09:42:14 by umeneses          #+#    #+#              #
-#    Updated: 2026/01/10 09:14:00 by umeneses         ###   ########.fr        #
+#    Updated: 2026/01/10 15:40:45 by umeneses         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -115,6 +115,7 @@ integration: $(NAME)
 	@./$(NAME) --gtest_filter="*IntegrationTest.*" 2>&1 | tee /tmp/integration_test_output.txt || true
 	@TOTAL=$$(grep -oP 'Running \K[0-9]+' /tmp/integration_test_output.txt | head -1 2>/dev/null || echo "0"); \
 	FAILED=$$(grep '^\[  FAILED  \]' /tmp/integration_test_output.txt | grep -oP '\K[0-9]+(?= tests)' | head -1 2>/dev/null || echo "0"); \
+	if [ -z "$$FAILED" ]; then FAILED=0; fi; \
 	if [ "$$TOTAL" -gt 0 ] && [ "$$TOTAL" -eq "$$FAILED" ]; then \
 		printf "$(RED)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)\n"; \
 		printf "$(RED)100%% of the Integration Tests FAILED! Are you running the webserver binary?$(RESET)\n"; \

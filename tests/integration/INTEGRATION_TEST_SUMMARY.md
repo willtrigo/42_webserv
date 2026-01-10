@@ -295,6 +295,47 @@ This integration test suite provides **100% coverage** of all 42 webserver subje
 
 ## 🚀 How to Run Tests
 
+### Configuration File Requirement ⚠️
+
+**IMPORTANT:** Integration tests are designed to run with **`conf/default.conf`** only.
+
+**Test Results by Config:**
+| Config File | Status | Tests Pass | Failures |
+|-------------|--------|------------|----------|
+| `conf/default.conf` | ✅ **PASS** | **101/101** | 0 |
+| `conf/webserv.conf` | ❌ FAIL | 88/101 | 13 |
+| `conf/webserv_combined_cgi.conf` | ❌ FAIL | 88/101 | 13 |
+
+**Why Other Configs Fail:**
+- ❌ Missing `/files` route → POST/DELETE upload tests get 405 (Method Not Allowed)
+- ❌ Missing `/docs` redirect → Redirect tests get 404 (Not Found)
+- ❌ Root allows POST/DELETE → Method restriction tests don't match expectations
+- ❌ Upload handler at `/uploads` not `/files` → File handler tests can't reach it
+
+**The `default.conf` provides:**
+- ✅ `location /files` with POST/DELETE + upload_store configured
+- ✅ `location /` with GET-only restriction
+- ✅ `location /docs` redirect to `/new-path/`
+- ✅ `location /uploads` for additional upload testing
+- ✅ All other required routes and configurations
+
+**To make CGI configs pass integration tests**, you would need to add these blocks to `webserv.conf` and `webserv_combined_cgi.conf`:
+```nginx
+location /files {
+    limit_except POST DELETE { deny all; }
+    upload_store ./var/uploads;
+    upload_store_permissions 0660;
+    upload_store_access user:rw group:r all:r;
+    autoindex off;
+}
+
+location /docs {
+    return 301 /new-path/;
+}
+```
+
+---
+
 ### Compile All Tests
 
 ```bash
@@ -305,13 +346,19 @@ make clean && make
 ### Run All Integration Tests
 
 ```bash
-# Start server first
+# Start server with default.conf (required for all tests)
 cd /home/biralavor/Documents/42_Cursus/42_webserver
 ./bin/webserv conf/default.conf &
 
-# Run tests
+# Run integration tests
 cd tests
-./bin/test_runner --gtest_filter="*Integration*"
+make integration
+```
+
+Or using `make test`:
+```bash
+cd tests
+./bin/test_runner --gtest_filter="*IntegrationTest.*"
 ```
 
 ### Run Specific Test Suite
@@ -340,28 +387,54 @@ cd tests
 
 ## 📊 Test Status
 
-### Current Status (First Run)
+### Current Status (January 10, 2026)
 
+**With `conf/default.conf`:**
 ```
-[==========] Running 104 integration tests
-[  PASSED  ] 2 tests
-[  FAILED  ] 102 tests
-```
-
-**Critical Issue:** Server crashes on 2nd HEAD request (segmentation fault)
-
-### Why Tests Fail
-
-1. **HEAD method crash** (CRITICAL) - Server crashes after 2nd HEAD request
-2. **All subsequent tests fail** - Server not running after crash
-
-### Expected After Bug Fixes
-
-```
-[==========] Running 104 integration tests
-[  PASSED  ] 104 tests  ← Target
+[==========] Running 101 integration tests
+[  PASSED  ] 101 tests ✅
 [  FAILED  ] 0 tests
 ```
+
+**With `conf/webserv.conf` or `conf/webserv_combined_cgi.conf`:**
+```
+[==========] Running 101 integration tests
+[  PASSED  ] 88 tests
+[  FAILED  ] 13 tests ❌
+```
+
+**Failing tests with non-default configs:**
+- AdvancedIntegrationTest.UploadLargeFileSucceeds (405)
+- FileHandlerIntegrationTest.UploadFileViaPost (405)
+- FileHandlerIntegrationTest.UploadLargeFile (405)
+- FileHandlerIntegrationTest.DownloadExistingFile (405)
+- FileHandlerIntegrationTest.DeleteUploadedFile (405)
+- FileHandlerIntegrationTest.DeleteNonExistentFile (405)
+- HttpServerIntegrationTest.PostRequestReturns200Or201 (405)
+- HttpServerIntegrationTest.DeleteRequestReturns200Or204 (405)
+- HttpServerIntegrationTest.SmallBodyAccepted (405)
+- HttpServerIntegrationTest.FileUploadReturns200Or201 (405)
+- HttpServerIntegrationTest.RedirectReturns3xxCode (404)
+- HttpServerIntegrationTest.RedirectHasLocationHeader (404)
+- HttpServerIntegrationTest.HeadOnPostOnlyRouteReturns405 (404)
+
+### Why Tests All Pass With default.conf
+
+The integration test suite was designed with specific routing and method restrictions in mind:
+
+1. **File Upload Tests** expect:
+   - A `/files` route that accepts POST and DELETE
+   - An `upload_store` configured to handle file uploads
+   - These exist in `default.conf` but not in `webserv.conf`
+
+2. **Redirect Tests** expect:
+   - A `/docs` route configured with `return 301 /new-path/;`
+   - This exists in `default.conf` but not in other configs
+
+3. **Method Restriction Tests** expect:
+   - Root `/` route to be GET-only (allows HEAD implicitly)
+   - `/files` route to be POST/DELETE only
+   - `default.conf` matches this exactly; other configs use different constraints
 
 ---
 
