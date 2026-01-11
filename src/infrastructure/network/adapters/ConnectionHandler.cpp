@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 12:01:14 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/11 00:36:15 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/11 05:21:43 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -210,6 +210,7 @@ void ConnectionHandler::handleRead() {
   m_logger.debug(oss.str());
 
   if (m_requestBuffer.size() > K_MAX_REQUEST_SIZE) {
+    m_logger.debug("######## before the throw");
     throw exceptions::ConnectionException(
         "Request size exceeds maximum allowed",
         exceptions::ConnectionException::REQUEST_TOO_LARGE);
@@ -250,6 +251,11 @@ void ConnectionHandler::handleWrite() {
       << m_responseOffset << "/" << m_responseBuffer.size() << ")";
   m_logger.debug(oss.str());
 
+  if (m_responseBuffer.size() <
+      m_serverConfig->getClientMaxBodySize().getBytes()) {
+    m_logger.debug("Closing connection: " + getRemoteAddress());
+    m_state = STATE_CLOSING;
+  }
   if (m_responseOffset >= m_responseBuffer.size()) {
     m_responseBuffer.clear();
     m_responseOffset = 0;
@@ -385,8 +391,7 @@ ConnectionHandler::resolvePathWithServerFallback(
       "./" + relativeRequestPath, false);
 }
 
-domain::filesystem::value_objects::Path
-ConnectionHandler::resolveErrorPagePath(
+domain::filesystem::value_objects::Path ConnectionHandler::resolveErrorPagePath(
     const domain::configuration::entities::LocationConfig& location,
     const std::string& errorPagePath) const {
   if (errorPagePath.empty()) {
@@ -460,9 +465,9 @@ ConnectionHandler::resolveErrorPagePath(
           m_serverConfig->getRoot().join(pathWithoutLeadingSlash);
 
       std::ostringstream debugMsg;
-      debugMsg << "Resolved error page path using server root: " << errorPagePath
-               << " + " << m_serverConfig->getRoot().toString() << " -> "
-               << resolvedPath.toString();
+      debugMsg << "Resolved error page path using server root: "
+               << errorPagePath << " + " << m_serverConfig->getRoot().toString()
+               << " -> " << resolvedPath.toString();
       m_logger.debug(debugMsg.str());
 
       return resolvedPath;
@@ -479,8 +484,9 @@ ConnectionHandler::resolveErrorPagePath(
 
   // Case 3: Neither ./ nor / - treat as relative to server root
   std::ostringstream warnMsg;
-  warnMsg << "Error page path '" << errorPagePath
-          << "' doesn't start with ./ or /, treating as relative to server root";
+  warnMsg
+      << "Error page path '" << errorPagePath
+      << "' doesn't start with ./ or /, treating as relative to server root";
   m_logger.warn(warnMsg.str());
 
   if (m_serverConfig != NULL && !m_serverConfig->getRoot().isEmpty()) {
@@ -896,8 +902,8 @@ void ConnectionHandler::handleDirectoryRequest(
 
       try {
         m_logger.debug("About to check if path exists...");
-        pathExists =
-            filesystem::adapters::FileSystemHelper::exists(indexPath.toString());
+        pathExists = filesystem::adapters::FileSystemHelper::exists(
+            indexPath.toString());
         m_logger.debug(pathExists ? "Path exists: YES" : "Path exists: NO");
       } catch (const std::exception& ex) {
         m_logger.debug(std::string("Path exists check failed: ") + ex.what());
@@ -954,7 +960,8 @@ void ConnectionHandler::handleDirectoryRequest(
   m_logger.debug("No index file found, checking autoindex: " +
                  std::string(location.getAutoIndex() ? "enabled" : "disabled"));
 
-  m_logger.debug("directoryPath => " + directoryPath.toString() + " requestPath => " + requestPath.toString());
+  m_logger.debug("directoryPath => " + directoryPath.toString() +
+                 " requestPath => " + requestPath.toString());
   if (location.getAutoIndex()) {
     handleDirectoryListing(directoryPath, requestPath);
     return;
@@ -1079,7 +1086,7 @@ void ConnectionHandler::handleDirectoryListing(
   try {
     const std::string dirPathStr = directoryPath.toString();
     char resolvedPath[PATH_MAX];
-    
+
     if (realpath(dirPathStr.c_str(), resolvedPath) == NULL) {
       std::ostringstream errorMsg;
       errorMsg << "Failed to resolve absolute path for: " << dirPathStr
@@ -1090,14 +1097,14 @@ void ConnectionHandler::handleDirectoryListing(
           "Failed to resolve directory path");
       return;
     }
-    
+
     const domain::filesystem::value_objects::Path absolutePath(resolvedPath);
-    
+
     std::ostringstream debugMsg;
     debugMsg << "Resolved directory path: " << dirPathStr << " -> "
              << absolutePath.toString();
     m_logger.debug(debugMsg.str());
-    
+
     const std::string htmlListing =
         filesystem::adapters::DirectoryLister::generateHtmlListing(
             absolutePath, requestPath, false, "name", true);
