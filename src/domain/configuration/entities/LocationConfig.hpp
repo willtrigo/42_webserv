@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 12:21:54 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/01 20:11:44 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/11 16:16:29 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,6 +76,7 @@ class LocationConfig {
   const filesystem::value_objects::Path& getAlias() const;
   bool getClientBodyBufferSizeSet() const;
   const filesystem::value_objects::Size& getClientBodyBufferSize() const;
+  void clearAllowedMethods();
 
   void setPath(const std::string& path, LocationMatchType matchType);
   void setRoot(const filesystem::value_objects::Path& root);

@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 11:50:30 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/05 20:36:27 by umeneses         ###   ########.fr       */
+/*   Updated: 2026/01/11 15:32:17 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,7 @@ class ServerConfig {
   typedef std::map<shared::value_objects::ErrorCode, std::string> ErrorPageMap;
 
   static const std::size_t DEFAULT_CLIENT_MAX_BODY_SIZE_MB = 1;
-  static const std::size_t MAX_CLIENT_MAX_BODY_SIZE_MB = 100;
+  static const std::size_t MAX_CLIENT_MAX_BODY_SIZE_MB = 10;
   static const std::string DEFAULT_ROOT;
   static const std::string DEFAULT_INDEX;
 

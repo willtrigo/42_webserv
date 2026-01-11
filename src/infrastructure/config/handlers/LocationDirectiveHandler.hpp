@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 14:39:01 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/01 17:35:20 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/11 16:11:47 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,6 +62,10 @@ class LocationDirectiveHandler : public ADirectiveHandler {
                               const std::vector<std::string>& args,
                               std::size_t lineNumber);
   void handleAddHeader(const std::vector<std::string>& args,
+                       std::size_t lineNumber);
+  void handleClientMaxBodySize(const std::vector<std::string>& args,
+                               std::size_t lineNumber);
+  void handleErrorPage(const std::vector<std::string>& args,
                        std::size_t lineNumber);
 };
 

@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 16:35:11 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/02 13:23:10 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/11 16:52:15 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,6 +89,17 @@ void BlockParser::parseServerBlock(
       new domain::configuration::entities::ServerConfig();
 
   try {
+    server->setClientMaxBodySize(httpConfig.getClientMaxBodySize());
+
+    const domain::configuration::entities::HttpConfig::ErrorPagesMap&
+        httpErrorPages = httpConfig.getErrorPages();
+    for (domain::configuration::entities::HttpConfig::ErrorPagesMap::
+             const_iterator it = httpErrorPages.begin();
+         it != httpErrorPages.end(); ++it) {
+      domain::shared::value_objects::ErrorCode errorCode(it->first);
+      server->addErrorPage(errorCode, it->second);
+    }
+
     while (context.hasMoreTokens()) {
       const lexer::Token& token = context.currentToken();
 
@@ -162,24 +173,19 @@ void BlockParser::parseLocationBlock(
     domain::configuration::entities::ServerConfig& server) {
   m_logger.debug("Parsing location block content");
 
-  // Parse location modifier and path
-  // Syntax: location [=|~|~*|^~] path { ... }
-
   const lexer::Token& firstToken = context.currentToken();
   std::string firstArg = firstToken.value;
 
   std::string path;
-  domain::configuration::entities::LocationConfig::LocationMatchType matchType;
+  domain::configuration::entities::LocationConfig::LocationMatchType matchType =
+      domain::configuration::entities::LocationConfig::MATCH_PREFIX;
 
-  // Check if first argument is a modifier
   if (!firstArg.empty() && firstArg[0] == '@') {
-    // Named location - used for internal redirects
     path = firstArg;
     matchType = domain::configuration::entities::LocationConfig::MATCH_EXACT;
     context.advance();
   } else if (firstArg == "=" || firstArg == "~" || firstArg == "~*" ||
              firstArg == "^~") {
-    // Has modifier - next token should be the path
     context.advance();
 
     if (!context.hasMoreTokens() ||
@@ -193,7 +199,6 @@ void BlockParser::parseLocationBlock(
 
     path = context.currentToken().value;
 
-    // Determine match type from modifier
     if (firstArg == "=") {
       matchType = domain::configuration::entities::LocationConfig::MATCH_EXACT;
     } else if (firstArg == "~") {
@@ -202,49 +207,59 @@ void BlockParser::parseLocationBlock(
     } else if (firstArg == "~*") {
       matchType = domain::configuration::entities::LocationConfig::
           MATCH_REGEX_CASE_INSENSITIVE;
-    } else {  // ^~
-      matchType = domain::configuration::entities::LocationConfig::MATCH_PREFIX;
+    } else if (firstArg == "^~") {
+      matchType =
+          domain::configuration::entities::LocationConfig::MATCH_PREFIX;
     }
 
     context.advance();
   } else {
-    // No modifier - first argument is the path
     path = firstArg;
-
-    // Determine match type from path prefix (legacy support)
-    if (path.empty()) {
-      matchType = domain::configuration::entities::LocationConfig::MATCH_PREFIX;
-    } else if (path[0] == '=') {
-      matchType = domain::configuration::entities::LocationConfig::MATCH_EXACT;
-      path = path.substr(1);
-    } else if (path[0] == '~') {
-      if (path.size() > 1 && path[1] == '*') {
-        matchType = domain::configuration::entities::LocationConfig::
-            MATCH_REGEX_CASE_INSENSITIVE;
-        path = path.substr(2);
-      } else {
-        matchType = domain::configuration::entities::LocationConfig::
-            MATCH_REGEX_CASE_SENSITIVE;
-        path = path.substr(1);
-      }
-    } else {
-      matchType = domain::configuration::entities::LocationConfig::MATCH_PREFIX;
-    }
-
+    matchType = domain::configuration::entities::LocationConfig::MATCH_PREFIX;
     context.advance();
   }
 
-  context.expect(lexer::Token::BLOCK_START, "location block start");
-  context.advance();
+  std::ostringstream debugMsg;
+  debugMsg << "Parsing location block for path: " << path;
+  m_logger.debug(debugMsg.str());
 
-  std::ostringstream logMsg;
-  logMsg << "Parsing location block for path: " << path;
-  m_logger.debug(logMsg.str());
+  if (!context.hasMoreTokens() ||
+      context.currentToken().type != lexer::Token::BLOCK_START) {
+    std::ostringstream oss;
+    oss << "Expected '{' after location path '" << path << "' at line "
+        << firstToken.lineNumber;
+    throw exceptions::SyntaxException(
+        oss.str(), exceptions::SyntaxException::MISSING_BRACE);
+  }
+
+  context.advance();
 
   domain::configuration::entities::LocationConfig* location =
       new domain::configuration::entities::LocationConfig(path, matchType);
 
   try {
+    location->setClientMaxBodySize(server.getClientMaxBodySize());
+
+    // Also inherit server-level error pages
+    const domain::configuration::entities::ServerConfig::ErrorPageMap&
+        serverErrorPages = server.getErrorPages();
+    for (domain::configuration::entities::ServerConfig::ErrorPageMap::
+             const_iterator it = serverErrorPages.begin();
+         it != serverErrorPages.end(); ++it) {
+      location->addErrorPage(it->first, it->second);
+    }
+
+    // Also inherit server-level root and index files if not set in location
+    location->setRoot(server.getRoot());
+    const std::vector<std::string>& serverIndexFiles = server.getIndexFiles();
+    if (!serverIndexFiles.empty()) {
+      location->clearIndexFiles();
+      for (std::size_t i = 0; i < serverIndexFiles.size(); ++i) {
+        location->addIndexFile(serverIndexFiles[i]);
+      }
+    }
+
+    // Parse location block content
     while (context.hasMoreTokens()) {
       const lexer::Token& token = context.currentToken();
 
@@ -272,21 +287,12 @@ void BlockParser::parseLocationBlock(
         std::string tokenValue = token.value;
 
         if (tokenValue == "limit_except") {
-          handleLimitExceptBlock(context, *location);
-        } else if (tokenValue == "location") {
-          context.advance();
-          context.pushState(ParserState::LOCATION, "location");
-          parseLocationBlock(context, server);
+          handleNestedBlock(context, tokenValue, NULL, NULL, location);
         } else if (context.currentIndex() + 1 < context.tokenCount()) {
           const lexer::Token& nextToken = context.peekToken();
 
           if (nextToken.type == lexer::Token::BLOCK_START) {
-            delete location;
-            std::ostringstream oss;
-            oss << "Unknown block '" << tokenValue
-                << "' in location context at line " << token.lineNumber;
-            throw exceptions::SyntaxException(
-                oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
+            handleNestedBlock(context, tokenValue, NULL, NULL, location);
           } else {
             handleDirective(context, token, NULL, NULL, location);
           }
@@ -325,48 +331,26 @@ void BlockParser::handleNestedBlock(
     domain::configuration::entities::ServerConfig* server,
     domain::configuration::entities::LocationConfig* location) {
   std::size_t lineNumber = context.currentToken().lineNumber;
-  ParserState currentState = context.currentState();
 
-  if (currentState.context == ParserState::HTTP && blockName == "server") {
-    if (httpConfig == NULL) {
-      throw exceptions::SyntaxException(
-          "Internal error: httpConfig is NULL",
-          exceptions::SyntaxException::UNEXPECTED_TOKEN);
-    }
-
+  if (blockName == "server" && httpConfig != NULL) {
     context.advance();
-    context.expect(lexer::Token::BLOCK_START, "server block start");
+    context.expect(lexer::Token::BLOCK_START, "block start");
     context.advance();
-
     context.pushState(ParserState::SERVER, "server");
     parseServerBlock(context, *httpConfig);
-
-  } else if (currentState.context == ParserState::SERVER &&
-             blockName == "location") {
-    if (server == NULL) {
-      throw exceptions::SyntaxException(
-          "Internal error: server is NULL",
-          exceptions::SyntaxException::UNEXPECTED_TOKEN);
-    }
-
-    context.advance();
-    context.pushState(ParserState::LOCATION, "location");
-    parseLocationBlock(context, *server);
-
-  } else if (currentState.context == ParserState::LOCATION &&
-             blockName == "limit_except") {
-    if (location == NULL) {
-      throw exceptions::SyntaxException(
-          "Internal error: location is NULL",
-          exceptions::SyntaxException::UNEXPECTED_TOKEN);
-    }
-
+  } else if (blockName == "location" && server != NULL) {
+    std::ostringstream oss;
+    oss << "Location blocks should be handled specially, not as nested blocks "
+           "at line "
+        << lineNumber;
+    throw exceptions::SyntaxException(
+        oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
+  } else if (blockName == "limit_except" && location != NULL) {
     handleLimitExceptBlock(context, *location);
-
   } else {
     std::ostringstream oss;
-    oss << "Unknown or misplaced block '" << blockName << "' in "
-        << currentState.contextToString() << " context at line " << lineNumber;
+    oss << "Unknown or misplaced block type '" << blockName << "' at line "
+        << lineNumber;
     throw exceptions::SyntaxException(
         oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
   }
@@ -394,6 +378,20 @@ void BlockParser::handleDirective(
     if (token.type == lexer::Token::STRING) {
       args.push_back(token.value);
       context.advance();
+    } else if (token.type == lexer::Token::BLOCK_START) {
+      std::ostringstream oss;
+      oss << "Unexpected block start in directive '" << directive
+          << "' at line " << token.lineNumber
+          << ". Did you mean to declare a block?";
+      throw exceptions::SyntaxException(
+          oss.str(), exceptions::SyntaxException::UNEXPECTED_TOKEN);
+    } else if (token.type == lexer::Token::BLOCK_END) {
+      std::ostringstream oss;
+      oss << "Unexpected block end in directive '" << directive
+          << "' at line " << token.lineNumber
+          << ". Expected semicolon to terminate directive.";
+      throw exceptions::SyntaxException(
+          oss.str(), exceptions::SyntaxException::UNEXPECTED_TOKEN);
     } else {
       std::ostringstream oss;
       oss << "Expected argument or semicolon after directive '" << directive
@@ -404,45 +402,21 @@ void BlockParser::handleDirective(
     }
   }
 
-  ParserState currentState = context.currentState();
-
-  try {
-    if (currentState.context == ParserState::HTTP && httpConfig != NULL) {
-      handlers::GlobalDirectiveHandler handler(m_logger, *httpConfig);
-      handler.handle(directive, args, lineNumber);
-
-    } else if (currentState.context == ParserState::SERVER && server != NULL) {
-      handlers::ServerDirectiveHandler handler(m_logger, *server);
-      handler.handle(directive, args, lineNumber);
-
-    } else if (currentState.context == ParserState::LOCATION &&
-               location != NULL) {
-      handlers::LocationDirectiveHandler handler(m_logger, *location);
-      handler.handle(directive, args, lineNumber);
-
-    } else {
-      std::ostringstream oss;
-      oss << "Directive '" << directive << "' not allowed in "
-          << currentState.contextToString() << " context at line "
-          << lineNumber;
-      throw exceptions::SyntaxException(
-          oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
-    }
-
-    std::ostringstream oss;
-    oss << "Processed directive '" << directive << "' with " << args.size()
-        << " arguments at line " << lineNumber;
-    m_logger.debug(oss.str());
-
-  } catch (const exceptions::SyntaxException&) {
-    throw;
-  } catch (const std::exception& e) {
-    std::ostringstream oss;
-    oss << "Error processing directive '" << directive << "': " << e.what()
-        << " at line " << lineNumber;
-    throw exceptions::SyntaxException(
-        oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
+  if (httpConfig != NULL) {
+    handlers::GlobalDirectiveHandler handler(m_logger, *httpConfig);
+    handler.handle(directive, args, lineNumber);
+  } else if (server != NULL) {
+    handlers::ServerDirectiveHandler handler(m_logger, *server);
+    handler.handle(directive, args, lineNumber);
+  } else if (location != NULL) {
+    handlers::LocationDirectiveHandler handler(m_logger, *location);
+    handler.handle(directive, args, lineNumber);
   }
+
+  std::ostringstream oss;
+  oss << "Processed directive '" << directive << "' with " << args.size()
+      << " arguments at line " << lineNumber;
+  m_logger.debug(oss.str());
 }
 
 void BlockParser::handleLimitExceptBlock(
@@ -482,6 +456,8 @@ void BlockParser::handleLimitExceptBlock(
 
   context.expect(lexer::Token::BLOCK_START, "limit_except block start");
   context.advance();
+
+  location.clearAllowedMethods();
 
   for (std::size_t i = 0; i < methods.size(); ++i) {
     try {
@@ -541,8 +517,8 @@ void BlockParser::handleLimitExceptBlock(
       }
     } else {
       std::ostringstream oss;
-      oss << "Unexpected token in limit_except block: " << token.typeToString()
-          << " at line " << token.lineNumber;
+      oss << "Unexpected token in limit_except block: "
+          << token.typeToString() << " at line " << token.lineNumber;
       throw exceptions::SyntaxException(
           oss.str(), exceptions::SyntaxException::UNEXPECTED_TOKEN);
     }

@@ -6,12 +6,13 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 16:13:59 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/02 02:01:45 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/11 16:12:23 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "domain/filesystem/value_objects/UploadAccess.hpp"
 #include "domain/http/value_objects/HttpMethod.hpp"
+#include "domain/shared/value_objects/ErrorCode.hpp"
 #include "infrastructure/config/exceptions/SyntaxException.hpp"
 #include "infrastructure/config/handlers/LocationDirectiveHandler.hpp"
 
@@ -61,6 +62,10 @@ void LocationDirectiveHandler::handle(const std::string& directive,
     handleUploadSizeLimits(directive, args, lineNumber);
   } else if (directive == "add_header") {
     handleAddHeader(args, lineNumber);
+  } else if (directive == "client_max_body_size") {
+    handleClientMaxBodySize(args, lineNumber);
+  } else if (directive == "error_page") {
+    handleErrorPage(args, lineNumber);
   } else if (directive == "include") {
     std::ostringstream oss;
     oss << "Include directive in location context (not yet implemented): "
@@ -237,7 +242,8 @@ void LocationDirectiveHandler::handleReturn(
     // Validate HTTP status code range using ErrorCode constants
     if (!domain::shared::value_objects::ErrorCode::isValidErrorCode(code)) {
       std::ostringstream oss;
-      oss << "return code " << code << " is not a valid HTTP status code ("
+      oss << "return code " << code
+          << " is not a valid HTTP status code ("
           << domain::shared::value_objects::ErrorCode::MIN_CODE << "-"
           << domain::shared::value_objects::ErrorCode::MAX_CODE << ") at line "
           << lineNumber;
@@ -253,31 +259,29 @@ void LocationDirectiveHandler::handleReturn(
         if (i > 1) redirectTarget += " ";
         redirectTarget += args[i];
       }
-
+      
       m_location.setReturnRedirect(redirectTarget, code);
 
       std::ostringstream oss;
-      oss << "Set return " << code << " -> '" << redirectTarget << "' at line "
-          << lineNumber;
+      oss << "Set return " << code << " -> '" << redirectTarget 
+          << "' at line " << lineNumber;
       m_logger.debug(oss.str());
-    }
-    // For success (2xx), client error (4xx), or server error (5xx) codes, use
-    // setReturnContent
-    else if (errorCode.isSuccess() || errorCode.isClientError() ||
-             errorCode.isServerError()) {
+    } 
+    // For success (2xx), client error (4xx), or server error (5xx) codes, use setReturnContent
+    else if (errorCode.isSuccess() || errorCode.isClientError() || errorCode.isServerError()) {
       // Join all remaining arguments as the response content
       std::string content;
       for (std::size_t i = 1; i < args.size(); ++i) {
         if (i > 1) content += " ";
         content += args[i];
       }
-
+      
       // Remove surrounding quotes if present
-      if (content.size() >= 2 && content[0] == '"' &&
-          content[content.size() - 1] == '"') {
+      if (content.size() >= 2 && 
+          content[0] == '"' && content[content.size() - 1] == '"') {
         content = content.substr(1, content.size() - 2);
       }
-
+      
       m_location.setReturnContent(content, code);
 
       std::ostringstream oss;
@@ -288,13 +292,14 @@ void LocationDirectiveHandler::handleReturn(
       // This should not happen due to the range check above, but handle it
       std::ostringstream oss;
       oss << "return code " << code
-          << " is not a valid return code (must be 2xx, 3xx, 4xx, or 5xx) at "
-             "line "
+          << " is not a valid return code (must be 2xx, 3xx, 4xx, or 5xx) at line "
           << lineNumber;
       throw exceptions::SyntaxException(
           oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
     }
 
+  } catch (const exceptions::SyntaxException&) {
+    throw;
   } catch (const std::exception& e) {
     std::ostringstream oss;
     oss << "Invalid return directive: " << e.what() << " at line "
@@ -531,6 +536,78 @@ void LocationDirectiveHandler::handleAddHeader(
         << lineNumber;
     throw exceptions::SyntaxException(
         oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
+  }
+}
+
+void LocationDirectiveHandler::handleClientMaxBodySize(
+    const std::vector<std::string>& args, std::size_t lineNumber) {
+  validateArgumentCount("client_max_body_size", args, 1, lineNumber);
+
+  try {
+    m_location.setClientMaxBodySize(args[0]);
+
+    std::ostringstream oss;
+    oss << "Set client_max_body_size to '" << args[0] << "' at line "
+        << lineNumber;
+    m_logger.debug(oss.str());
+
+  } catch (const exceptions::SyntaxException&) {
+    throw;
+  } catch (const std::exception& e) {
+    std::ostringstream oss;
+    oss << "Invalid client_max_body_size '" << args[0] << "': " << e.what()
+        << " at line " << lineNumber;
+    throw exceptions::SyntaxException(
+        oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
+  }
+}
+
+void LocationDirectiveHandler::handleErrorPage(
+    const std::vector<std::string>& args, std::size_t lineNumber) {
+  validateMinimumArguments("error_page", args, 2, lineNumber);
+
+  std::string uri = args.back();
+
+  if (uri.empty()) {
+    throw exceptions::SyntaxException(
+        "error_page URI cannot be empty",
+        exceptions::SyntaxException::INVALID_DIRECTIVE);
+  }
+
+  for (std::size_t i = 0; i < args.size() - 1; ++i) {
+    try {
+      unsigned int codeValue =
+          parseUnsignedInt(args[i], "error_page code", lineNumber);
+
+      if (codeValue <
+              domain::shared::value_objects::ErrorCode::MIN_VALID_CODE ||
+          codeValue >
+              domain::shared::value_objects::ErrorCode::MAX_VALID_CODE) {
+        std::ostringstream oss;
+        oss << "error_page code " << codeValue
+            << " is not a valid HTTP error code (400-599) at line "
+            << lineNumber;
+        throw exceptions::SyntaxException(
+            oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
+      }
+
+      domain::shared::value_objects::ErrorCode errorCode(codeValue);
+      m_location.addErrorPage(errorCode, uri);
+
+      std::ostringstream oss;
+      oss << "Set error_page " << codeValue << " -> '" << uri << "' at line "
+          << lineNumber;
+      m_logger.debug(oss.str());
+
+    } catch (const exceptions::SyntaxException&) {
+      throw;
+    } catch (const std::exception& e) {
+      std::ostringstream oss;
+      oss << "Failed to set error_page for code '" << args[i]
+          << "': " << e.what() << " at line " << lineNumber;
+      throw exceptions::SyntaxException(
+          oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
+    }
   }
 }
 

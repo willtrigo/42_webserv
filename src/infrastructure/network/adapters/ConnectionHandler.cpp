@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 12:01:14 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/11 06:21:01 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/11 16:44:47 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -213,11 +213,17 @@ void ConnectionHandler::handleRead() {
       << " (total: " << m_requestBuffer.size() << ")";
   m_logger.debug(oss.str());
 
-  if (m_requestBuffer.size() > K_MAX_REQUEST_SIZE) {
-    m_logger.debug("######## before the throw");
+  // Use configured server-level client_max_body_size instead of hardcoded limit
+  const size_t maxRequestSize =
+      m_serverConfig->getClientMaxBodySize().getBytes();
+
+  if (m_requestBuffer.size() > maxRequestSize) {
+    std::ostringstream errorMsg;
+    errorMsg << "Request size (" << m_requestBuffer.size()
+             << " bytes) exceeds server maximum (" << maxRequestSize
+             << " bytes)";
     throw exceptions::ConnectionException(
-        "Request size exceeds maximum allowed",
-        exceptions::ConnectionException::REQUEST_TOO_LARGE);
+        errorMsg.str(), exceptions::ConnectionException::REQUEST_TOO_LARGE);
   }
 
   if (parseRequest()) {
@@ -268,8 +274,9 @@ void ConnectionHandler::handleWrite() {
 
 bool ConnectionHandler::parseRequest() {
   http::RequestParser parser;
-  parser.setMaxHeaderSize(K_MAX_REQUEST_SIZE);
-  parser.setMaxBodySize(m_serverConfig->getClientMaxBodySize().getBytes());
+  const size_t maxBodySize = m_serverConfig->getClientMaxBodySize().getBytes();
+  parser.setMaxHeaderSize(maxBodySize);
+  parser.setMaxBodySize(maxBodySize);
 
   if (!parser.parse(m_requestBuffer.c_str(), m_requestBuffer.size())) {
     return false;
@@ -1561,7 +1568,8 @@ void ConnectionHandler::handlePayloadTooLarge(
   }
 
   std::ostringstream tryServerMsg;
-  tryServerMsg << "handlePayloadTooLarge: 413 not in location, checking server config";
+  tryServerMsg
+      << "handlePayloadTooLarge: 413 not in location, checking server config";
   m_logger.debug(tryServerMsg.str());
 
   if (m_serverConfig != NULL) {
@@ -1573,8 +1581,9 @@ void ConnectionHandler::handlePayloadTooLarge(
 
     if (serverIt != serverErrorPages.end()) {
       std::ostringstream foundServerMsg;
-      foundServerMsg << "handlePayloadTooLarge: found 413 page in server config: "
-                     << serverIt->second;
+      foundServerMsg
+          << "handlePayloadTooLarge: found 413 page in server config: "
+          << serverIt->second;
       m_logger.debug(foundServerMsg.str());
       serveErrorPage(serverIt->second, payloadTooLargeCode, location);
       return;
@@ -1582,8 +1591,8 @@ void ConnectionHandler::handlePayloadTooLarge(
   }
 
   std::ostringstream noErrorPageMsg;
-  noErrorPageMsg
-      << "handlePayloadTooLarge: no 413 error page configured, generating default";
+  noErrorPageMsg << "handlePayloadTooLarge: no 413 error page configured, "
+                    "generating default";
   m_logger.debug(noErrorPageMsg.str());
   generateErrorResponse(payloadTooLargeCode, "Request entity too large");
 }

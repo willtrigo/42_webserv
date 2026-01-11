@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 12:23:41 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/11 00:48:35 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/11 16:16:43 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -207,6 +207,10 @@ bool LocationConfig::getClientBodyBufferSizeSet() const {
 const filesystem::value_objects::Size& LocationConfig::getClientBodyBufferSize()
     const {
   return m_clientBodyBufferSize;
+}
+
+void LocationConfig::clearAllowedMethods() {
+  m_allowedMethods.clear();
 }
 
 void LocationConfig::setPath(const std::string& path,
