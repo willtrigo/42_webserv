@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 12:01:14 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/11 05:21:43 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/11 06:21:01 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -141,15 +141,19 @@ void ConnectionHandler::processEvent() {
     m_state = STATE_WRITING_RESPONSE;
   } catch (const exceptions::ConnectionException& ex) {
     m_logger.error(std::string("Connection error: ") + ex.what());
-    domain::shared::value_objects::ErrorCode errorCode =
-        domain::shared::value_objects::ErrorCode::internalServerError();
-    std::string errorMsg = ex.what();
-    if (errorMsg.find("Request size exceeds") != std::string::npos ||
-        errorMsg.find("too large") != std::string::npos ||
-        errorMsg.find("Request entity too large") != std::string::npos) {
-      errorCode = domain::shared::value_objects::ErrorCode::payloadTooLarge();
-    }
-    generateErrorResponse(errorCode, ex.what());
+
+    const domain::configuration::entities::ServerConfig* config =
+        resolveVirtualHost();
+    const domain::http::value_objects::HttpMethod& method =
+        m_request.getMethod();
+    const domain::filesystem::value_objects::Path requestPath =
+        domain::filesystem::value_objects::Path::fromString(
+            m_request.getPath().toString(), true);
+
+    const domain::configuration::entities::LocationConfig* matchedLocation =
+        findMatchingLocation(config, requestPath.toString());
+    handlePayloadTooLarge(*matchedLocation);
+
     m_responseBuffer = m_response.serialize();
     m_responseOffset = 0;
     m_state = STATE_WRITING_RESPONSE;
@@ -1530,6 +1534,58 @@ void ConnectionHandler::handleNotFound(
       << "handleNotFound: no 404 error page configured, generating default";
   m_logger.debug(noErrorPageMsg.str());
   generateErrorResponse(notFoundCode, "Not Found");
+}
+
+void ConnectionHandler::handlePayloadTooLarge(
+    const domain::configuration::entities::LocationConfig& location) {
+  domain::shared::value_objects::ErrorCode payloadTooLargeCode =
+      domain::shared::value_objects::ErrorCode::payloadTooLarge();
+
+  std::ostringstream debugMsg;
+  debugMsg << "handlePayloadTooLarge: looking for 413 error page";
+  m_logger.debug(debugMsg.str());
+
+  const domain::configuration::entities::LocationConfig::ErrorPageMap&
+      locationErrorPages = location.getErrorPages();
+
+  domain::configuration::entities::LocationConfig::ErrorPageMap::const_iterator
+      locationIt = locationErrorPages.find(payloadTooLargeCode);
+
+  if (locationIt != locationErrorPages.end()) {
+    std::ostringstream foundMsg;
+    foundMsg << "handlePayloadTooLarge: found 413 page in location config: "
+             << locationIt->second;
+    m_logger.debug(foundMsg.str());
+    serveErrorPage(locationIt->second, payloadTooLargeCode, location);
+    return;
+  }
+
+  std::ostringstream tryServerMsg;
+  tryServerMsg << "handlePayloadTooLarge: 413 not in location, checking server config";
+  m_logger.debug(tryServerMsg.str());
+
+  if (m_serverConfig != NULL) {
+    const domain::configuration::entities::ServerConfig::ErrorPageMap&
+        serverErrorPages = m_serverConfig->getErrorPages();
+
+    domain::configuration::entities::ServerConfig::ErrorPageMap::const_iterator
+        serverIt = serverErrorPages.find(payloadTooLargeCode);
+
+    if (serverIt != serverErrorPages.end()) {
+      std::ostringstream foundServerMsg;
+      foundServerMsg << "handlePayloadTooLarge: found 413 page in server config: "
+                     << serverIt->second;
+      m_logger.debug(foundServerMsg.str());
+      serveErrorPage(serverIt->second, payloadTooLargeCode, location);
+      return;
+    }
+  }
+
+  std::ostringstream noErrorPageMsg;
+  noErrorPageMsg
+      << "handlePayloadTooLarge: no 413 error page configured, generating default";
+  m_logger.debug(noErrorPageMsg.str());
+  generateErrorResponse(payloadTooLargeCode, "Request entity too large");
 }
 
 void ConnectionHandler::serveErrorPage(

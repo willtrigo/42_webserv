@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 11:57:13 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/11 00:34:41 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/11 06:05:35 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -133,6 +133,9 @@ class ConnectionHandler {
       const std::string& message);
 
   void handleNotFound(
+      const domain::configuration::entities::LocationConfig& location);
+
+  void handlePayloadTooLarge(
       const domain::configuration::entities::LocationConfig& location);
 
   void serveErrorPage(
