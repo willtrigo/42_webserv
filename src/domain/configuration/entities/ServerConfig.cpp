@@ -6,7 +6,7 @@
 /*   By: umeneses <umeneses@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 11:52:37 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/05 21:46:40 by umeneses         ###   ########.fr       */
+/*   Updated: 2026/01/11 00:48:39 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -136,8 +136,8 @@ std::string ServerConfig::normalizeListenDirective(
   // Check if it's an IPv6 without port
   if (trimmed.find("::") != std::string::npos ||
       (!trimmed.empty() && trimmed[0] == '[')) {
-        std::ostringstream oss;
-        oss << trimmed << ":" << ListenDirective::DEFAULT_PORT.getValue();
+    std::ostringstream oss;
+    oss << trimmed << ":" << ListenDirective::DEFAULT_PORT.getValue();
     return oss.str();
   }
 
@@ -258,10 +258,16 @@ void ServerConfig::addErrorPage(const shared::value_objects::ErrorCode& code,
         oss.str(), exceptions::ServerConfigException::EMPTY_ERROR_PAGE_URI);
   }
 
-  if (trimmedUri[0] != '/') {
+  // Accept both relative paths (./) and absolute paths from root (/)
+  const bool startsWithRelative =
+      (trimmedUri.length() >= 2 && trimmedUri[0] == '.' &&
+       trimmedUri[1] == '/');
+  const bool startsWithAbsolute = (trimmedUri[0] == '/');
+
+  if (!startsWithRelative && !startsWithAbsolute) {
     std::ostringstream oss;
-    oss << "Error page URI must start with '/': " << trimmedUri
-        << " for error code " << code.getValue();
+    oss << "Error page URI must start with './' (relative) or '/' (absolute): '"
+        << trimmedUri << "' for error code " << code.getValue();
     throw exceptions::ServerConfigException(
         oss.str(), exceptions::ServerConfigException::INVALID_ERROR_PAGE_URI);
   }
@@ -488,10 +494,23 @@ void ServerConfig::validateErrorPages() const {
        it != m_errorPages.end(); ++it) {
     const std::string& uri = it->second;
 
-    if (uri.empty() || uri[0] != '/') {
+    if (uri.empty()) {
+      std::ostringstream oss;
+      oss << "Error page URI cannot be empty for error code "
+          << it->first.getValue();
+      throw exceptions::ServerConfigException(
+          oss.str(), exceptions::ServerConfigException::INVALID_ERROR_PAGE_URI);
+    }
+
+    const bool startsWithRelative =
+        (uri.length() >= 2 && uri[0] == '.' && uri[1] == '/');
+    const bool startsWithAbsolute = (uri[0] == '/');
+
+    if (!startsWithRelative && !startsWithAbsolute) {
       std::ostringstream oss;
       oss << "Invalid error page URI for error " << it->first.getValue()
-          << ": '" << uri << "' (must start with '/')";
+          << ": '" << uri
+          << "' (must start with './' for relative or '/' for absolute)";
       throw exceptions::ServerConfigException(
           oss.str(), exceptions::ServerConfigException::INVALID_ERROR_PAGE_URI);
     }

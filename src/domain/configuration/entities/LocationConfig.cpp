@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/22 12:23:41 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/09 02:13:32 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/11 00:48:35 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -434,15 +434,31 @@ void LocationConfig::addErrorPage(const shared::value_objects::ErrorCode& code,
         oss.str(), exceptions::LocationConfigException::EMPTY_ERROR_PAGE_URI);
   }
 
-  if (uri[0] != '/') {
+  std::string trimmedUri = shared::utils::StringUtils::trim(uri);
+
+  if (trimmedUri.empty()) {
     std::ostringstream oss;
-    oss << "Error page URI must start with '/': " << uri << " for error code "
+    oss << "Error page URI cannot be empty or whitespace for error code "
         << code.getValue();
+    throw exceptions::LocationConfigException(
+        oss.str(), exceptions::LocationConfigException::EMPTY_ERROR_PAGE_URI);
+  }
+
+  // Accept both relative paths (./) and absolute paths from root (/)
+  const bool startsWithRelative =
+      (trimmedUri.length() >= 2 && trimmedUri[0] == '.' &&
+       trimmedUri[1] == '/');
+  const bool startsWithAbsolute = (trimmedUri[0] == '/');
+
+  if (!startsWithRelative && !startsWithAbsolute) {
+    std::ostringstream oss;
+    oss << "Error page URI must start with './' (relative) or '/' (absolute): '"
+        << trimmedUri << "' for error code " << code.getValue();
     throw exceptions::LocationConfigException(
         oss.str(), exceptions::LocationConfigException::INVALID_ERROR_PAGE_URI);
   }
 
-  m_errorPages[code] = uri;
+  m_errorPages[code] = trimmedUri;
 }
 
 void LocationConfig::removeErrorPage(
@@ -567,8 +583,7 @@ void LocationConfig::setUploadDirectory(const std::string& directory) {
 
 void LocationConfig::setUploadPermissions(unsigned int permissions) {
   if (!m_hasUploadConfig) {
-    domain::filesystem::value_objects::Path defaultDir(
-        "/tmp");
+    domain::filesystem::value_objects::Path defaultDir("/tmp");
     m_uploadConfig =
         domain::configuration::value_objects::UploadConfig(defaultDir);
     m_hasUploadConfig = true;
@@ -760,10 +775,24 @@ void LocationConfig::validateErrorPages() const {
        it != m_errorPages.end(); ++it) {
     const std::string& uri = it->second;
 
-    if (uri.empty() || uri[0] != '/') {
+    if (uri.empty()) {
+      std::ostringstream oss;
+      oss << "Error page URI cannot be empty for error code "
+          << it->first.getValue();
+      throw exceptions::LocationConfigException(
+          oss.str(),
+          exceptions::LocationConfigException::INVALID_ERROR_PAGE_URI);
+    }
+
+    const bool startsWithRelative =
+        (uri.length() >= 2 && uri[0] == '.' && uri[1] == '/');
+    const bool startsWithAbsolute = (uri[0] == '/');
+
+    if (!startsWithRelative && !startsWithAbsolute) {
       std::ostringstream oss;
       oss << "Invalid error page URI for error " << it->first.getValue()
-          << ": '" << uri << "' (must start with '/')";
+          << ": '" << uri
+          << "' (must start with './' for relative or '/' for absolute)";
       throw exceptions::LocationConfigException(
           oss.str(),
           exceptions::LocationConfigException::INVALID_ERROR_PAGE_URI);
@@ -1012,9 +1041,8 @@ value_objects::Route LocationConfig::toRoute() const {
   // For regex locations, use root path or "/" instead of the regex pattern
   // since regex patterns are not valid filesystem paths
   filesystem::value_objects::Path routePath;
-  bool isRegexLocation =
-      (m_matchType == MATCH_REGEX_CASE_SENSITIVE ||
-       m_matchType == MATCH_REGEX_CASE_INSENSITIVE);
+  bool isRegexLocation = (m_matchType == MATCH_REGEX_CASE_SENSITIVE ||
+                          m_matchType == MATCH_REGEX_CASE_INSENSITIVE);
 
   if (isRegexLocation) {
     // Use root if set, otherwise use "/"

@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 11:57:13 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/08 10:20:23 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/11 00:34:41 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -143,6 +143,10 @@ class ConnectionHandler {
   domain::filesystem::value_objects::Path resolvePathWithServerFallback(
       const domain::configuration::entities::LocationConfig& location,
       const std::string& requestPath) const;
+
+  domain::filesystem::value_objects::Path resolveErrorPagePath(
+      const domain::configuration::entities::LocationConfig& location,
+      const std::string& errorPagePath) const;
 
   bool validateRequestBodySize(
       const domain::configuration::entities::LocationConfig& location) const;

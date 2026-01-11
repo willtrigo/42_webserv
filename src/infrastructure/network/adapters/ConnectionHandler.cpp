@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/03 12:01:14 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/09 22:34:44 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/11 00:36:15 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -383,6 +383,111 @@ ConnectionHandler::resolvePathWithServerFallback(
 
   return domain::filesystem::value_objects::Path::fromString(
       "./" + relativeRequestPath, false);
+}
+
+domain::filesystem::value_objects::Path
+ConnectionHandler::resolveErrorPagePath(
+    const domain::configuration::entities::LocationConfig& location,
+    const std::string& errorPagePath) const {
+  if (errorPagePath.empty()) {
+    throw std::runtime_error("Error page path cannot be empty");
+  }
+
+  // Case 1: Relative path starting with "./" (e.g., ./errors/404.html)
+  // Convert to absolute path using realpath()
+  if (errorPagePath.length() >= 2 && errorPagePath[0] == '.' &&
+      errorPagePath[1] == '/') {
+    char resolvedPath[PATH_MAX];
+
+    if (realpath(errorPagePath.c_str(), resolvedPath) == NULL) {
+      std::ostringstream errorMsg;
+      errorMsg << "Failed to resolve error page path: " << errorPagePath
+               << " (errno=" << errno << ")";
+      m_logger.warn(errorMsg.str());
+
+      // Try to construct path manually if realpath fails (file might not exist
+      // yet)
+      char cwd[PATH_MAX];
+      if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        std::string cwdStr(cwd);
+        std::string relativePart = errorPagePath.substr(2);  // Remove "./"
+        std::string constructedPath = cwdStr + "/" + relativePart;
+        return domain::filesystem::value_objects::Path(constructedPath);
+      }
+
+      throw std::runtime_error("Failed to resolve relative error page path: " +
+                               errorPagePath);
+    }
+
+    std::ostringstream debugMsg;
+    debugMsg << "Resolved relative error page path: " << errorPagePath << " -> "
+             << resolvedPath;
+    m_logger.debug(debugMsg.str());
+
+    return domain::filesystem::value_objects::Path(resolvedPath);
+  }
+
+  // Case 2: Absolute path from server root starting with "/" (e.g.,
+  // /errors/404.html) Join with server or location root
+  if (errorPagePath[0] == '/') {
+    std::string pathWithoutLeadingSlash = errorPagePath.substr(1);
+
+    // Try location root first
+    try {
+      const domain::filesystem::value_objects::Path& locationRoot =
+          location.getRoot();
+      if (!locationRoot.isEmpty() && locationRoot.toString() != "/") {
+        domain::filesystem::value_objects::Path resolvedPath =
+            locationRoot.join(pathWithoutLeadingSlash);
+
+        std::ostringstream debugMsg;
+        debugMsg << "Resolved error page path using location root: "
+                 << errorPagePath << " + " << locationRoot.toString() << " -> "
+                 << resolvedPath.toString();
+        m_logger.debug(debugMsg.str());
+
+        return resolvedPath;
+      }
+    } catch (const std::exception& ex) {
+      std::ostringstream warnMsg;
+      warnMsg << "Could not use location root for error page: " << ex.what();
+      m_logger.debug(warnMsg.str());
+    }
+
+    // Fall back to server root
+    if (m_serverConfig != NULL && !m_serverConfig->getRoot().isEmpty()) {
+      domain::filesystem::value_objects::Path resolvedPath =
+          m_serverConfig->getRoot().join(pathWithoutLeadingSlash);
+
+      std::ostringstream debugMsg;
+      debugMsg << "Resolved error page path using server root: " << errorPagePath
+               << " + " << m_serverConfig->getRoot().toString() << " -> "
+               << resolvedPath.toString();
+      m_logger.debug(debugMsg.str());
+
+      return resolvedPath;
+    }
+
+    // If no root configured, use path as-is (treat as absolute filesystem path)
+    std::ostringstream warnMsg;
+    warnMsg << "No server root configured, using error page path as absolute: "
+            << errorPagePath;
+    m_logger.warn(warnMsg.str());
+
+    return domain::filesystem::value_objects::Path(errorPagePath);
+  }
+
+  // Case 3: Neither ./ nor / - treat as relative to server root
+  std::ostringstream warnMsg;
+  warnMsg << "Error page path '" << errorPagePath
+          << "' doesn't start with ./ or /, treating as relative to server root";
+  m_logger.warn(warnMsg.str());
+
+  if (m_serverConfig != NULL && !m_serverConfig->getRoot().isEmpty()) {
+    return m_serverConfig->getRoot().join(errorPagePath);
+  }
+
+  return domain::filesystem::value_objects::Path("./" + errorPagePath);
 }
 
 void ConnectionHandler::processRequest() {
@@ -1425,11 +1530,17 @@ void ConnectionHandler::serveErrorPage(
     const domain::shared::value_objects::ErrorCode& statusCode,
     const domain::configuration::entities::LocationConfig& location) {
   try {
+    std::ostringstream debugStart;
+    debugStart << "Attempting to serve error page: " << errorPagePath
+               << " for status code: " << statusCode.getValue();
+    m_logger.debug(debugStart.str());
+
     domain::filesystem::value_objects::Path errorPath =
-        resolvePathWithServerFallback(location, errorPagePath);
+        resolveErrorPagePath(location, errorPagePath);
 
     std::ostringstream debugMsg;
-    debugMsg << "Serving error page from: " << errorPath.toString();
+    debugMsg << "Resolved error page path: " << errorPagePath << " -> "
+             << errorPath.toString();
     m_logger.debug(debugMsg.str());
 
     const std::string errorPathStr = errorPath.toString();

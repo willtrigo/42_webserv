@@ -6,7 +6,7 @@
 /*   By: dande-je <dande-je@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 17:13:33 by dande-je          #+#    #+#             */
-/*   Updated: 2026/01/02 14:32:31 by dande-je         ###   ########.fr       */
+/*   Updated: 2026/01/11 00:37:24 by dande-je         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -384,9 +384,17 @@ void HttpConfig::setErrorPage(const shared::value_objects::ErrorCode& code,
         exceptions::HttpConfigException::INVALID_ERROR_PAGE);
   }
 
-  if (trimmedUri[0] != '/') {
+  // Accept both relative paths (./) and absolute paths from root (/)
+  const bool startsWithRelative = 
+      (trimmedUri.length() >= 2 && trimmedUri[0] == '.' && trimmedUri[1] == '/');
+  const bool startsWithAbsolute = (trimmedUri[0] == '/');
+  
+  if (!startsWithRelative && !startsWithAbsolute) {
+    std::ostringstream oss;
+    oss << "Error page URI must start with './' (relative) or '/' (absolute): '"
+        << trimmedUri << "'";
     throw exceptions::HttpConfigException(
-        "Error page URI must start with '/'",
+        oss.str(),
         exceptions::HttpConfigException::INVALID_ERROR_PAGE);
   }
 
