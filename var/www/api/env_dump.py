@@ -16,6 +16,7 @@ from io import BytesIO
 import cgi
 
 
+# CGI Environment Variables to Display
 CGI_VARS: List[str] = [
     'GATEWAY_INTERFACE', 'SERVER_PROTOCOL', 'SERVER_SOFTWARE',
     'SERVER_NAME', 'SERVER_PORT', 'REQUEST_METHOD', 'REQUEST_URI',
@@ -149,7 +150,6 @@ class CGIRenderer:
             length = int(content_length)
             if length > 0:
                 raw_post_bytes = sys.stdin.buffer.read(length)
-                # Decode for display
                 raw_post_text = raw_post_bytes.decode('utf-8', errors='replace')
         except Exception as e:
             output.append(f"    <p class='error'>Error reading POST data: {html.escape(str(e))}</p>\n")
@@ -172,6 +172,14 @@ class CGIRenderer:
                 
                 if not form:
                     output.append("        <tr><td colspan='2'><em>No POST data</em></td></tr>\n")
+                else:
+                    for key in sorted(form.keys()):
+                        field = form[key]
+                        if field.filename:
+                            value = f"📁 File: {field.filename}"
+                        else:
+                            value = field.value
+                        output.append(f"        <tr><td class='key'>{html.escape(key)}</td><td>{html.escape(value)}</td></tr>\n")
             else:
                 output.append("        <tr><td colspan='2'><em>No POST data</em></td></tr>\n")
                 
