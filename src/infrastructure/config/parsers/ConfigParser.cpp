@@ -174,7 +174,7 @@ void ConfigParser::handleSingleDirective(
     const lexer::Token& token = context.currentToken();
 
     if (token.type == lexer::Token::SEMICOLON) {
-      context.advance();  // Consume the semicolon
+      context.advance();
       break;
     }
     if (token.type == lexer::Token::STRING) {

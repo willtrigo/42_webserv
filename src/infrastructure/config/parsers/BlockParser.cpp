@@ -240,7 +240,6 @@ void BlockParser::parseLocationBlock(
   try {
     location->setClientMaxBodySize(server.getClientMaxBodySize());
 
-    // Also inherit server-level error pages
     const domain::configuration::entities::ServerConfig::ErrorPageMap&
         serverErrorPages = server.getErrorPages();
     for (domain::configuration::entities::ServerConfig::ErrorPageMap::
@@ -249,7 +248,6 @@ void BlockParser::parseLocationBlock(
       location->addErrorPage(it->first, it->second);
     }
 
-    // Also inherit server-level root and index files if not set in location
     location->setRoot(server.getRoot());
     const std::vector<std::string>& serverIndexFiles = server.getIndexFiles();
     if (!serverIndexFiles.empty()) {
@@ -259,7 +257,6 @@ void BlockParser::parseLocationBlock(
       }
     }
 
-    // Parse location block content
     while (context.hasMoreTokens()) {
       const lexer::Token& token = context.currentToken();
 

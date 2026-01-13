@@ -27,8 +27,6 @@ class IConfigProvider {
  public:
   virtual ~IConfigProvider() {}
   virtual void load(const std::string& configPath) = 0;
-  // virtual void load(const std::string& configPath,
-  //                   const std::string& includePath) = 0;
 
   virtual const domain::configuration::entities::HttpConfig& getConfiguration()
       const = 0;

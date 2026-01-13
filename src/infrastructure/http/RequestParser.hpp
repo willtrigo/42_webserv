@@ -48,19 +48,15 @@ class RequestParser {
   RequestParser();
   explicit RequestParser(std::size_t maxHeaderSize, std::size_t maxBodySize);
 
-  // Parse incoming data
   bool parse(const char* data, std::size_t length);
   bool parse(const std::vector<char>& data);
 
-  // Get parsed request
   const ParsedRequest& getRequest() const;
 
-  // State
   bool isComplete() const;
   bool hasError() const;
   void reset();
 
-  // Configuration
   void setMaxHeaderSize(std::size_t size);
   void setMaxBodySize(std::size_t size);
   std::size_t getMaxHeaderSize() const;
@@ -72,25 +68,21 @@ class RequestParser {
   std::size_t m_maxHeaderSize;
   std::size_t m_maxBodySize;
 
-  // Parsing state
   enum ParseState { START_LINE, HEADERS, BODY, CHUNKED_BODY, COMPLETE, ERROR };
 
   ParseState m_state;
   std::size_t m_bodyBytesRead;
 
-  // Parsing methods
   bool parseStartLine();
   bool parseHeaders();
   bool parseBody();
   bool parseChunkedBody();
 
-  // Helper methods
   std::size_t findLineEnd() const;
   std::string extractLine();
   void processStartLine(const std::string& line);
   void processHeaderLine(const std::string& line);
 
-  // Validation
   bool validateMethod(const std::string& method) const;
   bool validatePath(const std::string& path) const;
   bool validateHttpVersion(const std::string& version) const;

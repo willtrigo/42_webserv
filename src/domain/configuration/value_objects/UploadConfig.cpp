@@ -437,9 +437,6 @@ UploadFileInfo UploadConfig::processUpload(const std::string& originalFilename,
                                            const std::vector<char>& fileData,
                                            const std::string& uploader) const {
   try {
-    // Perform validations BEFORE initializing dependencies
-    // This allows validation tests to pass without requiring file I/O
-    // infrastructure
     if (!validateFilename(originalFilename)) {
       throw exceptions::UploadConfigException(
           "Invalid filename: " + originalFilename,
@@ -453,8 +450,6 @@ UploadFileInfo UploadConfig::processUpload(const std::string& originalFilename,
           exceptions::UploadConfigException::MAX_FILE_SIZE_EXCEEDED);
     }
 
-    // Initialize dependencies only after basic validations pass
-    // This requires actual file I/O infrastructure
     initializeDependencies();
 
     if (!validateUploadConstraints(uploader)) {
@@ -542,8 +537,6 @@ UploadFileInfo UploadConfig::processUpload(const std::string& originalFilename,
     }
 
     updateUploadStatistics(uploader);
-    // updateUploadStatistics(uploader, fileSize); remove filesize to bypass the
-    // error
 
     return createFileInfo(originalFilename, storedFilename, fileSize, mimeType,
                           uploader);
@@ -593,9 +586,7 @@ std::vector<UploadFileInfo> UploadConfig::processMultiUpload(
       UploadFileInfo info = processUpload(it->first, it->second, uploader);
       results.push_back(info);
     } catch (const exceptions::UploadConfigException& e) {
-      // Log the error but continue with other files
-      // In production, you might want to collect all errors
-      throw;  // Re-throw for now
+      throw;
     }
   }
 
@@ -750,14 +741,14 @@ std::vector<UploadFileInfo> UploadConfig::listUploadedFiles(
       }
 
       UploadFileInfo info;
-      info.originalFilename = name;  // In a real system, you'd have a mapping
+      info.originalFilename = name;
       info.storedFilename = name;
       info.filePath = entry.m_fullPath;
       info.fileSize = entry.m_size;
       info.mimeType = m_fileHandler->detectMimeType(entry.m_fullPath);
       info.checksum = m_fileHandler->calculateChecksum(entry.m_fullPath, "md5");
       info.uploadTime = entry.m_lastModified;
-      info.uploader = "unknown";  // In a real system, you'd store this metadata
+      info.uploader = "unknown";
 
       fileList.push_back(info);
     }
@@ -782,14 +773,14 @@ UploadFileInfo UploadConfig::getFileInfo(
 
     UploadFileInfo info;
     info.originalFilename =
-        storedFilename;  // In a real system, you'd have a mapping
+        storedFilename;
     info.storedFilename = storedFilename;
     info.filePath = filePath;
     info.fileSize = metadata.size;
     info.mimeType = metadata.mimeType;
     info.checksum = metadata.checksum;
     info.uploadTime = metadata.lastModified;
-    info.uploader = "unknown";  // In a real system, you'd store this metadata
+    info.uploader = "unknown";
 
     if (info.mimeType.find("image/") == 0) {
       info.metadata["type"] = "image";
@@ -835,8 +826,8 @@ UploadStatistics UploadConfig::getStatistics() const {
 
     stats.totalFiles = files.size();
     stats.successfulUploads =
-        files.size();         // In a real system, you'd track this separately
-    stats.failedUploads = 0;  // In a real system, you'd track this
+        files.size();
+    stats.failedUploads = 0;
 
     for (std::size_t i = 0; i < files.size(); ++i) {
       stats.totalSize = stats.totalSize + files[i].fileSize;
@@ -844,8 +835,6 @@ UploadStatistics UploadConfig::getStatistics() const {
 
     stats.diskSpaceUsed =
         m_fileHandler->getAvailableDiskSpace(m_uploadDirectory);
-    // Note: This returns available space, not used space
-    // In a real system, you'd calculate used space differently
 
     stats.diskSpaceAvailable = stats.diskSpaceUsed;
 
@@ -858,8 +847,6 @@ UploadStatistics UploadConfig::getStatistics() const {
 
 std::map<std::string, UploadStatistics> UploadConfig::getStatisticsByUploader()
     const {
-  // In a real implementation, you would track uploads by uploader
-  // For now, return empty map
   return std::map<std::string, UploadStatistics>();
 }
 
@@ -917,8 +904,6 @@ bool UploadConfig::cleanupOldFiles(int daysToKeep) const {
     time_t cutoffTime = now - (daysToKeep * 24 * 60 * 60);
 
     for (std::size_t i = 0; i < files.size(); ++i) {
-      // Parse last modified time (simplified)
-      // In a real system, you'd parse the actual timestamp
       struct tm tmTime;
       memset(&tmTime, 0, sizeof(tmTime));
 
@@ -951,10 +936,6 @@ bool UploadConfig::cleanupOrphanedFiles() const {
         infrastructure::filesystem::adapters::DirectoryLister::listDirectory(
             m_uploadDirectory, true, "name", true);
 
-    // In a real system, you would check which files are orphaned
-    // (e.g., no corresponding database entry)
-    // For now, just clean up temporary files
-
     for (std::size_t i = 0; i < entries.size(); ++i) {
       const infrastructure::filesystem::adapters::DirectoryEntry& entry =
           entries[i];
@@ -982,14 +963,11 @@ bool UploadConfig::cleanupOrphanedFiles() const {
 }
 
 bool UploadConfig::cleanupTemporaryFiles() const {
-  // This is similar to cleanupOrphanedFiles but focused on temp files
   return cleanupOrphanedFiles();
 }
 
 bool UploadConfig::scanForViruses(
     const domain::filesystem::value_objects::Path& filePath) const {
-  // In a real implementation, you would integrate with an antivirus library
-  // For now, just check file extensions and basic heuristics
 
   try {
     initializeDependencies();
@@ -1070,8 +1048,6 @@ std::string UploadConfig::generateUniqueFilename(
 
   std::string timestamp = getCurrentTimestamp();
 
-  // Generate unique identifier (using timestamp and random number in real
-  // system)
   std::ostringstream oss;
   oss << nameWithoutExt << "_" << timestamp;
 
@@ -1184,8 +1160,6 @@ bool UploadConfig::getCompressFiles() const { return m_compressFiles; }
 
 void UploadConfig::initializeDependencies() const {
   if (m_fileHandler == NULL) {
-    // FileSystemHelper is a utility class with only static methods.
-    // Use singleton instance for safe dependency injection.
     infrastructure::filesystem::adapters::FileSystemHelper* helperPtr =
         infrastructure::filesystem::adapters::FileSystemHelper::getInstance();
 
@@ -1246,7 +1220,6 @@ bool UploadConfig::validateUploadConstraints(
 }
 
 void UploadConfig::updateUploadStatistics(const std::string& uploader) const {
-  // add fileSize remove to bypass the errors
   if (!uploader.empty()) {
     time_t now = time(NULL);
     m_uploadHistory[uploader].push_back(now);
@@ -1293,7 +1266,6 @@ std::string UploadConfig::getCurrentTimestamp() const {
   struct tm* timeinfo = localtime(&now);
 
   char buffer[80];
-  // Use filesystem-safe format: no spaces, no colons
   strftime(buffer, sizeof(buffer), "%Y%m%d-%H%M%S", timeinfo);
 
   return std::string(buffer);
@@ -1301,9 +1273,6 @@ std::string UploadConfig::getCurrentTimestamp() const {
 
 bool UploadConfig::generateThumbnail(
     const domain::filesystem::value_objects::Path& thumbPath) const {
-  // In a real implementation, you would use an image processing library
-  // For now, just create a placeholder
-  // put sourcePath, remove to bypass the error
   try {
     std::vector<char> placeholder;
     const char* text = "Thumbnail placeholder";
@@ -1318,8 +1287,6 @@ bool UploadConfig::generateThumbnail(
 bool UploadConfig::applyWatermark(
     const domain::filesystem::value_objects::Path& sourcePath,
     const domain::filesystem::value_objects::Path& watermarkedPath) const {
-  // In a real implementation, you would apply a watermark to the image
-  // For now, just copy the file
   try {
     std::vector<char> data = m_fileHandler->readFile(sourcePath);
     return m_fileHandler->writeFile(watermarkedPath, data, true);
@@ -1331,8 +1298,6 @@ bool UploadConfig::applyWatermark(
 bool UploadConfig::encryptFile(
     const domain::filesystem::value_objects::Path& sourcePath,
     const domain::filesystem::value_objects::Path& encryptedPath) const {
-  // In a real implementation, you would encrypt the file
-  // For now, just compress it as a simple example
   (void)sourcePath;
   (void)encryptedPath;
   try {

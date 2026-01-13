@@ -67,7 +67,6 @@ bool FileSystemHelper::isRootDirectory(const std::string& path) {
   return path == "/";
 }
 
-// Singleton instance for dependency injection
 FileSystemHelper* FileSystemHelper::getInstance() {
   static FileSystemHelper instance;
   return &instance;

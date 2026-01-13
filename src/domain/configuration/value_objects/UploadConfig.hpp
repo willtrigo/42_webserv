@@ -77,7 +77,6 @@ class UploadConfig {
                const domain::filesystem::value_objects::Size& maxFileSize,
                const domain::filesystem::value_objects::Size& maxTotalSize);
 
-  // Constructor for dependency injection (primarily for testing)
   UploadConfig(
       const domain::filesystem::value_objects::Path& uploadDirectory,
       infrastructure::filesystem::adapters::FileHandler* fileHandler,
@@ -89,7 +88,6 @@ class UploadConfig {
   UploadConfig(const UploadConfig& other);
   UploadConfig& operator=(const UploadConfig& other);
 
-  // Configuration methods
   void setMaxFileSize(const domain::filesystem::value_objects::Size& maxSize);
   void setMaxTotalSize(const domain::filesystem::value_objects::Size& maxSize);
   void setMaxFilesPerUpload(std::size_t maxFiles);
@@ -115,7 +113,6 @@ class UploadConfig {
   const domain::filesystem::value_objects::Permission& getPermissions() const;
   const std::string& getUploadAccess() const;
 
-  // Validation methods
   bool validateUploadDirectory() const;
   bool validateFileSize(
       const domain::filesystem::value_objects::Size& fileSize) const;
@@ -125,7 +122,6 @@ class UploadConfig {
   bool validateExtension(const std::string& filename) const;
   bool validateMimeType(const std::string& mimeType) const;
 
-  // Upload operations
   UploadFileInfo processUpload(const std::string& originalFilename,
                                const std::vector<char>& fileData,
                                const std::string& uploader = "") const;
@@ -138,34 +134,28 @@ class UploadConfig {
   bool renameUploadedFile(const std::string& oldFilename,
                           const std::string& newFilename) const;
 
-  // File management
   std::vector<UploadFileInfo> listUploadedFiles(bool showHidden = false) const;
   UploadFileInfo getFileInfo(const std::string& storedFilename) const;
   std::vector<char> getFileContent(const std::string& storedFilename) const;
 
-  // Statistics
   UploadStatistics getStatistics() const;
   std::map<std::string, UploadStatistics> getStatisticsByUploader() const;
   std::map<std::string, std::size_t> getFileTypeDistribution() const;
 
-  // Cleanup
   bool cleanupOldFiles(int daysToKeep = 30) const;  // TODO:remove magic number
   bool cleanupOrphanedFiles() const;
   bool cleanupTemporaryFiles() const;
 
-  // Security
   bool scanForViruses(
       const domain::filesystem::value_objects::Path& filePath) const;
   bool verifyFileIntegrity(const std::string& storedFilename,
                            const std::string& expectedChecksum) const;
 
-  // Utility methods
   std::string generateUniqueFilename(const std::string& originalFilename) const;
   std::string sanitizeFilename(const std::string& filename) const;
   domain::filesystem::value_objects::Path getFullPath(
       const std::string& filename) const;
 
-  // Getters
   domain::filesystem::value_objects::Path getUploadDirectory() const;
   domain::filesystem::value_objects::Size getMaxFileSize() const;
   domain::filesystem::value_objects::Size getMaxTotalSize() const;
@@ -197,7 +187,6 @@ class UploadConfig {
   std::vector<std::string> m_allowedMimeTypes;
   std::vector<std::string> m_blockedMimeTypes;
 
-  // Dependencies (would be injected in a real implementation)
   mutable infrastructure::filesystem::adapters::FileHandler* m_fileHandler;
   mutable infrastructure::filesystem::adapters::DirectoryLister*
       m_directoryLister;
@@ -206,7 +195,6 @@ class UploadConfig {
   domain::filesystem::value_objects::Permission m_permissions;
   std::string m_uploadAccess;
 
-  // Helper methods
   void initializeDependencies() const;
   void cleanupDependencies() const;
 
@@ -237,7 +225,6 @@ class UploadConfig {
   static bool isTextFile(const std::string& filename);
   static bool isArchiveFile(const std::string& filename);
 
-  // Rate limiting
   mutable std::map<std::string, std::vector<time_t> > m_uploadHistory;
 
   static const std::size_t MAX_THUMBNAIL_WIDTH = 200;

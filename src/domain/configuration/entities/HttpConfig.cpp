@@ -45,9 +45,6 @@ HttpConfig::HttpConfig()
 
 HttpConfig::HttpConfig(const std::string& configFilePath) {
   initializeDefaults();
-  // This constructor would parse a configuration file
-  // For now, it just initializes with defaults
-  // TODO: implement necessary things to parse information
   (void)configFilePath;
 }
 
@@ -384,7 +381,6 @@ void HttpConfig::setErrorPage(const shared::value_objects::ErrorCode& code,
         exceptions::HttpConfigException::INVALID_ERROR_PAGE);
   }
 
-  // Accept both relative paths (./) and absolute paths from root (/)
   const bool startsWithRelative = 
       (trimmedUri.length() >= 2 && trimmedUri[0] == '.' && trimmedUri[1] == '/');
   const bool startsWithAbsolute = (trimmedUri[0] == '/');
@@ -571,7 +567,6 @@ void HttpConfig::validateDefaultServers() const {
           unsigned int port = directives[i].getPort().getValue();
           defaultServerCounts[port]++;
 
-          // TODO: possible error the defaultServerCounts was > 1
           if (defaultServerCounts[port] > 2) {
             std::ostringstream oss;
             oss << "Multiple default servers found for port " << port;

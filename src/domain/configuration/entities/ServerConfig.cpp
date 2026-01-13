@@ -123,17 +123,14 @@ std::string ServerConfig::normalizeListenDirective(
     const std::string& directive) {
   std::string trimmed = shared::utils::StringUtils::trim(directive);
 
-  // Already has colon - return as-is
   if (trimmed.find(':') != std::string::npos) {
     return trimmed;
   }
 
-  // Check if it's a port-only format (all digits)
   if (shared::utils::StringUtils::isAllDigits(trimmed)) {
     return ListenDirective::DEFAULT_HOST + std::string(":") + trimmed;
   }
 
-  // Check if it's an IPv6 without port
   if (trimmed.find("::") != std::string::npos ||
       (!trimmed.empty() && trimmed[0] == '[')) {
     std::ostringstream oss;
@@ -141,7 +138,6 @@ std::string ServerConfig::normalizeListenDirective(
     return oss.str();
   }
 
-  // Otherwise it's a hostname/IP without port
   std::ostringstream oss;
   oss << trimmed << ":" << ListenDirective::DEFAULT_PORT.getValue();
   return oss.str();
@@ -258,7 +254,6 @@ void ServerConfig::addErrorPage(const shared::value_objects::ErrorCode& code,
         oss.str(), exceptions::ServerConfigException::EMPTY_ERROR_PAGE_URI);
   }
 
-  // Accept both relative paths (./) and absolute paths from root (/)
   const bool startsWithRelative =
       (trimmedUri.length() >= 2 && trimmedUri[0] == '.' &&
        trimmedUri[1] == '/');
@@ -377,7 +372,6 @@ void ServerConfig::setReturnContent(
     const std::string& content, const shared::value_objects::ErrorCode& code) {
   std::string trimmedContent = shared::utils::StringUtils::trim(content);
 
-  // Validate code is NOT a redirect code
   if (code.isRedirection()) {
     std::ostringstream oss;
     oss << "Return content code cannot be a redirect code: " << code.getValue()
@@ -386,7 +380,6 @@ void ServerConfig::setReturnContent(
         oss.str(), exceptions::ServerConfigException::INVALID_RETURN_CODE);
   }
 
-  // Validate it's a valid return code (2xx, 4xx, or 5xx)
   if (!code.isSuccess() && !code.isClientError() && !code.isServerError()) {
     std::ostringstream oss;
     oss << "Invalid return content code: " << code.getValue()

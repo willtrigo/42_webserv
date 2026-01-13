@@ -230,7 +230,6 @@ void SocketOrchestrator::collectUniqueBindings(
       const std::string hostValue = directive.getHost().getValue();
       std::ostringstream bindKey;
 
-      // Wrap IPv6 addresses in brackets for consistent parsing
       if (directive.getHost().isIpv6()) {
         bindKey << "[" << hostValue << "]";
       } else {
@@ -347,7 +346,7 @@ void SocketOrchestrator::processEventLoopIteration() {
 
   if (shared::utils::SignalHandler::isShutdownRequested()) {
     m_logger.info("Shutdown signal during wait(); processing final events");
-    processReadyEvents(readyEvents);  // Graceful drain.
+    processReadyEvents(readyEvents);
     return;
   }
 

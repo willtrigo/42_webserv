@@ -32,8 +32,6 @@ class ConfigProvider : public application::ports::IConfigProvider {
   virtual ~ConfigProvider();
 
   virtual void load(const std::string& configPath);
-  // virtual void load(const std::string& configPath,
-  //                   const std::string& includePath);
 
   virtual const domain::configuration::entities::HttpConfig& getConfiguration()
       const;
@@ -65,7 +63,6 @@ class ConfigProvider : public application::ports::IConfigProvider {
   bool m_valid;
 
   std::string m_configPath;
-  // std::string m_includePath;
 
   void updateServerPointers();
 };

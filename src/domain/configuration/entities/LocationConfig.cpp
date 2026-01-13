@@ -338,7 +338,6 @@ void LocationConfig::setReturnContent(
         oss.str(), exceptions::LocationConfigException::INVALID_REDIRECT_CODE);
   }
 
-  // Validate it's a valid return code (2xx, 4xx, or 5xx)
   if (!code.isSuccess() && !code.isClientError() && !code.isServerError()) {
     std::ostringstream oss;
     oss << "Invalid return content code: " << code.getValue()
@@ -350,7 +349,7 @@ void LocationConfig::setReturnContent(
   m_returnContent = trimmedContent;
   m_returnCode = code;
   m_hasReturnContent = true;
-  m_returnRedirect = http::value_objects::Uri();  // Clear any redirect
+  m_returnRedirect = http::value_objects::Uri();
 }
 
 void LocationConfig::setReturnContent(const std::string& content,
@@ -448,7 +447,6 @@ void LocationConfig::addErrorPage(const shared::value_objects::ErrorCode& code,
         oss.str(), exceptions::LocationConfigException::EMPTY_ERROR_PAGE_URI);
   }
 
-  // Accept both relative paths (./) and absolute paths from root (/)
   const bool startsWithRelative =
       (trimmedUri.length() >= 2 && trimmedUri[0] == '.' &&
        trimmedUri[1] == '/');
@@ -610,7 +608,6 @@ void LocationConfig::setUploadAccess(const std::string& accessString) {
 
 void LocationConfig::setUploadMaxFileSize(const std::string& sizeString) {
   if (!m_hasUploadConfig) {
-    // Create default UploadConfig first
     domain::filesystem::value_objects::Path defaultDir("/tmp");
     m_uploadConfig =
         domain::configuration::value_objects::UploadConfig(defaultDir);
@@ -982,15 +979,12 @@ filesystem::value_objects::Path LocationConfig::resolvePath(
     const std::string& requestPath) const {
   if (hasAlias()) {
     std::string relativePath = requestPath.substr(m_path.length());
-    // Strip leading slash for proper joining
     if (!relativePath.empty() && relativePath[0] == '/') {
       relativePath = relativePath.substr(1);
     }
     return m_alias.join(relativePath);
   }
 
-  // Strip leading slash from request path for proper joining
-  // Web request paths like "/" or "/index.html" are relative to the root
   std::string relativeRequestPath = requestPath;
   if (!relativeRequestPath.empty() && relativeRequestPath[0] == '/') {
     relativeRequestPath = relativeRequestPath.substr(1);
@@ -1042,32 +1036,26 @@ value_objects::Route LocationConfig::toRoute() const {
     handlerType = value_objects::Route::REDIRECT;
   }
 
-  // For regex locations, use root path or "/" instead of the regex pattern
-  // since regex patterns are not valid filesystem paths
   filesystem::value_objects::Path routePath;
   bool isRegexLocation = (m_matchType == MATCH_REGEX_CASE_SENSITIVE ||
                           m_matchType == MATCH_REGEX_CASE_INSENSITIVE);
 
   if (isRegexLocation) {
-    // Use root if set, otherwise use "/"
     if (!m_root.isEmpty() && m_root.toString() != "/") {
       routePath = m_root;
     } else {
       routePath = filesystem::value_objects::Path::rootDirectory();
     }
   } else {
-    // Normal location - use path (which should be a valid filesystem path)
     try {
       routePath = filesystem::value_objects::Path(m_path, true);
     } catch (const std::exception&) {
-      // Fallback to root if path is invalid
       routePath = filesystem::value_objects::Path::rootDirectory();
     }
   }
 
   value_objects::Route route(routePath, m_allowedMethods, handlerType);
 
-  // Set root directory if it's a valid path (not just "/" and not empty)
   if (!m_root.isEmpty()) {
     std::string rootStr = m_root.toString();
     if (rootStr != "/" && !rootStr.empty()) {
@@ -1185,7 +1173,7 @@ std::string LocationConfig::stripMatchPrefix(const std::string& path) {
   switch (type) {
     case MATCH_EXACT:
       if (path[0] == '@') {
-        return path;  // Keep the @
+        return path;
       }
       return path.substr(1);
 

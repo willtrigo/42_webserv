@@ -16,12 +16,10 @@
 namespace shared {
 namespace utils {
 
-// Static initialization.
 volatile sig_atomic_t SignalHandler::s_shutdownRequested = 0;
 bool SignalHandler::s_initialized = false;
 
 extern "C" void handleSignal(int signal) {
-  // Async-signal-safe: only atomic ops, no complex logic.
   if (signal == SIGINT || signal == SIGTERM || signal == SIGQUIT) {
     SignalHandler::s_shutdownRequested = 1;
   }
@@ -31,8 +29,8 @@ void SignalHandler::initialize() {
   if (s_initialized) return;
   std::signal(SIGINT, handleSignal);
   std::signal(SIGTERM, handleSignal);
-  std::signal(SIGQUIT, handleSignal);  // Handle Ctrl+\ for graceful quit.
-  std::signal(SIGPIPE, SIG_IGN);       // Ignore broken pipes (per RFC).
+  std::signal(SIGQUIT, handleSignal);
+  std::signal(SIGPIPE, SIG_IGN);
   s_initialized = true;
   s_shutdownRequested = 0;
 }
@@ -59,7 +57,6 @@ volatile sig_atomic_t* SignalHandler::getShutdownFlagPtr() {
   return &s_shutdownRequested;
 }
 
-// Prevent instantiation.
 SignalHandler::SignalHandler() {}
 SignalHandler::~SignalHandler() {}
 

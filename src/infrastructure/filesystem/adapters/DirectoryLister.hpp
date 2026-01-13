@@ -104,8 +104,6 @@ class DirectoryLister {
   FileSystemHelper* m_fileSystemHelper;
   PathResolver* m_pathResolver;
 
-  // Meyer's Singleton pattern - static functions returning references to static
-  // locals This fixes the static initialization order fiasco
   static const domain::shared::value_objects::RegexPattern&
   getImageExtensionPattern();
   static const domain::shared::value_objects::RegexPattern&

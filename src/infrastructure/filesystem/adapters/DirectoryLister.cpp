@@ -32,8 +32,6 @@ namespace infrastructure {
 namespace filesystem {
 namespace adapters {
 
-// Meyer's Singleton pattern - guarantees initialization on first use
-// This fixes the static initialization order fiasco
 const domain::shared::value_objects::RegexPattern&
 DirectoryLister::getImageExtensionPattern() {
   static const domain::shared::value_objects::RegexPattern pattern =
@@ -228,7 +226,6 @@ std::string DirectoryLister::generateHtmlListing(
   html << "  </div>\n";
 
   html << "  <address>";
-  // html << m_fileSystemHelper->getServerSignature();
   html << " at " << requestPath.toString() << "</address>\n";
   html << "</body>\n";
   html << "</html>\n";
@@ -344,8 +341,6 @@ std::string DirectoryLister::generatePlainTextListing(
 
 bool DirectoryLister::isDirectoryListingEnabled(
     const domain::filesystem::value_objects::Path& directoryPath) {
-  // In a real implementation, this would check configuration
-  // For now, we'll assume it's enabled if directory exists and is readable
   if (!FileSystemHelper::exists(directoryPath.toString())) {
     return false;
   }
@@ -414,9 +409,6 @@ std::string DirectoryLister::getParentDirectoryUri(
     return "";
   }
 
-  // Convert filesystem path back to URI
-  // This is a simplified version - in reality you'd need to map back to URI
-  // space
   std::string parentStr = parentPath.toString();
 
   if (parentStr == "/") {

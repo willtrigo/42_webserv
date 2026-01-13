@@ -144,8 +144,6 @@ void ConnectionHandler::processEvent() {
 
     const domain::configuration::entities::ServerConfig* config =
         resolveVirtualHost();
-    const domain::http::value_objects::HttpMethod& method =
-        m_request.getMethod();
     const domain::filesystem::value_objects::Path requestPath =
         domain::filesystem::value_objects::Path::fromString(
             m_request.getPath().toString(), true);
@@ -213,7 +211,6 @@ void ConnectionHandler::handleRead() {
       << " (total: " << m_requestBuffer.size() << ")";
   m_logger.debug(oss.str());
 
-  // Use configured server-level client_max_body_size instead of hardcoded limit
   const size_t maxRequestSize =
       m_serverConfig->getClientMaxBodySize().getBytes();
 
@@ -409,8 +406,6 @@ domain::filesystem::value_objects::Path ConnectionHandler::resolveErrorPagePath(
     throw std::runtime_error("Error page path cannot be empty");
   }
 
-  // Case 1: Relative path starting with "./" (e.g., ./errors/404.html)
-  // Convert to absolute path using realpath()
   if (errorPagePath.length() >= 2 && errorPagePath[0] == '.' &&
       errorPagePath[1] == '/') {
     char resolvedPath[PATH_MAX];
@@ -421,8 +416,6 @@ domain::filesystem::value_objects::Path ConnectionHandler::resolveErrorPagePath(
                << " (errno=" << errno << ")";
       m_logger.warn(errorMsg.str());
 
-      // Try to construct path manually if realpath fails (file might not exist
-      // yet)
       char cwd[PATH_MAX];
       if (getcwd(cwd, sizeof(cwd)) != NULL) {
         std::string cwdStr(cwd);
@@ -443,12 +436,9 @@ domain::filesystem::value_objects::Path ConnectionHandler::resolveErrorPagePath(
     return domain::filesystem::value_objects::Path(resolvedPath);
   }
 
-  // Case 2: Absolute path from server root starting with "/" (e.g.,
-  // /errors/404.html) Join with server or location root
   if (errorPagePath[0] == '/') {
     std::string pathWithoutLeadingSlash = errorPagePath.substr(1);
 
-    // Try location root first
     try {
       const domain::filesystem::value_objects::Path& locationRoot =
           location.getRoot();
@@ -470,7 +460,6 @@ domain::filesystem::value_objects::Path ConnectionHandler::resolveErrorPagePath(
       m_logger.debug(warnMsg.str());
     }
 
-    // Fall back to server root
     if (m_serverConfig != NULL && !m_serverConfig->getRoot().isEmpty()) {
       domain::filesystem::value_objects::Path resolvedPath =
           m_serverConfig->getRoot().join(pathWithoutLeadingSlash);
@@ -484,7 +473,6 @@ domain::filesystem::value_objects::Path ConnectionHandler::resolveErrorPagePath(
       return resolvedPath;
     }
 
-    // If no root configured, use path as-is (treat as absolute filesystem path)
     std::ostringstream warnMsg;
     warnMsg << "No server root configured, using error page path as absolute: "
             << errorPagePath;
@@ -493,7 +481,6 @@ domain::filesystem::value_objects::Path ConnectionHandler::resolveErrorPagePath(
     return domain::filesystem::value_objects::Path(errorPagePath);
   }
 
-  // Case 3: Neither ./ nor / - treat as relative to server root
   std::ostringstream warnMsg;
   warnMsg
       << "Error page path '" << errorPagePath

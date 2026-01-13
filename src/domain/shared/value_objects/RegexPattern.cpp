@@ -175,7 +175,6 @@ bool RegexPattern::matches(const std::string& text) const {
     return m_pattern == text;
   }
 
-  // Use POSIX regex for complex patterns
   regex_t regex;
   int cflags = REG_EXTENDED | REG_NOSUB;
 

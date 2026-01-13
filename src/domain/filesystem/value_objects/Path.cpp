@@ -88,7 +88,6 @@ std::string Path::toString() const { return m_path; }
 std::string Path::getDirectory() const {
   if (m_path.empty()) return "";
 
-  // Remove trailing slash if present (directory paths)
   std::string pathWithoutTrailing = m_path;
   if (pathWithoutTrailing.length() > 1 && 
       pathWithoutTrailing[pathWithoutTrailing.length() - 1] == PATH_SEPARATOR) {
@@ -109,7 +108,6 @@ std::string Path::getDirectory() const {
 std::string Path::getFilename() const {
   if (m_path.empty()) return "";
 
-  // Remove trailing slash if present (directory paths)
   std::string pathWithoutTrailing = m_path;
   if (pathWithoutTrailing.length() > 1 && 
       pathWithoutTrailing[pathWithoutTrailing.length() - 1] == PATH_SEPARATOR) {
@@ -164,21 +162,16 @@ Path Path::join(const std::string& subpath) const {
     return *this;
   }
 
-  // If subpath is absolute (starts with /), treat it as an absolute path replacement
   if (!subpath.empty() && subpath[0] == PATH_SEPARATOR) {
-    // If subpath starts with /, it should be treated as absolute
     return Path(subpath, true);
   }
 
-  // Handle empty base path
   if (m_path.empty()) {
-    // Join with empty base: return subpath with same absolute/relative status
     return Path(subpath, true);
   }
 
   std::string newPath = m_path;
   
-  // Add separator if base path doesn't end with one
   if (newPath[newPath.size() - 1] != PATH_SEPARATOR) {
     newPath += PATH_SEPARATOR;
   }
@@ -287,8 +280,6 @@ void Path::validatePathSecurity(const std::string& path) {
         "Path contains invalid characters: '" + path + "'",
         exceptions::PathException::INVALID_CHARACTER);
   }
-  // Note: Directory traversal (../) is allowed in paths
-  // Use isSafePath() to check for security concerns
 }
 
 void Path::validateFilenameProperties(const std::string& path) {
@@ -374,14 +365,13 @@ std::string Path::urlDecode(const std::string& str) {
   
   for (std::size_t i = 0; i < str.length(); ++i) {
     if (str[i] == '%' && i + 2 < str.length()) {
-      // Try to decode hex sequence
       char hex[3] = {str[i + 1], str[i + 2], '\0'};
       char* endptr;
       long value = std::strtol(hex, &endptr, 16);
       
-      if (endptr == hex + 2) {  // Successfully decoded 2 hex digits
+      if (endptr == hex + 2) {
         result += static_cast<char>(value);
-        i += 2;  // Skip the two hex digits
+        i += 2;
         continue;
       }
     }
@@ -392,7 +382,6 @@ std::string Path::urlDecode(const std::string& str) {
 }
 
 bool Path::hasDirectoryTraversal(const std::string& path) {
-  // Decode URL-encoded characters first
   std::string decodedPath = urlDecode(path);
   
   std::vector<std::string> components = splitComponents(decodedPath);
@@ -402,8 +391,6 @@ bool Path::hasDirectoryTraversal(const std::string& path) {
       continue;
     }
     if (components[i] == PARENT_DIR) {
-      // Any .. in path is considered traversal (even if safe mathematically)
-      // This is for security - we want to reject any path with ..
       return true;
     }
   }

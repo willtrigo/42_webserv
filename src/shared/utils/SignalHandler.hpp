@@ -26,7 +26,6 @@ class SignalHandler {
   static void resetShutdownFlag();
   static volatile sig_atomic_t* getShutdownFlagPtr();
 
-  // Public static for safe, qualified access from global handler.
   static volatile sig_atomic_t s_shutdownRequested;
 
  private:
@@ -41,7 +40,6 @@ class SignalHandler {
 } // namespace utils
 } // namespace shared
 
-// Global C-linkage for std::signal compatibility.
 extern "C" void handleSignal(int signal);
 
 #endif // SIGNALHANDLER_HPP

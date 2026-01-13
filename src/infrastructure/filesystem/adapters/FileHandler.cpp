@@ -23,8 +23,6 @@
 #include <dirent.h>
 #include <fstream>
 #include <iomanip>
-#include <openssl/md5.h>
-#include <openssl/sha.h>
 #include <sstream>
 #include <sys/file.h>
 #include <sys/stat.h>
@@ -449,9 +447,8 @@ bool FileHandler::lockFile(const domain::filesystem::value_objects::Path& filePa
         exceptions::FileHandlerException::FILE_NOT_FOUND);
   }
 
-  // Check if already locked
   if (m_fileLocks.find(pathStr) != m_fileLocks.end()) {
-    return true;  // Already locked
+    return true;
   }
 
   int fd = open(pathStr.c_str(), O_RDWR);
@@ -507,7 +504,6 @@ bool FileHandler::isFileLocked(
     return true;
   }
 
-  // Try to lock the file temporarily
   int fd = open(pathStr.c_str(), O_RDWR);
   if (fd < 0) {
     return false;
@@ -558,9 +554,7 @@ domain::filesystem::value_objects::Size FileHandler::getAvailableDiskSpace(
     const domain::filesystem::value_objects::Path& path) const {
   std::string pathStr = path.toString();
 
-  // This is a simplified implementation
-  // In a real implementation, you would use statvfs or similar
-  return domain::filesystem::value_objects::Size(1024 * 1024 * 1024);  // 1GB default
+  return domain::filesystem::value_objects::Size(1024 * 1024 * 1024);
 }
 
 bool FileHandler::validateFileSize(
@@ -739,7 +733,7 @@ void FileHandler::validateDirectoryForDeletion(
     struct dirent* entry;
     int count = 0;
     while ((entry = readdir(dir)) != NULL) {
-      if (++count > 2) {  // . and ..
+      if (++count > 2) {
         closedir(dir);
         throw exceptions::FileHandlerException(
             "Directory is not empty: " + pathStr,
@@ -926,7 +920,7 @@ void FileHandler::sha1PadAndProcess(const std::vector<char>& data,
                                     unsigned int* state, U64& bitLen) const {
   unsigned char padded[64];
   std::vector<char>::size_type idx =
-      (bitLen.m_lo / 8) % 64;  // Low word for modulo
+      (bitLen.m_lo / 8) % 64;
   bitLen.add(static_cast<unsigned long>(data.size()));
 
   unsigned char finalOctet = static_cast<unsigned char>(0x80);
@@ -952,7 +946,7 @@ std::string FileHandler::calculateSHA1(const std::vector<char>& data) const {
     sha1Transform(state, ptr + (i * 64));
     bitLen.add(64UL);
   }
-  // Process remainder
+
   std::vector<char>::size_type rem = data.size() % 64;
   if (rem > 0) {
     sha1PadAndProcess(std::vector<char>(ptr + (blocks * 64), ptr + data.size()),
@@ -1059,7 +1053,7 @@ std::string FileHandler::calculateSHA256(const std::vector<char>& data) const {
     sha256Transform(state, ptr + (i * 64));
     bitLen.add(64UL);
   }
-  // Process remainder
+
   std::vector<char>::size_type rem = data.size() % 64;
   if (rem > 0) {
     sha256PadAndProcess(
@@ -1083,11 +1077,12 @@ void FileHandler::md5Transform(unsigned int* state,
                                const unsigned char* block) const {
   unsigned int a = state[0], b = state[1], c = state[2], d = state[3];
   unsigned int x[16];
+  
   for (int i = 0; i < 16; ++i) {
-    x[i] = (static_cast<unsigned int>(block[i * 4]) << 24) |
-           (static_cast<unsigned int>(block[i * 4 + 1]) << 16) |
-           (static_cast<unsigned int>(block[i * 4 + 2]) << 8) |
-           static_cast<unsigned int>(block[i * 4 + 3]);
+    x[i] = static_cast<unsigned int>(block[i * 4]) |
+           (static_cast<unsigned int>(block[i * 4 + 1]) << 8) |
+           (static_cast<unsigned int>(block[i * 4 + 2]) << 16) |
+           (static_cast<unsigned int>(block[i * 4 + 3]) << 24);
   }
 
   const unsigned int s[64] = {
@@ -1107,26 +1102,21 @@ void FileHandler::md5Transform(unsigned int* state,
       0xf4292244, 0x432aff97, 0xab9423a7, 0xfc93a039, 0x655b59c3, 0x8f0ccc92,
       0xffeff47d, 0x85845dd1, 0x6fa87e4f, 0xfe2ce6e0, 0xa3014314, 0x4e0811a1,
       0xf7537e82, 0xbd3af235, 0x2ad7d2bb, 0xeb86d391};
-  const int r[64] = {0,  1,  2,  3, 4, 5,  6,  7,  8,  9,  10, 11, 12,
-                     13, 14, 15, 1, 6, 11, 0,  5,  10, 15, 4,  9,  14,
-                     3,  8,  13, 2, 7, 12, 5,  8,  11, 14, 1,  4,  7,
-                     10, 13, 0,  3, 6, 9,  12, 15, 2,  0,  1,  2,  3,
-                     4,  5,  6,  7, 8, 9,  10, 11, 12, 13, 14, 15};
 
   for (int i = 0; i < 64; ++i) {
     unsigned int f, g;
     if (i < 16) {
       f = (b & c) | (~b & d);
-      g = r[i];
+      g = i;
     } else if (i < 32) {
-      f = (b & d) | (c & ~d);
-      g = (3 * i + 5) % 16;
+      f = (d & b) | (~d & c);
+      g = (5 * i + 1) % 16;
     } else if (i < 48) {
       f = b ^ c ^ d;
-      g = (7 * i) % 16;
+      g = (3 * i + 5) % 16;
     } else {
       f = c ^ (b | ~d);
-      g = (i * 7) % 16;
+      g = (7 * i) % 16;
     }
     unsigned int temp = d;
     d = c;
@@ -1154,7 +1144,16 @@ void FileHandler::md5PadAndProcess(const std::vector<char>& data,
     idx = 0;
   }
   std::memset(padded + idx, 0, 56 - idx);
-  bitLen.toBytes(padded + 56);
+  
+  padded[56] = static_cast<unsigned char>(bitLen.m_lo & 0xFF);
+  padded[57] = static_cast<unsigned char>((bitLen.m_lo >> 8) & 0xFF);
+  padded[58] = static_cast<unsigned char>((bitLen.m_lo >> 16) & 0xFF);
+  padded[59] = static_cast<unsigned char>((bitLen.m_lo >> 24) & 0xFF);
+  padded[60] = static_cast<unsigned char>(bitLen.m_hi & 0xFF);
+  padded[61] = static_cast<unsigned char>((bitLen.m_hi >> 8) & 0xFF);
+  padded[62] = static_cast<unsigned char>((bitLen.m_hi >> 16) & 0xFF);
+  padded[63] = static_cast<unsigned char>((bitLen.m_hi >> 24) & 0xFF);
+  
   md5Transform(state, padded);
 }
 
@@ -1164,6 +1163,7 @@ std::string FileHandler::calculateMD5(const std::vector<char>& data) const {
   const unsigned char* ptr =
       reinterpret_cast<const unsigned char*>(data.data());
   std::vector<char>::size_type blocks = data.size() / 64;
+  
   for (std::vector<char>::size_type i = 0; i < blocks; ++i) {
     md5Transform(state, ptr + (i * 64));
     bitLen.add(64UL);
@@ -1179,11 +1179,12 @@ std::string FileHandler::calculateMD5(const std::vector<char>& data) const {
 
   unsigned char digest[16];
   for (int i = 0; i < 4; ++i) {
-    digest[i * 4] = static_cast<unsigned char>((state[i] >> 24) & 0xFF);
-    digest[i * 4 + 1] = static_cast<unsigned char>((state[i] >> 16) & 0xFF);
-    digest[i * 4 + 2] = static_cast<unsigned char>((state[i] >> 8) & 0xFF);
-    digest[i * 4 + 3] = static_cast<unsigned char>(state[i] & 0xFF);
+    digest[i * 4] = static_cast<unsigned char>(state[i] & 0xFF);
+    digest[i * 4 + 1] = static_cast<unsigned char>((state[i] >> 8) & 0xFF);
+    digest[i * 4 + 2] = static_cast<unsigned char>((state[i] >> 16) & 0xFF);
+    digest[i * 4 + 3] = static_cast<unsigned char>((state[i] >> 24) & 0xFF);
   }
+  
   return toHexDigest(digest, 16);
 }
 

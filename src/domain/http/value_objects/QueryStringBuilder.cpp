@@ -550,7 +550,6 @@ QueryStringBuilder QueryStringBuilder::parseQueryString(
         builder.m_parameters[key] = value;
       }
     } else {
-      // Skip parameters without '=' (considered invalid during parsing)
       continue;
     }
   }

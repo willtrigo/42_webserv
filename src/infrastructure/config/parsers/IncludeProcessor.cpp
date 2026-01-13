@@ -125,7 +125,6 @@ std::vector<std::string> IncludeProcessor::expandGlobPattern(
   return result;
 }
 
-// TODO: maybe use compoment of filesystem
 std::vector<std::string> IncludeProcessor::listDirectory(
     const std::string& dirPath) {
   std::vector<std::string> result;
@@ -159,7 +158,6 @@ std::vector<std::string> IncludeProcessor::listDirectory(
   return result;
 }
 
-// TODO: maybe use RegexPattern.cpp
 bool IncludeProcessor::matchesPattern(const std::string& filename,
                                       const std::string& pattern) {
   std::size_t fileIdx = 0;

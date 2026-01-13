@@ -239,7 +239,6 @@ void LocationDirectiveHandler::handleReturn(
     unsigned int code = parseUnsignedInt(args[0], "return code", lineNumber);
     domain::shared::value_objects::ErrorCode errorCode(code);
 
-    // Validate HTTP status code range using ErrorCode constants
     if (!domain::shared::value_objects::ErrorCode::isValidErrorCode(code)) {
       std::ostringstream oss;
       oss << "return code " << code
@@ -251,9 +250,7 @@ void LocationDirectiveHandler::handleReturn(
           oss.str(), exceptions::SyntaxException::INVALID_DIRECTIVE);
     }
 
-    // For redirect codes (3xx), use setReturnRedirect
     if (errorCode.isRedirection()) {
-      // Join all remaining arguments as the redirect URL
       std::string redirectTarget;
       for (std::size_t i = 1; i < args.size(); ++i) {
         if (i > 1) redirectTarget += " ";
@@ -267,16 +264,13 @@ void LocationDirectiveHandler::handleReturn(
           << "' at line " << lineNumber;
       m_logger.debug(oss.str());
     } 
-    // For success (2xx), client error (4xx), or server error (5xx) codes, use setReturnContent
     else if (errorCode.isSuccess() || errorCode.isClientError() || errorCode.isServerError()) {
-      // Join all remaining arguments as the response content
       std::string content;
       for (std::size_t i = 1; i < args.size(); ++i) {
         if (i > 1) content += " ";
         content += args[i];
       }
       
-      // Remove surrounding quotes if present
       if (content.size() >= 2 && 
           content[0] == '"' && content[content.size() - 1] == '"') {
         content = content.substr(1, content.size() - 2);
@@ -289,7 +283,6 @@ void LocationDirectiveHandler::handleReturn(
           << lineNumber;
       m_logger.debug(oss.str());
     } else {
-      // This should not happen due to the range check above, but handle it
       std::ostringstream oss;
       oss << "return code " << code
           << " is not a valid return code (must be 2xx, 3xx, 4xx, or 5xx) at line "

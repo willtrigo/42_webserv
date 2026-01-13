@@ -340,13 +340,11 @@ bool Permission::hasSpecialBitsFormat(const std::string& symbolicString) {
 }
 
 unsigned int Permission::parseSpecialBits(const std::string& symbolicString) {
-  // Validate special bits format: "XYZ " where X,Y,Z are S/s/T/t/-
   char setuidChar = symbolicString[0];
   char setgidChar = symbolicString[1];
   char stickyChar = symbolicString[2];
   char spaceChar = symbolicString[3];
   
-  // Validate each position
   if (setuidChar != 'S' && setuidChar != 's' && setuidChar != '-') {
     throw exceptions::PermissionException(
         "Invalid setuid character: expected 'S', 's', or '-'",
@@ -368,7 +366,6 @@ unsigned int Permission::parseSpecialBits(const std::string& symbolicString) {
         exceptions::PermissionException::INVALID_FORMAT);
   }
   
-  // Build special bits
   unsigned int specialBits = 0;
 
   if (setuidChar == 'S' || setuidChar == 's') {
@@ -388,7 +385,6 @@ unsigned int Permission::parseSpecialBits(const std::string& symbolicString) {
 
 unsigned int Permission::parseRegularPermissions(
     const std::string& symbolicString, std::size_t startIndex) {
-  // Extract all characters
   char ownerRead = symbolicString[startIndex + OWNER_READ_POSITION];
   char ownerWrite = symbolicString[startIndex + OWNER_WRITE_POSITION];
   char ownerExecute = symbolicString[startIndex + OWNER_EXECUTE_POSITION];
@@ -399,7 +395,6 @@ unsigned int Permission::parseRegularPermissions(
   char otherWrite = symbolicString[startIndex + OTHER_WRITE_POSITION];
   char otherExecute = symbolicString[startIndex + OTHER_EXECUTE_POSITION];
 
-  // Validate all positions
   if (ownerRead != 'r' && ownerRead != '-') {
     throw exceptions::PermissionException(
         "Invalid character in owner read position: expected 'r' or '-'",
@@ -446,7 +441,6 @@ unsigned int Permission::parseRegularPermissions(
         exceptions::PermissionException::INVALID_FORMAT);
   }
 
-  // Build permission bits
   unsigned int permissions = 0;
   
   if (ownerRead == 'r')

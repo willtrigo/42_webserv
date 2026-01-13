@@ -263,7 +263,6 @@ void CgiConfig::validate() const {
   validateExtensionPattern();
   validateParameters();
 
-  // Only check required params if script path is set (fully configured)
   if (!m_scriptPath.empty()) {
     static const std::string REQUIRED_PARAMS[] = {
         DEFAULT_SCRIPT_FILENAME, DEFAULT_REQUEST_METHOD,

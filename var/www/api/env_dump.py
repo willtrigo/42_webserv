@@ -25,7 +25,8 @@ CGI_VARS: List[str] = [
     'REMOTE_ADDR', 'REMOTE_PORT', 'REDIRECT_STATUS',
 ]
 
-HTML_HEADER: str = """<!DOCTYPE html>
+HTML_HEADER: str = """
+ <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">

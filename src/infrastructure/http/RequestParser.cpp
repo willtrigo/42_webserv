@@ -84,11 +84,9 @@ bool ParsedRequest::isChunked() const {
   return transferEncoding.find("chunked") != std::string::npos;
 }
 
-// ==================== RequestParser Implementation ====================
-
 RequestParser::RequestParser()
-    : m_maxHeaderSize(8192),            // 8KB default
-      m_maxBodySize(10 * 1024 * 1024),  // 10MB default
+    : m_maxHeaderSize(8192),
+      m_maxBodySize(10 * 1024 * 1024),
       m_state(START_LINE),
       m_bodyBytesRead(0) {
   reset();
@@ -107,30 +105,25 @@ bool RequestParser::parse(const char* data, std::size_t length) {
     return false;
   }
 
-  // Check if we're already in an error state
   if (m_state == ERROR) {
     return false;
   }
 
-  // Append data to buffer
   m_buffer.append(data, length);
 
   try {
-    // Parse based on current state
     bool progress = false;
     while (true) {
       switch (m_state) {
         case START_LINE:
           progress = parseStartLine();
           if (!progress) return false;
-          // If start line parsed successfully, continue to headers
           m_state = HEADERS;
           break;
 
         case HEADERS:
           progress = parseHeaders();
           if (!progress) return false;
-          // If headers parsed successfully, determine next state
           if (m_request.isChunked()) {
             m_state = CHUNKED_BODY;
           } else if (m_request.getContentLength() > 0) {
@@ -198,12 +191,11 @@ std::size_t RequestParser::getMaxBodySize() const { return m_maxBodySize; }
 bool RequestParser::parseStartLine() {
   std::size_t lineEnd = findLineEnd();
   if (lineEnd == std::string::npos) {
-    // Not enough data yet
     return false;
   }
 
   std::string line = m_buffer.substr(0, lineEnd);
-  m_buffer.erase(0, lineEnd + 2);  // Remove line + CRLF
+  m_buffer.erase(0, lineEnd + 2);
 
   processStartLine(line);
   return true;
@@ -213,21 +205,18 @@ bool RequestParser::parseHeaders() {
   while (true) {
     std::size_t lineEnd = findLineEnd();
     if (lineEnd == std::string::npos) {
-      // Not enough data yet
       return false;
     }
 
     std::string line = m_buffer.substr(0, lineEnd);
-    m_buffer.erase(0, lineEnd + 2);  // Remove line + CRLF
+    m_buffer.erase(0, lineEnd + 2);
 
-    // Empty line indicates end of headers
     if (line.empty()) {
       break;
     }
 
     processHeaderLine(line);
 
-    // Check header size limit
     if (m_buffer.size() > m_maxHeaderSize) {
       std::ostringstream oss;
       oss << "Headers size " << m_buffer.size() << " exceeds maximum of "
@@ -248,7 +237,6 @@ bool RequestParser::parseBody() {
     return true;
   }
 
-  // Check body size limit
   if (contentLength > m_maxBodySize) {
     std::ostringstream oss;
     oss << "Content-Length " << contentLength
@@ -257,7 +245,6 @@ bool RequestParser::parseBody() {
                                  RequestParserException::BODY_TOO_LARGE);
   }
 
-  // Calculate how many bytes we still need
   std::size_t bytesNeeded = contentLength - m_bodyBytesRead;
 
   if (bytesNeeded == 0) {
@@ -265,14 +252,12 @@ bool RequestParser::parseBody() {
     return true;
   }
 
-  // Read available bytes from buffer
   std::size_t bytesToRead = std::min(bytesNeeded, m_buffer.size());
   m_request.body.insert(m_request.body.end(), m_buffer.begin(),
                         m_buffer.begin() + bytesToRead);
   m_bodyBytesRead += bytesToRead;
   m_buffer.erase(0, bytesToRead);
 
-  // Check if we have complete body
   if (m_bodyBytesRead >= contentLength) {
     m_state = COMPLETE;
     return true;
@@ -282,19 +267,12 @@ bool RequestParser::parseBody() {
 }
 
 bool RequestParser::parseChunkedBody() {
-  // Simple chunked parsing - for full implementation you'd need to handle
-  // chunk sizes, trailers, etc.
-
-  // For now, just read until we find "0\r\n\r\n" (end of chunks)
   std::size_t endPos = m_buffer.find("0\r\n\r\n");
   if (endPos == std::string::npos) {
-    // Not enough data yet
     return false;
   }
 
-  // For simplicity, just skip chunked encoding for now
-  // In a real implementation, you would parse each chunk
-  m_buffer.erase(0, endPos + 5);  // Remove "0\r\n\r\n"
+  m_buffer.erase(0, endPos + 5);
   m_state = COMPLETE;
   return true;
 }
@@ -315,7 +293,7 @@ std::string RequestParser::extractLine() {
   }
 
   std::string line = m_buffer.substr(0, lineEnd);
-  m_buffer.erase(0, lineEnd + 2);  // Remove line + CRLF
+  m_buffer.erase(0, lineEnd + 2);
   return line;
 }
 
@@ -328,7 +306,6 @@ void RequestParser::processStartLine(const std::string& line) {
                                  RequestParserException::MALFORMED_REQUEST);
   }
 
-  // Validate and parse method
   if (!validateMethod(methodStr)) {
     throw RequestParserException("Unsupported HTTP method: " + methodStr,
                                  RequestParserException::UNSUPPORTED_METHOD);
@@ -336,7 +313,6 @@ void RequestParser::processStartLine(const std::string& line) {
   m_request.method =
       domain::http::value_objects::HttpMethod::fromString(methodStr);
 
-  // Parse URI and query string
   std::size_t queryPos = uri.find('?');
   std::string pathStr;
   if (queryPos != std::string::npos) {
@@ -349,8 +325,7 @@ void RequestParser::processStartLine(const std::string& line) {
     pathStr = uri;
   }
 
-  // Validate URI length
-  if (pathStr.length() > 8192) {  // Common URI length limit
+  if (pathStr.length() > 8192) {
     std::ostringstream oss;
     oss << "URI length " << pathStr.length()
         << " exceeds maximum of 8192 characters";
@@ -376,7 +351,6 @@ void RequestParser::processStartLine(const std::string& line) {
                                  RequestParserException::MALFORMED_REQUEST);
   }
 
-  // Validate HTTP version
   if (!validateHttpVersion(version)) {
     throw RequestParserException(
         "Invalid or unsupported HTTP version: " + version,
@@ -395,19 +369,16 @@ void RequestParser::processHeaderLine(const std::string& line) {
   std::string name = line.substr(0, colonPos);
   std::string value = line.substr(colonPos + 1);
 
-  // Trim whitespace
   name.erase(0, name.find_first_not_of(" \t"));
   name.erase(name.find_last_not_of(" \t") + 1);
   value.erase(0, value.find_first_not_of(" \t"));
   value.erase(value.find_last_not_of(" \t") + 1);
 
-  // Validate header name
   if (name.empty()) {
     throw RequestParserException("Empty header name",
                                  RequestParserException::INVALID_HEADER);
   }
 
-  // Convert header name to lowercase for case-insensitive lookup
   std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 
   m_request.headers[name] = value;
@@ -418,17 +389,14 @@ bool RequestParser::validateMethod(const std::string& method) const {
 }
 
 bool RequestParser::validatePath(const std::string& path) const {
-  // Basic path validation
   if (path.empty()) {
     return false;
   }
 
-  // Path should start with '/'
   if (path[0] != '/') {
     return false;
   }
 
-  // Check for control characters
   for (std::size_t i = 0; i < path.length(); ++i) {
     if (iscntrl(static_cast<unsigned char>(path[i]))) {
       return false;
@@ -439,13 +407,11 @@ bool RequestParser::validatePath(const std::string& path) const {
 }
 
 bool RequestParser::validateHttpVersion(const std::string& version) const {
-  // Check format: HTTP/x.y
   if (version.find("HTTP/") != 0) {
     return false;
   }
 
-  // Check version number
-  std::string verNum = version.substr(5);  // Skip "HTTP/"
+  std::string verNum = version.substr(5);
   if (verNum == "1.0" || verNum == "1.1") {
     return true;
   }

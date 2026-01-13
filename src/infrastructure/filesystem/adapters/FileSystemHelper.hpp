@@ -22,9 +22,6 @@ namespace adapters {
 
 class FileSystemHelper {
  public:
-  // Singleton instance for dependency injection
-  // Returns a valid pointer that can be passed to adapters
-  // The pointer itself is never dereferenced - only static methods are called
   static FileSystemHelper* getInstance();
 
   static bool exists(const std::string& path);

@@ -42,7 +42,6 @@ void ConfigProvider::load(const std::string& configPath) {
     domain::configuration::entities::HttpConfig* httpConfig =
         this->m_parser->parseFile(configPath);
 
-    // Transfer ownership immediately to prevent leaks
     this->m_httpConfig.reset(httpConfig);
     this->m_parser->validateConfiguration(*this->m_httpConfig);
     updateServerPointers();
@@ -96,7 +95,6 @@ void ConfigProvider::reload() {
         exceptions::ConfigException::INVALID_STATE);
   }
   load(this->m_configPath);
-  // load(this->m_configPath, this->m_includePath);
 }
 
 bool ConfigProvider::isValid() const {
